@@ -1,0 +1,22 @@
+[Defines]
+  INF_VERSION     = 0x00010006
+  BASE_NAME       = SunxiTimerLib
+  FILE_GUID       = 1bb317aa-a2e3-4415-9617-3145a5ce3abe
+  MODULE_TYPE     = BASE 
+  VERSION_STRING  = 1.0
+  LIBRARY_CLASS   = TimerLib
+  CONSTRUCTOR     = SunxiTimerConstructor
+
+[Sources]
+  TimerLib.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  SunxiPlatformPkg/SunxiPlatformPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  IoLib
+
+[Pcd]
+  gSunxiTokenSpaceGuid.TimerBase

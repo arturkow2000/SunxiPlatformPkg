@@ -1,0 +1,32 @@
+[Defines]
+  INF_VERSION     = 0x00010006
+  BASE_NAME       = SunxiGpioDxe
+  FILE_GUID       = 36ba3fcb-f8d7-4000-9234-2af16b193386
+  MODULE_TYPE     = UEFI_DRIVER
+  VERSION_STRING  = 1.0
+  ENTRY_POINT     = SunxiGpioInitialize
+
+[Sources]
+  DriverBinding.c
+  ComponentName.h
+  ComponentName.c
+  Gpio.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  SunxiPlatformPkg/SunxiPlatformPkg.dec
+
+[LibraryClasses]
+  UefiDriverEntryPoint
+  UefiBootServicesTableLib
+  UefiLib
+  BaseLib
+  DebugLib
+  SunxiGpioLib
+
+[Protocols]
+  gEfiDevicePathProtocolGuid     ## PRODUCES
+  gSunxiGpioProtocolGuid         ## PRODUCES
+
+[Depex]
+  TRUE

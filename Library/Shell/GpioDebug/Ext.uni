@@ -1,0 +1,22 @@
+// /**
+//
+// (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.<BR>
+// Copyright (c) 2009 - 2011, Intel Corporation. All rights reserved.<BR>
+// Copyright (c) 2020, Artur Kowalski.
+//
+// SPDX-License-Identifier: BSD-2-Clause-Patent
+//
+// **/
+
+#langdef   en-US "english"
+
+#string STR_GEN_PROBLEM           #language en-US "%H%s%N: Unknown flag - '%H%s%N'\r\n"
+#string STR_GEN_TOO_FEW           #language en-US "%H%s%N: Too few arguments\r\n"
+#string STR_GEN_TOO_MANY          #language en-US "%H%s%N: Too many arguments\r\n"
+
+#string STR_NOT_FOUND             #language en-US "%H%s%N: GPIO %s not found\r\n"
+#string STR_UNSUPPORTED_FUNCTION  #language en-US "%H%s%N does not support %H%s%N\r\n"
+
+#string STR_HELP_DUMP_GPIO        #language en-US "Dump GPIO state"
+#string STR_HELP_GPIO_GET_FUNC_LIST #language en-US "Get function list supported by GPIO pin"
+#string STR_HELP_GPIO_SET_FUNC    #language en-US "Change GPIO pin function"

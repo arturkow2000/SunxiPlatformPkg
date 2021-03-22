@@ -1,0 +1,29 @@
+// /**
+//
+// (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.<BR>
+// Copyright (c) 2009 - 2011, Intel Corporation. All rights reserved.<BR>
+// Copyright (c) 2020, Artur Kowalski.
+//
+// SPDX-License-Identifier: BSD-2-Clause-Patent
+//
+// **/
+
+#langdef   en-US "english"
+
+#string STR_GEN_PROBLEM                           #language en-US "%H%s%N: Unknown flag - '%H%s%N'\r\n"
+#string STR_GEN_TOO_FEW                           #language en-US "%H%s%N: Too few arguments\r\n"
+#string STR_GEN_TOO_MANY                          #language en-US "%H%s%N: Too many arguments\r\n"
+
+#string STR_GET_HELP_CLOCK_GET                    #language en-US ""
+#string STR_GET_HELP_CLOCK_SET                    #language en-US ""
+#string STR_GET_HELP_PLL_DUMP                     #language en-US ""
+
+#string STR_GATE_NOT_FOUND                        #language en-US "Gate not found\r\n"
+#string STR_PLL_NOT_FOUND                         #language en-US "PLL not found\r\n"
+
+#string STR_EXPECTED_ZERO_ONE_DISABLE_ENABLE      #language en-US "%H%s%N: Expected one of: 0, 1, mask, unmask\r\n"
+#string STR_SUNXI_CCM_NOT_FOUND                   #language en-US "%H%s%N: CCM protocol not found\r\n"
+#string STR_FAILED_TO_GET_GATE_STATE              #language en-US "%H%s%N: Failed to get gate state: %r\r\n"
+#string STR_FAILED_TO_CHANGE_GATE_STATE           #language en-US "%H%s%N: Failed to change gate state: %r\r\n"
+
+#string STR_FAILED_TO_GET_PLL_FREQ                #language en-US "%H%s%N: Failed to get PLL frequency: %r\r\n"

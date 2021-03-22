@@ -1,0 +1,72 @@
+[Defines]
+  INF_VERSION     = 0x00010006
+  BASE_NAME       = SplMain
+  FILE_GUID       = 997091bb-251f-48d0-a6bb-b81d9a916ced
+  MODULE_TYPE     = SEC
+  VERSION_STRING  = 1.0
+
+[Sources.ARM]
+  Arm/EntryPoint.S
+  Arm/Exception.S
+  Arm/CException.c
+  A13/HWInit.S
+  Board/XW711.c
+  Sun4i/Ccm.h
+  Sun4i/Ccm.c
+  Setup.c
+  Main.c
+  Spl.h
+  BootSource.c
+  Timer.c
+  Sun4i/Dram.c
+  Sun4i/Dram.h
+  Sun5i/Dram.c
+  RamDetect.c
+
+[Packages]
+  ArmPkg/ArmPkg.dec
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  SunxiPlatformPkg/SunxiPlatformPkg.dec
+
+[LibraryClasses]
+  ArmLib
+  CacheMaintenanceLib
+  BaseLib
+  DebugLib
+  SerialPortLib
+  IoLib
+  SunxiGpioLib
+  BaseMemoryLib
+  PrintLib
+
+[FixedPcd]
+  gSunxiSplTokenSpaceGuid.PcdStackBase
+  gSunxiSplTokenSpaceGuid.PcdStackSize
+  gSunxiSplTokenSpaceGuid.PcdSplBaseAddress
+
+  gSunxiSplTokenSpaceGuid.DramClock
+  gSunxiSplTokenSpaceGuid.DramMbusClock
+  gSunxiSplTokenSpaceGuid.DramType
+  gSunxiSplTokenSpaceGuid.DramRankNum
+  gSunxiSplTokenSpaceGuid.DramDensity
+  gSunxiSplTokenSpaceGuid.DramZq
+  gSunxiSplTokenSpaceGuid.DramOdtEnable
+  gSunxiSplTokenSpaceGuid.DramCas
+  gSunxiSplTokenSpaceGuid.DramTpr0
+  gSunxiSplTokenSpaceGuid.DramTpr1
+  gSunxiSplTokenSpaceGuid.DramTpr2
+  gSunxiSplTokenSpaceGuid.DramTpr3
+  gSunxiSplTokenSpaceGuid.DramTpr4
+  gSunxiSplTokenSpaceGuid.DramTpr5
+  gSunxiSplTokenSpaceGuid.DramEmr1
+  gSunxiSplTokenSpaceGuid.DramEmr2
+  gSunxiSplTokenSpaceGuid.DramEmr3
+  gSunxiSplTokenSpaceGuid.DramDqsGatingDelay
+  gSunxiSplTokenSpaceGuid.DramActiveWindowing
+
+  gSunxiTokenSpaceGuid.CcmBase
+  gSunxiTokenSpaceGuid.UartBase
+  gSunxiTokenSpaceGuid.TimerBase
+
+  gArmTokenSpaceGuid.PcdVFPEnabled

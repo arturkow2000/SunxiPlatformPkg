@@ -1,0 +1,39 @@
+[Defines]
+  INF_VERSION         = 0x00010006
+  FILE_GUID           = d794d65d-5917-4fb2-8088-7858eff87035
+  BASE_NAME           = SunxiTimerDxe
+  MODULE_TYPE         = DXE_DRIVER
+  VERSION_STRING      = 1.0
+
+  ENTRY_POINT         = TimerInitialize
+
+[Sources]
+  TimerDxe.c
+  Timer.h
+  Timer.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  EmbeddedPkg/EmbeddedPkg.dec
+  ArmPkg/ArmPkg.dec
+  SunxiPlatformPkg/SunxiPlatformPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  DebugLib
+  IoLib
+  UefiDriverEntryPoint
+  UefiBootServicesTableLib
+  ArmLib
+  TimerLib
+
+[Protocols]
+  gHardwareInterruptProtocolGuid      ## CONSUMES
+  gEfiTimerArchProtocolGuid           ## PRODUCES
+
+[Pcd]
+  gEmbeddedTokenSpaceGuid.PcdTimerPeriod
+  gSunxiTokenSpaceGuid.TimerBase
+
+[Depex]
+  gHardwareInterruptProtocolGuid

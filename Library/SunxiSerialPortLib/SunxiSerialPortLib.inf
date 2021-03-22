@@ -1,0 +1,27 @@
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = SunxiSerialPort
+  FILE_GUID                      = 26c7395d-afc3-4c3f-a0bf-7ba945e36ad8
+  MODULE_TYPE                    = BASE
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = SunxiSerialPort
+
+[Sources.Common]
+  SunxiSerial.c
+  Hw.h
+
+[Packages]
+  MdePkg/MdePkg.dec
+  SunxiPlatformPkg/SunxiPlatformPkg.dec
+
+[LibraryClasses]
+  SerialPortLib
+  IoLib
+  PcdLib
+
+[Guids]
+
+[Protocols]
+
+[FixedPcd]
+  gSunxiTokenSpaceGuid.UartBase

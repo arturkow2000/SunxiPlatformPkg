@@ -1,0 +1,42 @@
+##  @file
+#  Provides commands for querying/modifying clock state.
+#
+#  Copyright (c) 2009-2015, Intel Corporation. All rights reserved. <BR>
+#  Copyright (c) 2020, Artur Kowalski.
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010006
+  BASE_NAME                      = SunxiGpioDebugShellExt
+  FILE_GUID                      = f209fd98-2829-44e3-8217-1355fbd0b9b7
+  MODULE_TYPE                    = UEFI_APPLICATION
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = NULL|UEFI_APPLICATION UEFI_DRIVER
+  CONSTRUCTOR                    = SunxiGpioDebugShellExtConstructor
+  DESTRUCTOR                     = SunxiGpioDebugShellExtDestructor
+
+[Sources]
+  Ext.uni
+  Ext.h
+  Ext.c
+  Dump.c
+  Function.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  ShellPkg/ShellPkg.dec
+  SunxiPlatformPkg/SunxiPlatformPkg.dec
+
+[LibraryClasses]
+  SunxiGpioLib
+
+[Pcd]
+  gEfiShellPkgTokenSpaceGuid.PcdShellSupportLevel ## CONSUMES
+
+[Guids]
+  gSunxiGpioDebugHiiGuid       ## SOMETIMES_CONSUMES ## HII

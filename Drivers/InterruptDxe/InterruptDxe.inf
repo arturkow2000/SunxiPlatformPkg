@@ -1,0 +1,34 @@
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = SunxiInterruptDxe
+  FILE_GUID                      = 2688698e-a115-483c-bdf5-7514cf8f0e22
+  MODULE_TYPE                    = DXE_DRIVER
+  VERSION_STRING                 = 1.0
+
+  ENTRY_POINT                    = InterruptDxeInitialize
+
+[Sources.common]
+  Interrupt.c
+
+[Packages]
+  ArmPkg/ArmPkg.dec
+  SunxiPlatformPkg/SunxiPlatformPkg.dec
+  MdePkg/MdePkg.dec
+  EmbeddedPkg/EmbeddedPkg.dec
+
+[LibraryClasses]
+  UefiBootServicesTableLib
+  UefiDriverEntryPoint
+  BaseLib
+  UefiLib
+  DebugLib
+  PrintLib
+  IoLib
+  ArmLib
+
+[Protocols]
+  gHardwareInterruptProtocolGuid  ## PRODUCES
+  gEfiCpuArchProtocolGuid         ## CONSUMES ## NOTIFY
+
+[Depex]
+  TRUE

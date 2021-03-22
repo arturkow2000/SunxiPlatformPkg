@@ -1,0 +1,68 @@
+[Defines]
+  DEC_SPECIFICATION              = 0x00010005
+  PACKAGE_NAME                   = SunxiPlatformPkg
+  PACKAGE_GUID                   = 34c18fb9-1074-48ea-abe1-13d6838533a2
+  PACKAGE_VERSION                = 0.2
+
+[Includes.common]
+  Include
+
+[Guids]
+  gSunxiTokenSpaceGuid       = { 0x80714ab9, 0xbcf8, 0x4379, { 0x43, 0xb8, 0xbf, 0x78, 0x6c, 0x9f, 0xbc, 0x84 } }
+  
+  # GUIDs used by sunxi specific shell extensions
+  gSunxiClockDebugHiiGuid    = { 0xa744be31, 0x5362, 0x47a1, { 0x2a, 0x94, 0x81, 0xb9, 0x03, 0xd8, 0x35, 0x39 } }
+  gSunxiGpioDebugHiiGuid     = { 0x337b24ed, 0xc2c7, 0x4a67, { 0x94, 0xa1, 0x9b, 0x26, 0xdf, 0xc8, 0xe9, 0x45 } }
+
+[Protocols]
+  gAxpPowerProtocolGuid      = { 0xbd371543, 0x0e8f, 0x47d5, { 0x4a, 0xad, 0x8a, 0xae, 0x3c, 0x8a, 0x02, 0x95 } }
+  gSunxiGpioProtocolGuid     = { 0x9810a737, 0x7a22, 0x4864, { 0xa1, 0x93, 0x08, 0xdb, 0xd0, 0x84, 0xfa, 0xc9 } }
+  gSunxiCcmProtocolGuid      = { 0xe9ea2798, 0x0717, 0x4813, { 0x55, 0xa7, 0x2b, 0x8f, 0xb0, 0xcd, 0x52, 0x0a } }
+
+[PcdsFixedAtBuild]
+  gSunxiTokenSpaceGuid.PcdFrameBufferBase   | 0x00000000 | UINT64 | 0x00000210
+  gSunxiTokenSpaceGuid.PcdFrameBufferSize   | 0x00000000 | UINT64 | 0x00000211
+
+  gSunxiTokenSpaceGuid.Mmc0Base             | 0x00000000 | UINT32 | 0x80000000
+  gSunxiTokenSpaceGuid.Mmc1Base             | 0x00000000 | UINT32 | 0x80000001
+  gSunxiTokenSpaceGuid.Mmc2Base             | 0x00000000 | UINT32 | 0x80000002
+  gSunxiTokenSpaceGuid.Mmc3Base             | 0x00000000 | UINT32 | 0x80000003
+  gSunxiTokenSpaceGuid.CcmBase              | 0x00000000 | UINT32 | 0x80000004
+  gSunxiTokenSpaceGuid.UartBase             | 0x00000000 | UINT32 | 0x80000005
+  gSunxiTokenSpaceGuid.PcdGpioBase          | 0x00000000 | UINT32 | 0x80000006
+  gSunxiTokenSpaceGuid.TimerBase            | 0x00000000 | UINT32 | 0x80000007
+  gSunxiTokenSpaceGuid.WatchdogBase         | 0x00000000 | UINT32 | 0x80000008
+
+
+# SPL
+[Guids]
+  gSunxiSplTokenSpaceGuid    =  { 0x26329918, 0x9b42, 0x4403, { 0xb0, 0xb0, 0x0f, 0xa2, 0x28, 0xf3, 0x9e, 0xd9 } }
+
+[PcdsFixedAtBuild]
+  gSunxiSplTokenSpaceGuid.PcdSplBaseAddress|0|UINT64|0x0
+  gSunxiSplTokenSpaceGuid.PcdSplSize|0|UINT64|0x1
+  gSunxiSplTokenSpaceGuid.PcdStackBase|0|UINT64|0x2
+  gSunxiSplTokenSpaceGuid.PcdStackSize|0|UINT32|0x3
+
+  #
+  # DRAM configuration
+  #
+  gSunxiSplTokenSpaceGuid.DramClock|0|UINT32|0xc0000000
+  gSunxiSplTokenSpaceGuid.DramMbusClock|0|UINT32|0xc0000001
+  gSunxiSplTokenSpaceGuid.DramType|0|UINT32|0xc0000002
+  gSunxiSplTokenSpaceGuid.DramRankNum|0|UINT32|0xc0000003
+  gSunxiSplTokenSpaceGuid.DramDensity|0|UINT32|0xc0000004
+  gSunxiSplTokenSpaceGuid.DramZq|0|UINT32|0xc0000005
+  gSunxiSplTokenSpaceGuid.DramOdtEnable|0|UINT32|0xc0000006
+  gSunxiSplTokenSpaceGuid.DramCas|0|UINT32|0xc0000007
+  gSunxiSplTokenSpaceGuid.DramTpr0|0|UINT32|0xc0000008
+  gSunxiSplTokenSpaceGuid.DramTpr1|0|UINT32|0xc0000009
+  gSunxiSplTokenSpaceGuid.DramTpr2|0|UINT32|0xc000000a
+  gSunxiSplTokenSpaceGuid.DramTpr3|0|UINT32|0xc000000b
+  gSunxiSplTokenSpaceGuid.DramTpr4|0|UINT32|0xc000000c
+  gSunxiSplTokenSpaceGuid.DramTpr5|0|UINT32|0xc000000d
+  gSunxiSplTokenSpaceGuid.DramEmr1|0|UINT32|0xc000000e
+  gSunxiSplTokenSpaceGuid.DramEmr2|0|UINT32|0xc000000f
+  gSunxiSplTokenSpaceGuid.DramEmr3|0|UINT32|0xc0000010
+  gSunxiSplTokenSpaceGuid.DramDqsGatingDelay|0|UINT32|0xc0000011
+  gSunxiSplTokenSpaceGuid.DramActiveWindowing|0|UINT32|0x0000012

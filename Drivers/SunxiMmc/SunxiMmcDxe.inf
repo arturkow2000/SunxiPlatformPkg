@@ -1,0 +1,54 @@
+[Defines]
+  INF_VERSION     = 0x00010006
+  BASE_NAME       = SunxiMmcDxe
+  FILE_GUID       = d2e1d37e-747c-420b-b072-0b2c753afe04
+  MODULE_TYPE     = UEFI_DRIVER
+  VERSION_STRING  = 1.0
+  ENTRY_POINT     = SunxiMmcInitialize
+
+[Sources]
+  Dxe/DriverBinding.c
+  Dxe/ComponentName.h
+  Dxe/ComponentName.c
+  Dxe/Driver.h
+  Dxe/PassThru.c
+  Dxe/GpioInit.c
+  Dxe/Clock.c
+  Dxe/Init.c
+
+  Common/Driver.h
+  Common/Clock.c
+  Common/Command.c
+  Common/Init.c
+  Common/MmcInit.c
+  Common/CardDetect.c
+  Common/MmcConfig.c
+  Common/MmcMode.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  SunxiPlatformPkg/SunxiPlatformPkg.dec
+
+[LibraryClasses]
+  UefiDriverEntryPoint
+  UefiBootServicesTableLib
+  MemoryAllocationLib
+  UefiLib
+  BaseLib
+  DebugLib
+  IoLib
+  TimerLib
+  BaseMemoryLib
+  PcdLib
+
+[Protocols]
+  gSunxiGpioProtocolGuid         ## CONSUMES
+  gSunxiCcmProtocolGuid          ## CONSUMES
+  gEfiDevicePathProtocolGuid     ## PRODUCES
+  gEfiSdMmcPassThruProtocolGuid  ## PRODUCES
+
+[Pcd]
+  gSunxiTokenSpaceGuid.Mmc0Base
+  gSunxiTokenSpaceGuid.Mmc1Base
+  gSunxiTokenSpaceGuid.Mmc2Base
+  gSunxiTokenSpaceGuid.Mmc3Base

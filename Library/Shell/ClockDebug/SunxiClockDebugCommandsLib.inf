@@ -1,0 +1,41 @@
+##  @file
+#  Provides commands for querying/modifying clock state.
+#
+#  Copyright (c) 2009-2015, Intel Corporation. All rights reserved. <BR>
+#  Copyright (c) 2020, Artur Kowalski.
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+#
+##
+[Defines]
+  INF_VERSION                    = 0x00010006
+  BASE_NAME                      = SunxiClockDebugCommandsLib
+  FILE_GUID                      = 64d3d096-0826-481f-93bf-471336f39830
+  MODULE_TYPE                    = UEFI_APPLICATION
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = NULL|UEFI_APPLICATION UEFI_DRIVER
+  CONSTRUCTOR                    = SunxiClockDebugCommandsLibConstructor
+  DESTRUCTOR                     = SunxiClockDebugCommandsLibDestructor
+
+[Sources.common]
+  SunxiClockDebugCommandsLib.c
+  SunxiClockDebugCommandsLib.h
+  SunxiClockDebugCommandsLib.uni
+  Gate.c
+  Pll.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  ShellPkg/ShellPkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  SunxiPlatformPkg/SunxiPlatformPkg.dec
+
+[Pcd.common]
+  gEfiShellPkgTokenSpaceGuid.PcdShellSupportLevel ## CONSUMES
+
+[Guids]
+  gSunxiClockDebugHiiGuid       ## SOMETIMES_CONSUMES ## HII
+
+[Protocols]
+  gSunxiCcmProtocolGuid
