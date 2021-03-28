@@ -1,0 +1,43 @@
+/** @file
+
+  SPDX-License-Identifier: BSD-2-Clause-Patent
+
+  Copyright (c) 2021, Artur Kowalski.
+
+  Based on PCF8563 library from edk2-platforms
+  Copyright (c) 2017, Linaro, Ltd. All rights reserved.<BR>
+
+**/
+
+[Defines]
+  INF_VERSION     = 0x00010006
+  BASE_NAME       = Pcf8563Dxe
+  FILE_GUID       = 973a8a60-931a-43c5-b111-ce7f3ffb5175
+  MODULE_TYPE     = UEFI_DRIVER
+  VERSION_STRING  = 1.0
+  ENTRY_POINT     = Pcf8536DxeInitialize
+
+[Sources]
+  Driver.h
+  Driver.c
+  DriverBinding.c
+  ComponentName.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  SunxiPlatformPkg/SunxiPlatformPkg.dec
+
+[LibraryClasses]
+  UefiDriverEntryPoint
+  UefiBootServicesTableLib
+  UefiLib
+  BaseLib
+  DebugLib
+  MemoryAllocationLib
+
+[Protocols]
+  gEfiI2cIoProtocolGuid     ## CONSUMES
+  gPcf8563ProtocolGuid      ## PRODUCES
+
+[Guids]
+  gI2cPcf8563Guid

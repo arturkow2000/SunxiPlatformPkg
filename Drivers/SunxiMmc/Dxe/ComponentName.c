@@ -1,10 +1,4 @@
-#include <Uefi.h>
-#include <Library/UefiLib.h>
-
-#include "ComponentName.h"
-#include <Protocol/SdMmcPassThru.h>
-
-extern EFI_DRIVER_BINDING_PROTOCOL gSunxiMmcDriverBinding;
+#include "Driver.h"
 
 STATIC EFI_UNICODE_STRING_TABLE mDriverName[] = {
   {
@@ -55,6 +49,7 @@ ComponentNameGetControllerName(
   OUT CHAR16 **ControllerName)
 {
   EFI_STATUS Status;
+  VOID *Dummy;
 
   //
   // ChildHandle must be NULL for a Device Driver
@@ -63,12 +58,16 @@ ComponentNameGetControllerName(
     return EFI_UNSUPPORTED;
 
   //
+  // Make sure controller was created by this driver
+  //
+  Status = gBS->HandleProtocol(ControllerHandle, &gEfiCallerIdGuid, &Dummy);
+  if (EFI_ERROR(Status))
+    return EFI_UNSUPPORTED;
+
+  //
   // Make sure this driver is currently managing ControllerHandle
   //
-  Status = EfiTestManagedDevice(
-    ControllerHandle,
-    gSunxiMmcDriverBinding.DriverBindingHandle,
-    &gEfiSdMmcPassThruProtocolGuid);
+  Status = gBS->HandleProtocol(ControllerHandle, &gEfiSdMmcPassThruProtocolGuid, &Dummy);
   if (EFI_ERROR(Status))
     return Status;
 

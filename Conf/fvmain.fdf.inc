@@ -55,7 +55,6 @@ READ_LOCK_STATUS   = TRUE
   # Platform drivers
   #
   INF SunxiPlatformPkg/Drivers/InterruptDxe/InterruptDxe.inf
-  #INF SunxiPlatformPkg/Drivers/AxpPower/Axp209.inf
   #INF SunxiPlatformPkg/Drivers/SunxiDisplayDxe/DisplayDxe.inf
   INF MdeModulePkg/Universal/WatchdogTimerDxe/WatchdogTimer.inf
   INF SunxiPlatformPkg/Drivers/EmuRuntimeDxe/EmuVariableRuntimeDxe.inf
@@ -64,8 +63,11 @@ READ_LOCK_STATUS   = TRUE
   #INF MdeModulePkg/Bus/Sd/EmmcDxe/EmmcDxe.inf
   INF MdeModulePkg/Bus/Sd/SdDxe/SdDxe.inf
   INF SunxiPlatformPkg/Drivers/SunxiGpioDxe/SunxiGpioDxe.inf
-  #INF SunxiPlatformPkg/Drivers/I2cDxe/I2cDxe.inf
-  INF MdeModulePkg/Bus/I2c/I2cDxe/I2cHostDxe.inf
+  INF SunxiPlatformPkg/Drivers/SunxiI2c/SunxiI2cDxe.inf
+  INF MdeModulePkg/Bus/I2c/I2cDxe/I2cDxe.inf
+  INF SunxiPlatformPkg/Board/XW711/I2cEnumerate/I2cEnumerateDxe.inf
+  INF SunxiPlatformPkg/Drivers/Axp209/Axp209Dxe.inf
+  INF SunxiPlatformPkg/Drivers/Pcf8563Dxe/Pcf8563Dxe.inf
   INF SunxiPlatformPkg/Drivers/FdtPlatformDxe/FdtPlatformDxe.inf
 
   #

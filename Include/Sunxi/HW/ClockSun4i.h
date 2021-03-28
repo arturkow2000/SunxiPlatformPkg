@@ -88,15 +88,17 @@ struct sunxi_ccm_reg {
 #endif
 
 /* apb1 bit field */
-#define APB1_CLK_SRC_OSC24M (0x0 << 24)
-#define APB1_CLK_SRC_PLL6 (0x1 << 24)
-#define APB1_CLK_SRC_LOSC (0x2 << 24)
-#define APB1_CLK_SRC_MASK (0x3 << 24)
-#define APB1_CLK_RATE_N_1 (0x0 << 16)
-#define APB1_CLK_RATE_N_2 (0x1 << 16)
-#define APB1_CLK_RATE_N_4 (0x2 << 16)
-#define APB1_CLK_RATE_N_8 (0x3 << 16)
-#define APB1_CLK_RATE_N_MASK (3 << 16)
+#define APB1_CLK_SRC_SHIFT 24
+#define APB1_CLK_SRC_MASK (0x3 << APB1_CLK_SRC_SHIFT)
+#define APB1_CLK_SRC_OSC24M 0
+#define APB1_CLK_SRC_PLL6 1
+#define APB1_CLK_SRC_LOSC 2
+#define APB1_CLK_RATE_N_SHIFT (16)
+#define APB1_CLK_RATE_N_MASK (3 << APB1_CLK_RATE_N_SHIFT)
+#define APB1_CLK_RATE_N_1 0
+#define APB1_CLK_RATE_N_2 1
+#define APB1_CLK_RATE_N_4 2
+#define APB1_CLK_RATE_N_8 3
 #define APB1_CLK_RATE_M(m) (((m)-1) << 0)
 #define APB1_CLK_RATE_M_MASK (0x1f << 0)
 
@@ -108,21 +110,25 @@ struct sunxi_ccm_reg {
 
 /* clock divide */
 #define AXI_DIV_SHIFT (0)
+#define AXI_DIV_MASK (3 << AXI_DIV_SHIFT)
 #define AXI_DIV_1 0
 #define AXI_DIV_2 1
 #define AXI_DIV_3 2
 #define AXI_DIV_4 3
 #define AHB_DIV_SHIFT (4)
+#define AHB_DIV_MASK (3 << AHB_DIV_SHIFT)
 #define AHB_DIV_1 0
 #define AHB_DIV_2 1
 #define AHB_DIV_4 2
 #define AHB_DIV_8 3
 #define APB0_DIV_SHIFT (8)
+#define APB0_DIV_MASK (3 << APB0_DIV_SHIFT)
 #define APB0_DIV_1 0
 #define APB0_DIV_2 1
 #define APB0_DIV_4 2
 #define APB0_DIV_8 3
 #define CPU_CLK_SRC_SHIFT (16)
+#define CPU_CLK_SRC_MASK (3 << CPU_CLK_SRC_SHIFT)
 #define CPU_CLK_SRC_OSC24M 1
 #define CPU_CLK_SRC_PLL1 2
 
@@ -132,12 +138,16 @@ struct sunxi_ccm_reg {
 #define CCM_PLL1_CFG_PLL4_EXCH_SHIFT 25
 #define CCM_PLL1_CFG_BIAS_CUR_SHIFT 20
 #define CCM_PLL1_CFG_DIVP_SHIFT 16
+#define CCM_PLL1_CFG_DIVP_MASK 0xF0000
 #define CCM_PLL1_CFG_LCK_TMR_SHIFT 13
 #define CCM_PLL1_CFG_FACTOR_N_SHIFT 8
+#define CCM_PLL1_CFG_FACTOR_N_MASK 0x1F00
 #define CCM_PLL1_CFG_FACTOR_K_SHIFT 4
+#define CCM_PLL1_CFG_FACTOR_K_MASK 0xf0
 #define CCM_PLL1_CFG_SIG_DELT_PAT_IN_SHIFT 3
 #define CCM_PLL1_CFG_SIG_DELT_PAT_EN_SHIFT 2
 #define CCM_PLL1_CFG_FACTOR_M_SHIFT 0
+#define CCM_PLL1_CFG_FACTOR_M_MASK 0x3
 
 #define PLL1_CFG_DEFAULT 0xa1005000
 

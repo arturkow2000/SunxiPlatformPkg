@@ -1,23 +1,28 @@
 [Defines]
   INF_VERSION     = 0x00010006
-  BASE_NAME       = A13Dxe
+  BASE_NAME       = A13CcmDxe
   FILE_GUID       = b4def4cc-8fab-43e4-8709-e6ac3b23b4ad
-  MODULE_TYPE     = UEFI_DRIVER
+  MODULE_TYPE     = DXE_DRIVER
   VERSION_STRING  = 1.0
   
   ENTRY_POINT     = SunxiCcmInitialize
 
 [Sources]
   Dxe/Driver.h
-  Dxe/DriverBinding.c
-  Dxe/ComponentName.c
+  Dxe/Driver.c
   Dxe/CcmProto.c
 
   Common/Driver.h
   Common/Gate.c
   Common/Pll.h
   Common/Pll.c
+  Common/Pll1.c
   Common/Pll6.c
+  Common/Cpu.c
+  Common/Axi.c
+  Common/Ahb.c
+  Common/Apb0.c
+  Common/Apb1.c
   Common/Mmc.c
 
 [Packages]
@@ -27,15 +32,15 @@
 [LibraryClasses]
   UefiDriverEntryPoint
   UefiBootServicesTableLib
-  MemoryAllocationLib
-  UefiLib
   BaseLib
   DebugLib
   IoLib
 
 [Protocols]
-  gEfiDevicePathProtocolGuid     ## PRODUCES
   gSunxiCcmProtocolGuid          ## PRODUCES
 
 [Pcd]
   gSunxiTokenSpaceGuid.CcmBase
+
+[Depex]
+  TRUE

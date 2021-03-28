@@ -68,6 +68,7 @@ GateUnmask(
   Sig = (GateId >> 24) & 0xff;
   if (Sig != 0xAF) {
     DEBUG((EFI_D_ERROR, "Invalid gate ID 0x%x\n", GateId));
+    ASSERT(0);
     return EFI_INVALID_PARAMETER;
   }
 
@@ -87,6 +88,7 @@ GateMask(
   Sig = (GateId >> 24) & 0xff;
   if (Sig != 0xAF) {
     DEBUG((EFI_D_ERROR, "Invalid gate ID 0x%x\n", GateId));
+    ASSERT(0);
     return EFI_INVALID_PARAMETER;
   }
   
@@ -107,6 +109,7 @@ GateIsMasked(
   Sig = (GateId >> 24) & 0xff;
   if (Sig != 0xAF) {
     DEBUG((EFI_D_ERROR, "Invalid gate ID 0x%x\n", GateId));
+    ASSERT(0);
     return EFI_INVALID_PARAMETER;
   }
   
@@ -179,6 +182,7 @@ PllGetFreq(
   Sig = (PllId >> 24) & 0xff;
   if (Sig != 0x42) {
     DEBUG((EFI_D_ERROR, "Invalid PLL ID 0x%x\n", PllId));
+    ASSERT(0);
     return EFI_INVALID_PARAMETER;
   }
 
@@ -207,6 +211,7 @@ PllSetFreq(
   Sig = (PllId >> 24) & 0xff;
   if (Sig != 0x42) {
     DEBUG((EFI_D_ERROR, "Invalid PLL ID 0x%x\n", PllId));
+    ASSERT(0);
     return EFI_INVALID_PARAMETER;
   }
 

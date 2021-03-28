@@ -11,6 +11,10 @@
   gSunxiTokenSpaceGuid.TimerBase    | 0x01c20c00
   gSunxiTokenSpaceGuid.WatchdogBase | 0x01c20c90
 
+  gSunxiTokenSpaceGuid.I2c0Base     | 0x01c2ac00
+  gSunxiTokenSpaceGuid.I2c1Base     | 0x01c2b000
+  gSunxiTokenSpaceGuid.I2c2Base     | 0x01c2b400
+
 [Components.common]
   SunxiPlatformPkg/Sun4i/Drivers/Ccm/A13CcmDxe.inf
   SunxiPlatformPkg/Sun4i/Drivers/TimerDxe/TimerDxe.inf

@@ -8,7 +8,6 @@
 
 [Sources]
   Dxe/DriverBinding.c
-  Dxe/ComponentName.h
   Dxe/ComponentName.c
   Dxe/Driver.h
   Dxe/PassThru.c

@@ -1,15 +1,5 @@
-#include <Uefi.h>
-
-#include <Library/DebugLib.h>
-#include <Library/SunxiGpioLib.h>
-
-#include <Protocol/SunxiGpio.h>
-#include <Protocol/SdMmcPassThru.h>
-
 #include "Driver.h"
 
-// FIXME: should use DXE or PEI GPIO driver proto
-// instead of SunxiGpioLib
 EFI_STATUS SunxiMmcInitGpio(
   IN SUNXI_MMC* Mmc
   )

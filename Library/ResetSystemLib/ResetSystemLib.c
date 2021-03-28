@@ -18,7 +18,7 @@
 #include <Library/UefiBootServicesTableLib.h>
 
 #include <Protocol/I2cIo.h>
-#include <Protocol/AxpPower.h>
+#include <Protocol/Pmic.h>
 
 #include <Sunxi/HW/Watchdog.h>
 
@@ -50,25 +50,20 @@ VOID EFIAPI ResetWarm(VOID)
   WatchdogReset();
 }
 
-STATIC AXP_POWER_PROTOCOL *mAxpPower;
-
 VOID EFIAPI ResetShutdown(VOID)
 {
   EFI_STATUS Status;
+  PMIC_PROTOCOL *Pmic;
 
-  Status = gBS->LocateProtocol(&gAxpPowerProtocolGuid, NULL, (VOID **)&mAxpPower);
-  if (Status != EFI_SUCCESS)
-  {
-    DebugPrint(EFI_D_ERROR, "AXP Power Protocol Missing\n");
-    ASSERT(FALSE);
+  Status = gBS->LocateProtocol(&gPmicProtocolGuid, NULL, (VOID **)&Pmic);
+  if (EFI_ERROR(Status)) {
+    DebugPrint(EFI_D_ERROR, "PMIC protocol not found\n");
     return;
   }
 
-  Status = mAxpPower->Shutdown(mAxpPower);
-  if (Status != EFI_SUCCESS)
-  {
-    DebugPrint(EFI_D_ERROR, "Shutdown Failed\n");
-    ASSERT(FALSE);
+  Status = Pmic->Poweroff(Pmic);
+  if (EFI_ERROR(Status)) {
+    DebugPrint(EFI_D_ERROR, "Shutdown error: %r\n", Status);
     return;
   }
 }

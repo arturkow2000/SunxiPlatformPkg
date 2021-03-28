@@ -1,17 +1,20 @@
-#include <Uefi.h>
-#include <Library/UefiLib.h>
-#include <Library/DebugLib.h>
+/** @file
 
-#include "ComponentName.h"
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
-#include <Protocol/SunxiGpio.h>
+  Copyright (c) 2021, Artur Kowalski.
 
-extern EFI_DRIVER_BINDING_PROTOCOL gSunxiGpioDriverBinding;
+  Based on PCF8563 library from edk2-platforms
+  Copyright (c) 2017, Linaro, Ltd. All rights reserved.<BR>
+
+**/
+
+#include "Driver.h"
 
 STATIC EFI_UNICODE_STRING_TABLE mDriverName[] = {
   {
     "eng;en",
-    (CHAR16 *)L"Sunxi GPIO Driver",
+    (CHAR16 *)L"PCF8563 Driver",
   },
   { NULL, NULL },
 };
@@ -19,7 +22,7 @@ STATIC EFI_UNICODE_STRING_TABLE mDriverName[] = {
 STATIC EFI_UNICODE_STRING_TABLE mControllerName[] = {
   {
     "eng;en",
-    (CHAR16 *)L"Sunxi GPIO controller",
+    (CHAR16 *)L"PCF8563 Real Time Clock",
   },
   { NULL, NULL },
 };
@@ -39,7 +42,7 @@ ComponentNameGetDriverName(
     mDriverName,
     DriverName,
     (BOOLEAN)(This == &gComponentName)
-    );
+  );
 }
 
 STATIC
@@ -59,21 +62,14 @@ ComponentNameGetControllerName(
   // ChildHandle must be NULL for a Device Driver
   //
   if (ChildHandle != NULL)
-  {
     return EFI_UNSUPPORTED;
-  }
 
   //
   // Make sure this driver is currently managing ControllerHandle
   //
-  Status = EfiTestManagedDevice(
-    ControllerHandle,
-    gSunxiGpioDriverBinding.DriverBindingHandle,
-    &gSunxiGpioProtocolGuid
-    );
-  if (EFI_ERROR(Status)) {
-    return Status;
-  }
+  Status = EfiTestManagedDevice(ControllerHandle, gPcf8563DriverBinding.DriverBindingHandle, &gEfiI2cIoProtocolGuid);
+  if (EFI_ERROR(Status))
+    return EFI_UNSUPPORTED;
 
   return LookupUnicodeString2(
     Language,
@@ -81,17 +77,17 @@ ComponentNameGetControllerName(
     mControllerName,
     ControllerName,
     (BOOLEAN)(This == &gComponentName)
-    );
+  );
 }
 
 EFI_COMPONENT_NAME_PROTOCOL gComponentName = {
-    ComponentNameGetDriverName,
-    ComponentNameGetControllerName,
-    "eng",
+  ComponentNameGetDriverName,
+  ComponentNameGetControllerName,
+  "eng",
 };
 
 EFI_COMPONENT_NAME2_PROTOCOL gComponentName2 = {
-    (EFI_COMPONENT_NAME2_GET_DRIVER_NAME)ComponentNameGetDriverName,
-    (EFI_COMPONENT_NAME2_GET_CONTROLLER_NAME)ComponentNameGetControllerName,
-    "en",
+  (EFI_COMPONENT_NAME2_GET_DRIVER_NAME)ComponentNameGetDriverName,
+  (EFI_COMPONENT_NAME2_GET_CONTROLLER_NAME)ComponentNameGetControllerName,
+  "en",
 };

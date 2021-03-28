@@ -1,17 +1,3 @@
-#include <Uefi.h>
-
-#include <Library/BaseLib.h>
-#include <Library/DebugLib.h>
-#include <Library/UefiLib.h>
-#include <Library/UefiBootServicesTableLib.h>
-#include <Library/MemoryAllocationLib.h>
-
-#include <Protocol/DriverBinding.h>
-#include <Protocol/SdMmcPassThru.h>
-#include <Protocol/SunxiGpio.h>
-#include <Protocol/SunxiCcm.h>
-
-#include "ComponentName.h"
 #include "Driver.h"
 
 STATIC EFI_HANDLE *mDevices = NULL;
@@ -75,6 +61,20 @@ SunxiMmcInitialize(
   INT32 i;
   SUNXI_MMC_DEVICE_PATH *DevicePath;
 
+  Status = gBS->LocateProtocol(&gSunxiCcmProtocolGuid, NULL, (VOID**)&gSunxiCcmProtocol);
+  if (EFI_ERROR(Status)) {
+    DEBUG((EFI_D_ERROR, "CCM protocol not found\n"));
+    ASSERT_EFI_ERROR(Status);
+    return EFI_NOT_FOUND;
+  }
+
+  Status = gBS->LocateProtocol(&gSunxiGpioProtocolGuid, NULL, (VOID**)&gSunxiGpioProtocol);
+  if (EFI_ERROR(Status)) {
+    DEBUG((EFI_D_ERROR, "GPIO protocol not foun\n"));
+    ASSERT_EFI_ERROR(Status);
+    return EFI_NOT_FOUND;
+  }
+
   mDevices = AllocateZeroPool(sizeof(EFI_HANDLE) * gNumMmcControllers);
   if (mDevices == NULL) {
     Status = EFI_OUT_OF_RESOURCES;
@@ -132,31 +132,12 @@ DriverSupported(
   EFI_STATUS Status;
   VOID *Temp;
 
-  //if (ControllerHandle != mDevice)
-  //  return EFI_UNSUPPORTED;
-
   Status = gBS->HandleProtocol(ControllerHandle, &gEfiCallerIdGuid, &Temp);
   if (EFI_ERROR(Status))
     return EFI_UNSUPPORTED;
 
   if (gBS->HandleProtocol(ControllerHandle, &gEfiSdMmcPassThruProtocolGuid, &Temp) == EFI_SUCCESS)
     return EFI_ALREADY_STARTED;
-
-  Status = gBS->LocateProtocol(
-    &gSunxiGpioProtocolGuid,
-    NULL,
-    (VOID**)&gSunxiGpioProtocol
-  );
-  if (EFI_ERROR(Status))
-    return EFI_NOT_READY;
-  
-  Status = gBS->LocateProtocol(
-    &gSunxiCcmProtocolGuid,
-    NULL,
-    (VOID**)&gSunxiCcmProtocol
-  );
-  if (EFI_ERROR(Status))
-    return EFI_NOT_READY;
 
   return EFI_SUCCESS;
 }
@@ -245,8 +226,34 @@ DriverStop(
   IN EFI_HANDLE *ChildHandleBuffer OPTIONAL
   )
 {
-  ASSERT(0);
-  return EFI_UNSUPPORTED;
+  EFI_STATUS Status;
+  SUNXI_MMC_DRIVER *Driver;
+
+  Status = gBS->HandleProtocol(
+    ControllerHandle,
+    &gEfiSdMmcPassThruProtocolGuid,
+    (VOID**)&Driver
+  );
+  if (EFI_ERROR(Status))
+    return Status;
+
+  Status = gBS->UninstallMultipleProtocolInterfaces(
+    ControllerHandle,
+    &gEfiSdMmcPassThruProtocolGuid, &Driver->Protocol,
+    NULL
+  );
+  if (EFI_ERROR(Status))
+    return Status;
+
+  Status = gBS->CloseProtocol(ControllerHandle, &gEfiCallerIdGuid, This->DriverBindingHandle, ControllerHandle);
+  if (EFI_ERROR(Status))
+    return Status;
+
+  Status = SunxiMmcDestroyDriver(Driver);
+  if (EFI_ERROR(Status))
+    return Status;
+
+  return EFI_SUCCESS;
 }
 
 EFI_DRIVER_BINDING_PROTOCOL gSunxiMmcDriverBinding = {

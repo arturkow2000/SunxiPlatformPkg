@@ -2,6 +2,7 @@
 
 #include <Library/BaseLib.h>
 #include <Library/DebugLib.h>
+#include <Library/UefiBootServicesTableLib.h>
 
 #include <Library/SunxiGpioLib.h>
 
@@ -138,3 +139,24 @@ SUNXI_GPIO_PROTOCOL gSunxiGpioProtocol = {
   GetDriveStrength,
   SetDriveStrength,
 };
+
+EFI_STATUS
+EFIAPI
+SunxiGpioInitialize (
+  IN EFI_HANDLE       ImageHandle,
+  IN EFI_SYSTEM_TABLE *SystemTable
+  )
+{
+  EFI_HANDLE Handle = NULL;
+  EFI_STATUS Status;
+
+  Status = gBS->InstallMultipleProtocolInterfaces(
+    &Handle,
+    &gSunxiGpioProtocolGuid, &gSunxiGpioProtocol,
+    NULL
+  );
+
+  ASSERT_EFI_ERROR(Status);
+
+  return EFI_SUCCESS;
+}

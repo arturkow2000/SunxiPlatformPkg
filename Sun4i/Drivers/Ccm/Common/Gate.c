@@ -17,7 +17,7 @@
 
 CONST CCM_GATE_DESC gCcmGateList[] = {
   // ahb0
-  GATE(L"ahb0-otg", 0x60, 0),
+  GATE(L"ahb0-otg", 0x060, 0),
   GATE(L"ahb0-ehci", 0x060, 1),
   GATE(L"ahb0-ohci", 0x060, 2),
   GATE(L"ahb0-ss", 0x060, 5),

@@ -8,7 +8,49 @@
 
 EFI_STATUS
 EFIAPI
+CcmPll1GetFrequency(
+  IN  CONST CCM_PLL_DESC *Desc,
+  OUT UINT32 *Hz
+);
+
+EFI_STATUS
+EFIAPI
 CcmGetPll6GetFrequency(
+  IN  CONST CCM_PLL_DESC *Desc,
+  OUT UINT32 *Hz
+);
+
+EFI_STATUS
+EFIAPI
+CcmGetCpuFrequency(
+  IN  CONST CCM_PLL_DESC *Desc,
+  OUT UINT32 *Hz
+);
+
+EFI_STATUS
+EFIAPI
+CcmGetAxiFrequency(
+  IN  CONST CCM_PLL_DESC *Desc,
+  OUT UINT32 *Hz
+);
+
+EFI_STATUS
+EFIAPI
+CcmGetAhbFrequency(
+  IN  CONST CCM_PLL_DESC *Desc,
+  OUT UINT32 *Hz
+);
+
+EFI_STATUS
+EFIAPI
+CcmGetApb0Frequency(
+  IN  CONST CCM_PLL_DESC *Desc,
+  OUT UINT32 *Hz
+);
+
+EFI_STATUS
+EFIAPI
+CcmGetApb1Frequency(
   IN  CONST CCM_PLL_DESC *Desc,
   OUT UINT32 *Hz
 );

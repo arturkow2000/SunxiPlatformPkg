@@ -1,0 +1,31 @@
+/** @file
+
+  SPDX-License-Identifier: BSD-3-Clause
+
+  Copyright (c) 2021, Artur Kowalski.
+
+**/
+
+[Defines]
+  INF_VERSION                    = 0x00010006
+  BASE_NAME                      = SunxiRtcLib
+  FILE_GUID                      = cdbb7fe0-3c1e-40da-81a4-9143c0d936bd
+  MODULE_TYPE                    = DXE_DRIVER
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = RealTimeClockLib
+
+[Sources]
+  Rtc.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  EmbeddedPkg/EmbeddedPkg.dec
+  SunxiPlatformPkg/SunxiPlatformPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  DebugLib
+  UefiBootServicesTableLib
+
+[Protocols]
+  gPcf8563ProtocolGuid

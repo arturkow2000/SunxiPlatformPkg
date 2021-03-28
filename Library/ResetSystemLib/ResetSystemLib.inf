@@ -22,4 +22,4 @@
   gSunxiTokenSpaceGuid.WatchdogBase
 
 [Protocols]
-  gAxpPowerProtocolGuid
+  gPmicProtocolGuid

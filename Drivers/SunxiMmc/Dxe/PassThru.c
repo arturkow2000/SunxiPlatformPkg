@@ -7,22 +7,8 @@
   Copyright (c) 2015, Intel Corporation. All rights reserved.
 **/
 
-#include <Uefi.h>
-
-#include <Library/BaseLib.h>
-#include <Library/DebugLib.h>
-#include <Library/PcdLib.h>
-#include <Library/BaseMemoryLib.h>
-#include <Library/MemoryAllocationLib.h>
-#include <Library/UefiBootServicesTableLib.h>
-
-#include <Protocol/SdMmcPassThru.h>
-#include <Protocol/SunxiGpio.h>
-
 #include "Driver.h"
 #include "../Common/MmcDef.h"
-
-extern EFI_SD_MMC_PASS_THRU_PROTOCOL gSunxiMmcProtocol;
 
 STATIC EMMC_DEVICE_PATH mEmmcDpTemplate = {
   {

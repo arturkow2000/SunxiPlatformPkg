@@ -1,0 +1,44 @@
+/**
+ SPDX-License-Identifier: GPL-2.0+
+
+ Copyright (C) 2021 Artur Kowalski <arturkow2000@gmail.com>
+
+ Based on code from U-Boot
+
+ Copyright (C) 2012 Henrik Nordstrom <henrik@henriknordstrom.net>
+**/
+
+[Defines]
+  INF_VERSION     = 0x00010006
+  BASE_NAME       = Axp209Dxe
+  FILE_GUID       = 91cca17c-4845-4cd6-819d-5c1aa8a89eaa
+  MODULE_TYPE     = UEFI_DRIVER
+  VERSION_STRING  = 1.0
+  ENTRY_POINT     = Axp209Initialize
+
+[Sources]
+  Dxe/Driver.h
+  Dxe/DriverBinding.c
+  Dxe/ComponentName.c
+  Dxe/Driver.c
+  Dxe/Pmic.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  SunxiPlatformPkg/SunxiPlatformPkg.dec
+
+[LibraryClasses]
+  UefiDriverEntryPoint
+  UefiBootServicesTableLib
+  UefiLib
+  BaseLib
+  DebugLib
+  MemoryAllocationLib
+  TimerLib
+
+[Protocols]
+  gEfiI2cIoProtocolGuid     ## CONSUMES
+  gPmicProtocolGuid         ## PRODUCES
+
+[Guids]
+  gI2cAxp209Guid

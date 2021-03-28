@@ -85,7 +85,6 @@
 
   SunxiGpioLib|SunxiPlatformPkg/Library/SunxiGpioLib/SunxiGpioLib.inf
   #SunxiClockLib|SunxiPlatformPkg/Library/SunxiClockLib/SunxiClockLib.inf
-  #SunxiI2cLib|SunxiPlatformPkg/Library/SunxiI2cLib/I2cLib.inf
   ResetSystemLib|SunxiPlatformPkg/Library/ResetSystemLib/ResetSystemLib.inf
 
   #
@@ -221,8 +220,7 @@
   MdeModulePkg/Universal/ResetSystemRuntimeDxe/ResetSystemRuntimeDxe.inf
   EmbeddedPkg/RealTimeClockRuntimeDxe/RealTimeClockRuntimeDxe.inf {
     <LibraryClasses>
-      # TODO: Implement RTC
-      RealTimeClockLib|EmbeddedPkg/Library/TemplateRealTimeClockLib/TemplateRealTimeClockLib.inf
+      RealTimeClockLib|SunxiPlatformPkg/Library/RtcLib/RtcLib.inf
   }
   EmbeddedPkg/MetronomeDxe/MetronomeDxe.inf
   MdeModulePkg/Universal/TimestampDxe/TimestampDxe.inf
@@ -240,7 +238,6 @@
   #
 
   SunxiPlatformPkg/Drivers/InterruptDxe/InterruptDxe.inf
-  #SunxiPlatformPkg/Drivers/AxpPower/Axp209.inf
   #SunxiPlatformPkg/Drivers/SunxiDisplayDxe/DisplayDxe.inf
   MdeModulePkg/Universal/WatchdogTimerDxe/WatchdogTimer.inf
   # TODO: support persistent variable storage
@@ -251,8 +248,11 @@
   #MdeModulePkg/Bus/Sd/EmmcDxe/EmmcDxe.inf
   MdeModulePkg/Bus/Sd/SdDxe/SdDxe.inf
   SunxiPlatformPkg/Drivers/SunxiGpioDxe/SunxiGpioDxe.inf
-  #SunxiPlatformPkg/Drivers/I2cDxe/I2cDxe.inf
-  MdeModulePkg/Bus/I2c/I2cDxe/I2cHostDxe.inf
+  SunxiPlatformPkg/Drivers/SunxiI2c/SunxiI2cDxe.inf
+  MdeModulePkg/Bus/I2c/I2cDxe/I2cDxe.inf
+  SunxiPlatformPkg/Board/XW711/I2cEnumerate/I2cEnumerateDxe.inf
+  SunxiPlatformPkg/Drivers/Axp209/Axp209Dxe.inf
+  SunxiPlatformPkg/Drivers/Pcf8563Dxe/Pcf8563Dxe.inf
   SunxiPlatformPkg/Drivers/FdtPlatformDxe/FdtPlatformDxe.inf {
     <LibraryClasses>
       BdsLib|SunxiPlatformPkg/Library/BdsLib/BdsLib.inf
@@ -311,6 +311,7 @@
       HandleParsingLib|ShellPkg/Library/UefiHandleParsingLib/UefiHandleParsingLib.inf
       BcfgCommandLib|ShellPkg/Library/UefiShellBcfgCommandLib/UefiShellBcfgCommandLib.inf
 
+      # TODO: reimplement using gEfiShellDynamicCommandProtocolGuid
       #NULL|SunxiPlatformPkg/Library/Shell/ClockDebug/SunxiClockDebugCommandsLib.inf
       #NULL|SunxiPlatformPkg/Library/Shell/GpioDebug/SunxiGpioDebugShellExt.inf
 

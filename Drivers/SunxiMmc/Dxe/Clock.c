@@ -1,13 +1,4 @@
-#include <Uefi.h>
-#include <Library/DebugLib.h>
-
-#include <Protocol/SunxiCcm.h>
-#include <Protocol/SunxiGpio.h>
-#include <Protocol/SdMmcPassThru.h>
-
 #include "Driver.h"
-
-extern SUNXI_CCM_PROTOCOL *gSunxiCcmProtocol;
 
 EFI_STATUS SunxiMmcUnmaskGate(
   IN SUNXI_MMC *Mmc,
