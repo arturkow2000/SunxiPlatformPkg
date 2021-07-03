@@ -18,25 +18,9 @@ Poweroff(
   )
 {
   EFI_STATUS Status;
-  DRIVER_DATA *Data = (DRIVER_DATA*)This;
-  AXP209_PACKET Packet;
-  UINT8 Buf[2];
+  AXP209_DXE_DRIVER *Driver = (AXP209_DXE_DRIVER*)This;
 
-  Buf[0] = AXP209_REG_SHUTDOWN;
-  Buf[1] = AXP209_POWEROFF;
-
-  Packet.OperationCount = 1;
-  Packet.Operation[0].Buffer = Buf;
-  Packet.Operation[0].Flags = 0;
-  Packet.Operation[0].LengthInBytes = 2;
-
-  Status = Data->I2cIo->QueueRequest(
-    Data->I2cIo,
-    0,
-    NULL,
-    (EFI_I2C_REQUEST_PACKET*)&Packet,
-    NULL
-  );
+  Status = AxpWrite8(&Driver->Common, AXP209_REG_SHUTDOWN, AXP209_POWEROFF);
   if (EFI_ERROR(Status)) {
     DEBUG((EFI_D_ERROR, "AXP209: failed to request shutdown\n"));
     return Status;

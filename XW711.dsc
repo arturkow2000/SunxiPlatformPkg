@@ -1,5 +1,5 @@
 [Defines]
-  PLATFORM_NAME                  = SunxiPlatformmPkg
+  PLATFORM_NAME                  = SunxiPlatformPkg
   PLATFORM_GUID                  = a78dbe5b-704c-4699-9c37-eb5c108f1c73
   PLATFORM_VERSION               = 0.1
   DSC_SPECIFICATION              = 0x0001001A
@@ -21,3 +21,12 @@
 !include SunxiPlatformPkg/SPL/Conf/XW711.dsc.inc
 
 !include SunxiPlatformPkg/Conf/Sun5i/A13.dsc.inc
+
+[Components]
+  SunxiPlatformPkg/Board/XW711/I2cEnumerate/I2cEnumeratePei.inf
+  SunxiPlatformPkg/Board/XW711/I2cEnumerate/I2cEnumerateDxe.inf
+
+[PcdsFixedAtBuild]
+  gAxp209TokenSpaceGuid.Dcdc2Voltage | 1400
+  gAxp209TokenSpaceGuid.Dcdc3Voltage | 1200
+  gAxp209TokenSpaceGuid.Ldo2Voltage  | 3000

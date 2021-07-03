@@ -180,6 +180,13 @@
   }
 
   #
+  # PEI Drivers
+  #
+  SunxiPlatformPkg/Drivers/SunxiGpio/SunxiGpioPei.inf
+  SunxiPlatformPkg/Drivers/SunxiI2c/SunxiI2cPei.inf
+  SunxiPlatformPkg/Drivers/Axp209/Axp209Pei.inf
+
+  #
   # DXE
   #
   MdeModulePkg/Core/Dxe/DxeMain.inf {
@@ -247,11 +254,13 @@
   # FIXME: eMMC support broken
   #MdeModulePkg/Bus/Sd/EmmcDxe/EmmcDxe.inf
   MdeModulePkg/Bus/Sd/SdDxe/SdDxe.inf
-  SunxiPlatformPkg/Drivers/SunxiGpioDxe/SunxiGpioDxe.inf
+  SunxiPlatformPkg/Drivers/SunxiGpio/SunxiGpioDxe.inf
   SunxiPlatformPkg/Drivers/SunxiI2c/SunxiI2cDxe.inf
   MdeModulePkg/Bus/I2c/I2cDxe/I2cDxe.inf
-  SunxiPlatformPkg/Board/XW711/I2cEnumerate/I2cEnumerateDxe.inf
-  SunxiPlatformPkg/Drivers/Axp209/Axp209Dxe.inf
+  SunxiPlatformPkg/Drivers/Axp209/Axp209Dxe.inf {
+    <PcdsFixedAtBuild>
+      gEfiShellPkgTokenSpaceGuid.PcdShellLibAutoInitialize|FALSE
+  }
   SunxiPlatformPkg/Drivers/Pcf8563Dxe/Pcf8563Dxe.inf
   SunxiPlatformPkg/Drivers/FdtPlatformDxe/FdtPlatformDxe.inf {
     <LibraryClasses>

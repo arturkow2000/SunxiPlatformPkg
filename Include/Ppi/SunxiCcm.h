@@ -1,18 +1,16 @@
 #pragma once
 
-#include <Uefi.h>
-
-#define SUNXI_CCM_PROTOCOL_GUID                                                    \
-  {                                                                                \
-    0xe9ea2798, 0x0717, 0x4813, { 0x55, 0xa7, 0x2b, 0x8f, 0xb0, 0xcd, 0x52, 0x0a } \
+#define SUNXI_CCM_PPI_GUID                                                      \
+  {                                                                                 \
+    0xa5ac9733, 0xa2f0, 0x4c97, { 0xb2, 0x74, 0xe6, 0x9b, 0xee, 0x58, 0xee, 0xf6 }  \
   }
 
-typedef struct _SUNXI_CCM_PROTOCOL SUNXI_CCM_PROTOCOL;
+typedef struct _SUNXI_CCM_PPI SUNXI_CCM_PPI;
 
 /**
  Obtain gate ID from gate name.
 
- @param  This                  Pointer to SUNXI_CCM_PROTOCOL instance.
+ @param  This                  Pointer to SUNXI_CCM_PPI instance.
  @param  Name                  Gate name.
  @param  OutGateId             Variable to receive gate ID.
 
@@ -23,7 +21,7 @@ typedef struct _SUNXI_CCM_PROTOCOL SUNXI_CCM_PROTOCOL;
 typedef
 EFI_STATUS
 (EFIAPI *SUNXI_CCM_GET_GATE)(
-  IN  SUNXI_CCM_PROTOCOL      *This,
+  IN  SUNXI_CCM_PPI           *This,
   IN  CONST CHAR16            *Name,
   OUT UINT32                  *OutGateId
 );
@@ -31,7 +29,7 @@ EFI_STATUS
 /**
  Iterate over available gates.
 
- @param  This                  Pointer to SUNXI_CCM_PROTOCOL instance.
+ @param  This                  Pointer to SUNXI_CCM_PPI instance.
  @param  Index                 Gate index.
  @param  OutGateId             Variable to receive gate ID.
  @param  OutGateName           Variable to receive gate name.
@@ -43,7 +41,7 @@ EFI_STATUS
 typedef
 EFI_STATUS
 (EFIAPI *SUNXI_CCM_GET_NEXT_GATE)(
-  IN  SUNXI_CCM_PROTOCOL      *This,
+  IN  SUNXI_CCM_PPI           *This,
   IN  UINT32                  Index,
   OUT UINT32                  *OutGateId,
   OUT CONST CHAR16            **OutGateName OPTIONAL
@@ -52,7 +50,7 @@ EFI_STATUS
 /**
  Unmask gate (enable clock)
 
- @param  This                  Pointer to SUNXI_CCM_PROTOCOL instance.
+ @param  This                  Pointer to SUNXI_CCM_PPI instance.
  @param  GateId                Gate ID obtained using SUNXI_CCM_GET_GATE.
 
  @retval EFI_SUCCESS           Gate unmasked.
@@ -61,14 +59,14 @@ EFI_STATUS
 typedef
 EFI_STATUS
 (EFIAPI *SUNXI_CCM_GATE_UNMASK)(
-  IN  SUNXI_CCM_PROTOCOL      *This,
+  IN  SUNXI_CCM_PPI           *This,
   IN  UINT32                  GateId
 );
 
 /**
  Mask gate (enable clock)
 
- @param  This                  Pointer to SUNXI_CCM_PROTOCOL instance.
+ @param  This                  Pointer to SUNXI_CCM_PPI instance.
  @param  GateId                Gate ID obtained using SUNXI_CCM_GET_GATE.
 
  @retval EFI_SUCCESS           Gate masked.
@@ -77,14 +75,14 @@ EFI_STATUS
 typedef
 EFI_STATUS
 (EFIAPI *SUNXI_CCM_GATE_MASK)(
-  IN  SUNXI_CCM_PROTOCOL      *This,
+  IN  SUNXI_CCM_PPI           *This,
   IN  UINT32                  GateId
 );
 
 /**
  Check if gate is masked.
  
- @param  This                  Pointer to SUNXI_CCM_PROTOCOL instance.
+ @param  This                  Pointer to SUNXI_CCM_PPI instance.
  @param  GateId                Gate ID obtained using SUNXI_CCM_GET_GATE.
  @param  OutIsMasked           Variable to obtain gate status.
 
@@ -95,7 +93,7 @@ EFI_STATUS
 typedef
 EFI_STATUS
 (EFIAPI *SUNXI_CCM_GATE_IS_MASKED)(
-  IN  SUNXI_CCM_PROTOCOL      *This,
+  IN  SUNXI_CCM_PPI           *This,
   IN  UINT32                  GateId,
   OUT BOOLEAN                 *OutIsMasked
 );
@@ -103,7 +101,7 @@ EFI_STATUS
 /**
  Obtain PLL id from PLL name.
 
- @param  This                  Pointer to SUNXI_CCM_PROTOCOL instance.
+ @param  This                  Pointer to SUNXI_CCM_PPI instance.
  @param  Name                  PLL name.
  @param  OutPllId              Variable to receive PLL ID.
 
@@ -114,7 +112,7 @@ EFI_STATUS
 typedef
 EFI_STATUS
 (EFIAPI *SUNXI_CCM_GET_PLL)(
-  IN  SUNXI_CCM_PROTOCOL      *This,
+  IN  SUNXI_CCM_PPI           *This,
   IN  CONST CHAR16            *Name,
   OUT UINT32                  *OutPllId
 );
@@ -122,7 +120,7 @@ EFI_STATUS
 /**
  Iterate over available PLLs.
 
- @param  This                  Pointer to SUNXI_CCM_PROTOCOL instance.
+ @param  This                  Pointer to SUNXI_CCM_PPI instance.
  @param  Index                 PLL index.
  @param  OutPllId              Variable to receive PLL ID.
  @param  OutPllName            Variable to receive PLL name.
@@ -130,7 +128,7 @@ EFI_STATUS
 typedef
 EFI_STATUS
 (EFIAPI *SUNXI_CCM_GET_NEXT_PLL)(
-  IN  SUNXI_CCM_PROTOCOL      *This,
+  IN  SUNXI_CCM_PPI           *This,
   IN  UINT32                  Index,
   OUT UINT32                  *OutPllId,
   OUT CONST CHAR16            **OutPllName OPTIONAL
@@ -139,7 +137,7 @@ EFI_STATUS
 /**
  Get PLL frequency.
 
- @param  This                  Pointer to SUNXI_CCM_PROTOCOL instance.
+ @param  This                  Pointer to SUNXI_CCM_PPI instance.
  @param  PllId                 PLL id obtained using SUNXI_CCM_GET_PLL.
  @param  OutPllFreq            Variable to receive PLL frequency in Hz.
 
@@ -149,7 +147,7 @@ EFI_STATUS
 typedef
 EFI_STATUS
 (EFIAPI *SUNXI_CCM_PLL_GET_FREQ)(
-  IN  SUNXI_CCM_PROTOCOL      *This,
+  IN  SUNXI_CCM_PPI           *This,
   IN  UINT32                  PllId,
   OUT UINT32                  *OutPllFreq
 );
@@ -157,7 +155,7 @@ EFI_STATUS
 /**
  Change PLL frequency.
 
- @param  This                  Pointer to SUNXI_CCM_PROTOCOL instance.
+ @param  This                  Pointer to SUNXI_CCM_PPI instance.
  @param  PllId                 PLL id obtained using SUNXI_CCM_GET_PLL.
  @param  Freq                  Requested frequency in Hz, if frequency is 0 clock is disabled.
  
@@ -167,12 +165,12 @@ EFI_STATUS
 typedef
 EFI_STATUS
 (EFIAPI *SUNXI_CCM_PLL_SET_FREQ)(
-  IN  SUNXI_CCM_PROTOCOL       *This,
+  IN  SUNXI_CCM_PPI            *This,
   IN  UINT32                   PllId,
   IN  UINT32                   Freq
 );
 
-struct _SUNXI_CCM_PROTOCOL {
+struct _SUNXI_CCM_PPI {
   SUNXI_CCM_GET_GATE GetGate;
   SUNXI_CCM_GET_NEXT_GATE GetNextGate;
   SUNXI_CCM_GATE_UNMASK GateUnmask;
@@ -184,4 +182,4 @@ struct _SUNXI_CCM_PROTOCOL {
   SUNXI_CCM_PLL_SET_FREQ PllSetFreq;
 };
 
-extern EFI_GUID gSunxiCcmProtocolGuid;
+extern EFI_GUID gSunxiCcmPpiGuid;

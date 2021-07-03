@@ -18,3 +18,9 @@
 [Components.common]
   SunxiPlatformPkg/Sun4i/Drivers/Ccm/A13CcmDxe.inf
   SunxiPlatformPkg/Sun4i/Drivers/TimerDxe/TimerDxe.inf
+
+[Components]
+  #
+  # PEI
+  #
+  SunxiPlatformPkg/Sun4i/Drivers/Ccm/A13CcmPei.inf

@@ -1,3 +1,5 @@
+#include <Uefi.h>
+
 #include "Driver.h"
 
 extern EFI_GUID gI2cAxp209Guid;
@@ -42,8 +44,8 @@ STATIC CONST I2C_DEVICE mPcf8563 = {
 };
 
 CONST I2C_DEVICE *gI2cDeviceListHeadArray[] = {
-  &mAxp209,
-  &mPcf8563,
+  &mAxp209,  /* i2c0 */
+  &mPcf8563, /* i2c1 */
 };
 
 CONST UINT32 gI2cDeviceListHeadArrayLength = ARRAY_SIZE(gI2cDeviceListHeadArray);

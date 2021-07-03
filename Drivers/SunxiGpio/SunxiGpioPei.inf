@@ -1,0 +1,28 @@
+[Defines]
+  INF_VERSION     = 0x00010006
+  BASE_NAME       = SunxiGpioPei
+  FILE_GUID       = 081e9ec5-59bf-4490-a717-ecefaf87c9ff
+  MODULE_TYPE     = PEIM
+  VERSION_STRING  = 1.0
+
+  ENTRY_POINT     = SunxiGpioInitialize
+  
+[Sources]
+  GpioPei.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  SunxiPlatformPkg/SunxiPlatformPkg.dec
+
+[LibraryClasses]
+  PeimEntryPoint
+  PeiServicesLib
+  BaseLib
+  DebugLib
+  SunxiGpioLib
+
+[Ppis]
+  gSunxiGpioPpiGuid
+
+[Depex]
+  TRUE

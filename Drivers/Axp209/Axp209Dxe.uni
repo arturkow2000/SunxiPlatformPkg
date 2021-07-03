@@ -1,0 +1,34 @@
+// *++
+//
+// Copyright (c) 2014, ARM Ltd. All rights reserved.<BR>
+//
+// SPDX-License-Identifier: BSD-2-Clause-Patent
+//
+//
+// Module Name:
+//
+//   FdtPlatformDxe
+//
+// Abstract:
+//
+//   String definitions for the EFI Shell 'setfdt' command
+//
+// Revision History:
+//
+// --*/
+
+/=#
+
+#langdef   en-US "English"
+
+#string STR_GET_HELP_AXP_DUMP            #language en-US ""
+".TH axp_dump 0 "Dump AXP chip state"\r\n"
+".SH NAME\r\n"
+"Dump AXP chip state\r\n"
+".SH SYNOPSIS\r\n"
+"axp_dump\r\n"
+"\r\n"
+".SH OPTIONS\r\n"
+"\r\n"
+".SH DESCRIPTION\r\n"
+"\r\n"
