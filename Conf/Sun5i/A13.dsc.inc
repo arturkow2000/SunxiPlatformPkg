@@ -25,6 +25,7 @@
 [Components.common]
   SunxiPlatformPkg/Sun4i/Drivers/Ccm/A13CcmDxe.inf
   SunxiPlatformPkg/Sun4i/Drivers/TimerDxe/TimerDxe.inf
+  SunxiPlatformPkg/Drivers/Usb/Phy/A13PhyPei.inf
 
 [Components]
   #
