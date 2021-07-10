@@ -27,7 +27,6 @@
   Dxe/BusConfiguration.c
   Dxe/Gate.c
   Dxe/Pll.c
-  Dxe/GpioInit.c
   Dxe/Executor.c
 
   Common/Driver.h
@@ -36,6 +35,7 @@
   Common/Init.c
   Common/Clock.c
   Common/Driver.c
+  Common/GpioInit.c
 
 [Packages]
   MdePkg/MdePkg.dec
@@ -49,10 +49,10 @@
   DebugLib
   MemoryAllocationLib
   TimerLib
+  SunxiGpioLib
 
 [Protocols]
   gSunxiCcmProtocolGuid          ## CONSUMES
-  gSunxiGpioProtocolGuid         ## CONSUMES
   gEfiDevicePathProtocolGuid     ## PRODUCES
   gEfiI2cMasterProtocolGuid      ## PRODUCES
   gEfiI2cBusConfigurationManagementProtocolGuid ## PRODUCES

@@ -91,14 +91,6 @@ DriverSupported (
   if (EFI_ERROR(Status))
     return EFI_NOT_READY;
 
-  Status = gBS->LocateProtocol(
-    &gSunxiGpioProtocolGuid,
-    NULL,
-    &Dummy
-  );
-  if (EFI_ERROR(Status))
-    return EFI_NOT_READY;
-
   Status = gBS->HandleProtocol(
     Controller,
     &gEfiI2cMasterProtocolGuid,
@@ -120,13 +112,6 @@ DriverStart (
   )
 {
   EFI_STATUS Status;
-#if 0
-  UINT32 BufferSize;
-  EFI_HANDLE CcmHandle;
-  EFI_HANDLE GpioHandle;
-  SUNXI_CCM_PROTOCOL *CcmProto;
-  SUNXI_GPIO_PROTOCOL *GpioProto;
-#endif
   SUNXI_I2C_PATH *DevicePath;
   SUNXI_I2C_CONFIG *I2cConfig;
   I2C_DXE_DRIVER *Driver = NULL;
@@ -279,7 +264,6 @@ EFI_DRIVER_BINDING_PROTOCOL gSunxiI2cDriverBinding = {
 };
 
 SUNXI_CCM_PROTOCOL *gSunxiCcmProtocol;
-SUNXI_GPIO_PROTOCOL *gSunxiGpioProtocol;
 
 EFI_STATUS
 EFIAPI
@@ -296,13 +280,6 @@ SunxiI2cInitialize(
   Status = gBS->LocateProtocol(&gSunxiCcmProtocolGuid, NULL, (VOID**)&gSunxiCcmProtocol);
   if (EFI_ERROR(Status)) {
     DEBUG((EFI_D_ERROR, "CCM protocol not found\n"));
-    ASSERT_EFI_ERROR(Status);
-    return EFI_NOT_FOUND;
-  }
-
-  Status = gBS->LocateProtocol(&gSunxiGpioProtocolGuid, NULL, (VOID**)&gSunxiGpioProtocol);
-  if (EFI_ERROR(Status)) {
-    DEBUG((EFI_D_ERROR, "GPIO protocol not foun\n"));
     ASSERT_EFI_ERROR(Status);
     return EFI_NOT_FOUND;
   }

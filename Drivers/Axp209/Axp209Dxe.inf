@@ -9,23 +9,37 @@
 **/
 
 [Defines]
-  INF_VERSION     = 0x00010006
-  BASE_NAME       = Axp209Dxe
-  FILE_GUID       = 91cca17c-4845-4cd6-819d-5c1aa8a89eaa
-  MODULE_TYPE     = UEFI_DRIVER
-  VERSION_STRING  = 1.0
-  ENTRY_POINT     = Axp209Initialize
+  INF_VERSION       = 0x00010006
+  BASE_NAME         = Axp209Dxe
+  MODULE_UNI_FILE   = Axp209Dxe.uni
+  FILE_GUID         = 91cca17c-4845-4cd6-819d-5c1aa8a89eaa
+  MODULE_TYPE       = UEFI_DRIVER
+  VERSION_STRING    = 1.0
+  ENTRY_POINT       = Axp209Initialize
 
 [Sources]
+  Axp209Dxe.uni
+
+  Common/Hw.h
+  Common/Driver.h
+  Common/Regulator.c
+
   Dxe/Driver.h
   Dxe/DriverBinding.c
   Dxe/ComponentName.c
   Dxe/Driver.c
   Dxe/Pmic.c
+  Dxe/Util.c
+
+  Dxe/Shell/Ext.h
+  Dxe/Shell/Ext.c
+  Dxe/Shell/Dump.c
 
 [Packages]
   MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
   SunxiPlatformPkg/SunxiPlatformPkg.dec
+  ShellPkg/ShellPkg.dec
 
 [LibraryClasses]
   UefiDriverEntryPoint
@@ -35,10 +49,14 @@
   DebugLib
   MemoryAllocationLib
   TimerLib
+  ShellLib
+  HiiLib
 
 [Protocols]
   gEfiI2cIoProtocolGuid     ## CONSUMES
   gPmicProtocolGuid         ## PRODUCES
+  gEfiShellDynamicCommandProtocolGuid   ## PRODUCES
 
 [Guids]
   gI2cAxp209Guid
+  gAxp209ShellExtHiiGuid

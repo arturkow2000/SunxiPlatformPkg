@@ -26,7 +26,7 @@
 #include <Protocol/I2cIo.h>
 #include <Protocol/Pmic.h>
 
-#include "Hw.h"
+#include "../Common/Driver.h"
 
 extern EFI_COMPONENT_NAME_PROTOCOL gComponentName;
 extern EFI_COMPONENT_NAME2_PROTOCOL gComponentName2;
@@ -34,10 +34,14 @@ extern EFI_COMPONENT_NAME2_PROTOCOL gComponentName2;
 extern EFI_DRIVER_BINDING_PROTOCOL gAxp209DriverBinding;
 extern PMIC_PROTOCOL gPmicProtocol;
 
-typedef struct _DRIVER_DATA {
+#define AXP209_COMMON_DRIVER_TO_DXE_DRIVER(x)  \
+  BASE_CR(x, AXP209_DXE_DRIVER, Common)
+
+typedef struct {
   PMIC_PROTOCOL PmicProto;
   EFI_I2C_IO_PROTOCOL *I2cIo;
-} DRIVER_DATA;
+  AXP209_DRIVER Common;
+} AXP209_DXE_DRIVER;
 
 typedef struct _AXP209_PACKET {
   UINTN OperationCount;

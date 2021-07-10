@@ -7,11 +7,13 @@
   ENTRY_POINT     = I2cEnumeratorInitialize
 
 [Sources]
-  Driver.h
-  DriverBinding.c
-  ComponentName.c
-  DeviceList.c
-  Enumerate.c
+  Dxe/Driver.h
+  Dxe/ComponentName.c
+  Dxe/DriverBinding.c
+  Dxe/Enumerate.c
+
+  Common/DeviceList.c
+  Common/Driver.h
 
 [Packages]
   MdePkg/MdePkg.dec

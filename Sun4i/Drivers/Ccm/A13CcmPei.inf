@@ -1,0 +1,45 @@
+[Defines]
+  INF_VERSION     = 0x00010006
+  BASE_NAME       = A13CcmPei
+  FILE_GUID       = dd332271-71ee-4b0b-b67e-79408a44fe63
+  MODULE_TYPE     = PEIM
+  VERSION_STRING  = 1.0
+
+  ENTRY_POINT     = SunxiCcmInitialize
+
+[Sources]
+  Pei/Driver.h
+  Pei/Driver.c
+
+  Common/Driver.h
+  Common/Gate.c
+  Common/Pll.h
+  Common/Pll.c
+  Common/Pll1.c
+  Common/Pll6.c
+  Common/Cpu.c
+  Common/Axi.c
+  Common/Ahb.c
+  Common/Apb0.c
+  Common/Apb1.c
+  Common/Mmc.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  SunxiPlatformPkg/SunxiPlatformPkg.dec
+
+[LibraryClasses]
+  PeimEntryPoint
+  PeiServicesLib
+  BaseLib
+  DebugLib
+  IoLib
+
+[Ppis]
+  gSunxiCcmPpiGuid
+
+[Pcd]
+  gSunxiTokenSpaceGuid.CcmBase
+
+[Depex]
+  TRUE

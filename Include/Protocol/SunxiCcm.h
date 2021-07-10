@@ -12,7 +12,7 @@ typedef struct _SUNXI_CCM_PROTOCOL SUNXI_CCM_PROTOCOL;
 /**
  Obtain gate ID from gate name.
 
- @param  This                  Pointer to SUNXI_GPIO_PROTOCOL instance.
+ @param  This                  Pointer to SUNXI_CCM_PROTOCOL instance.
  @param  Name                  Gate name.
  @param  OutGateId             Variable to receive gate ID.
 
@@ -31,7 +31,7 @@ EFI_STATUS
 /**
  Iterate over available gates.
 
- @param  This                  Pointer to SUNXI_GPIO_PROTOCOL instance.
+ @param  This                  Pointer to SUNXI_CCM_PROTOCOL instance.
  @param  Index                 Gate index.
  @param  OutGateId             Variable to receive gate ID.
  @param  OutGateName           Variable to receive gate name.
@@ -52,7 +52,7 @@ EFI_STATUS
 /**
  Unmask gate (enable clock)
 
- @param  This                  Pointer to SUNXI_GPIO_PROTOCOL instance.
+ @param  This                  Pointer to SUNXI_CCM_PROTOCOL instance.
  @param  GateId                Gate ID obtained using SUNXI_CCM_GET_GATE.
 
  @retval EFI_SUCCESS           Gate unmasked.
@@ -68,7 +68,7 @@ EFI_STATUS
 /**
  Mask gate (enable clock)
 
- @param  This                  Pointer to SUNXI_GPIO_PROTOCOL instance.
+ @param  This                  Pointer to SUNXI_CCM_PROTOCOL instance.
  @param  GateId                Gate ID obtained using SUNXI_CCM_GET_GATE.
 
  @retval EFI_SUCCESS           Gate masked.
@@ -84,7 +84,7 @@ EFI_STATUS
 /**
  Check if gate is masked.
  
- @param  This                  Pointer to SUNXI_GPIO_PROTOCOL instance.
+ @param  This                  Pointer to SUNXI_CCM_PROTOCOL instance.
  @param  GateId                Gate ID obtained using SUNXI_CCM_GET_GATE.
  @param  OutIsMasked           Variable to obtain gate status.
 
@@ -103,7 +103,7 @@ EFI_STATUS
 /**
  Obtain PLL id from PLL name.
 
- @param  This                  Pointer to SUNXI_GPIO_PROTOCOL instance.
+ @param  This                  Pointer to SUNXI_CCM_PROTOCOL instance.
  @param  Name                  PLL name.
  @param  OutPllId              Variable to receive PLL ID.
 
@@ -122,7 +122,7 @@ EFI_STATUS
 /**
  Iterate over available PLLs.
 
- @param  This                  Pointer to SUNXI_GPIO_PROTOCOL instance.
+ @param  This                  Pointer to SUNXI_CCM_PROTOCOL instance.
  @param  Index                 PLL index.
  @param  OutPllId              Variable to receive PLL ID.
  @param  OutPllName            Variable to receive PLL name.
@@ -139,7 +139,7 @@ EFI_STATUS
 /**
  Get PLL frequency.
 
- @param  This                  Pointer to SUNXI_GPIO_PROTOCOL instance.
+ @param  This                  Pointer to SUNXI_CCM_PROTOCOL instance.
  @param  PllId                 PLL id obtained using SUNXI_CCM_GET_PLL.
  @param  OutPllFreq            Variable to receive PLL frequency in Hz.
 
@@ -157,7 +157,7 @@ EFI_STATUS
 /**
  Change PLL frequency.
 
- @param  This                  Pointer to SUNXI_GPIO_PROTOCOL instance.
+ @param  This                  Pointer to SUNXI_CCM_PROTOCOL instance.
  @param  PllId                 PLL id obtained using SUNXI_CCM_GET_PLL.
  @param  Freq                  Requested frequency in Hz, if frequency is 0 clock is disabled.
  

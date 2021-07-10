@@ -1,0 +1,33 @@
+[Defines]
+  INF_VERSION     = 0x00010006
+  BASE_NAME       = SunxiI2cEnumerator
+  FILE_GUID       = 4261eed8-e667-483b-8409-c58e5175b594
+  MODULE_TYPE     = PEIM
+  VERSION_STRING  = 1.0
+  ENTRY_POINT     = I2cEnumeratorInitialize
+
+[Sources]
+  Pei/Driver.c
+
+  Common/DeviceList.c
+  Common/Driver.h
+
+[Packages]
+  MdePkg/MdePkg.dec
+  SunxiPlatformPkg/SunxiPlatformPkg.dec
+
+[LibraryClasses]
+  PeimEntryPoint
+  PeiServicesLib
+  BaseLib
+  DebugLib
+
+[Ppis]
+  gI2cEnumeratePpiGuid
+
+[Guids]
+  gI2cAxp209Guid
+  gI2cPcf8563Guid
+
+[Depex]
+  TRUE

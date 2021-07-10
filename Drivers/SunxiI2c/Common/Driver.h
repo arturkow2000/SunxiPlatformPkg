@@ -20,6 +20,7 @@
 #include <Library/BaseMemoryLib.h>
 #include <Library/IoLib.h>
 #include <Library/TimerLib.h>
+#include <Library/SunxiGpioLib.h>
 
 #include "Hw.h"
 

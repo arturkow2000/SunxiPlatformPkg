@@ -20,50 +20,48 @@ EFI_STATUS SunxiI2cInitGpio(
   EFI_STATUS Status;
   INT32 i;
   CONST GPIO_CONFIG *Config;
-  SUNXI_GPIO_PIN Pin;
-  I2C_DXE_DRIVER *DxeDriver;
+  UINT32 Pin;
 
   Status = EFI_SUCCESS;
-  DxeDriver = DXE_DRIVER_FROM_COMMON_DRIVER(Driver);
 
-  if (DxeDriver->Driver.Config->GpioConfig == NULL)
+  if (Driver->Config->GpioConfig == NULL)
     return EFI_SUCCESS;
 
-  for (i = 0; i < DxeDriver->Driver.Config->GpioConfigLength; i++) {
-    Config = &DxeDriver->Driver.Config->GpioConfig[i];
+  for (i = 0; i < Driver->Config->GpioConfigLength; i++) {
+    Config = &Driver->Config->GpioConfig[i];
 
-    Status = gSunxiGpioProtocol->GetPin(gSunxiGpioProtocol, Config->Pin, &Pin);
+    Status = SunxiGpioGetPin(Config->Pin, &Pin);
     if (EFI_ERROR(Status)) {
       DEBUG((EFI_D_ERROR, "Failed to get pin %s: %r\n", Config->Pin, Status));
       ASSERT(0);
       goto Exit;
     }
 
-    Status = gSunxiGpioProtocol->SetFunction(gSunxiGpioProtocol, Pin, L"gpio_in");
+    Status = SunxiGpioConfigureAsInput(Pin);
     if (EFI_ERROR(Status)) {
       ASSERT(0);
       goto Exit;
     }
 
-    Status = gSunxiGpioProtocol->SetPullMode(gSunxiGpioProtocol, Pin, Config->Pull);
+    Status = SunxiGpioSetPullMode(Pin, Config->Pull);
     if (EFI_ERROR(Status)) {
       ASSERT(0);
       goto Exit;
     }
 
-    Status = gSunxiGpioProtocol->SetDriveStrength(gSunxiGpioProtocol, Pin, Config->Drive);
+    Status = SunxiGpioSetDriveStrength(Pin, Config->Drive);
     if (EFI_ERROR(Status)) {
       ASSERT(0);
       goto Exit;
     }
 
-    Status = gSunxiGpioProtocol->SetFunction(gSunxiGpioProtocol, Pin, Config->Function);
+    Status = SunxiGpioSetFunction(Pin, Config->Function);
     if (EFI_ERROR(Status)) {
       ASSERT(0);
       goto Exit;
     }
   }
 
-  Exit:
+Exit:
   return Status;
 }

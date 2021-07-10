@@ -7,7 +7,7 @@
   ENTRY_POINT     = SunxiGpioInitialize
 
 [Sources]
-  Gpio.c
+  GpioDxe.c
 
 [Packages]
   MdePkg/MdePkg.dec

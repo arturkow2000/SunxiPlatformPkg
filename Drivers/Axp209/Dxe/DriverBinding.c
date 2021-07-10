@@ -11,6 +11,9 @@
 #include "Driver.h"
 
 extern EFI_GUID gI2cAxp209Guid;
+// Global pointer to private driver structure
+// used by shell extensions
+AXP209_DXE_DRIVER *gAxp209DxeDriver = NULL;
 
 STATIC
 EFI_STATUS
@@ -48,6 +51,12 @@ DriverSupported(
   Status = gBS->HandleProtocol(Controller, &gPmicProtocolGuid, &Dummy);
   if (Status == EFI_SUCCESS)
     return EFI_ALREADY_STARTED;
+
+  // support only one device
+  if (gAxp209DxeDriver != NULL) {
+    ASSERT(0);
+    return EFI_ALREADY_STARTED;
+  }
   
   return EFI_SUCCESS;
 }
@@ -63,13 +72,13 @@ DriverStart(
 {
   EFI_STATUS Status;
   EFI_I2C_IO_PROTOCOL *I2cIo;
-  DRIVER_DATA *Data;
+  AXP209_DXE_DRIVER *Driver;
 
-  Data = AllocatePool(sizeof(DRIVER_DATA));
-  if (Data == NULL)
+  Driver = AllocatePool(sizeof(AXP209_DXE_DRIVER));
+  if (Driver == NULL)
     return EFI_OUT_OF_RESOURCES;
 
-  CopyMem(&Data->PmicProto, &gPmicProtocol, sizeof(PMIC_PROTOCOL));
+  CopyMem(&Driver->PmicProto, &gPmicProtocol, sizeof(PMIC_PROTOCOL));
 
   Status = gBS->OpenProtocol(
     Controller,
@@ -82,7 +91,7 @@ DriverStart(
   if (EFI_ERROR(Status))
     goto Exit;
 
-  Data->I2cIo = I2cIo;
+  Driver->I2cIo = I2cIo;
 
   Status = Axp209Init(I2cIo);
   if (EFI_ERROR(Status))
@@ -90,7 +99,7 @@ DriverStart(
 
   Status = gBS->InstallMultipleProtocolInterfaces(
     &Controller,
-    &gPmicProtocolGuid, &Data->PmicProto,
+    &gPmicProtocolGuid, &Driver->PmicProto,
     NULL
   );
   if (EFI_ERROR(Status))
@@ -99,8 +108,9 @@ DriverStart(
   Exit:
   if (EFI_ERROR(Status)) {
     gBS->CloseProtocol(Controller, &gEfiI2cIoProtocolGuid, This->DriverBindingHandle, Controller);
-    FreePool(Data);
-  }
+    FreePool(Driver);
+  } else
+    gAxp209DxeDriver = Driver;
 
   return Status;
 }
@@ -116,15 +126,15 @@ DriverStop(
   )
 {
   EFI_STATUS Status;
-  DRIVER_DATA *Data;
+  AXP209_DXE_DRIVER *Driver;
   
-  Status = gBS->HandleProtocol(Controller, &gPmicProtocolGuid, (VOID**)&Data);
+  Status = gBS->HandleProtocol(Controller, &gPmicProtocolGuid, (VOID**)&Driver);
   if (EFI_ERROR(Status))
     return Status;
 
   Status = gBS->UninstallMultipleProtocolInterfaces(
     Controller,
-    &gPmicProtocolGuid, &Data->PmicProto,
+    &gPmicProtocolGuid, &Driver->PmicProto,
     NULL
   );
   ASSERT_EFI_ERROR(Status);
@@ -134,7 +144,8 @@ DriverStop(
   Status = gBS->CloseProtocol(Controller, &gEfiI2cIoProtocolGuid, This->DriverBindingHandle, Controller);
   ASSERT_EFI_ERROR(Status);
 
-  FreePool(Data);
+  FreePool(Driver);
+  gAxp209DxeDriver = NULL;
   
   return Status;
 }
@@ -148,6 +159,8 @@ EFI_DRIVER_BINDING_PROTOCOL gAxp209DriverBinding = {
   NULL
 };
 
+EFI_STATUS EFIAPI ExtendShell(VOID);
+
 EFI_STATUS
 EFIAPI
 Axp209Initialize(
@@ -155,6 +168,11 @@ Axp209Initialize(
   IN EFI_SYSTEM_TABLE *SystemTable
   )
 {
+  EFI_STATUS Status;
+
+  Status = ExtendShell();
+  ASSERT_EFI_ERROR(Status);
+
   return EfiLibInstallDriverBindingComponentName2(
     ImageHandle,
     SystemTable,

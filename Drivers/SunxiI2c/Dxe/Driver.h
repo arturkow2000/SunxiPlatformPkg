@@ -27,7 +27,6 @@
 #include <Protocol/I2cMaster.h>
 #include <Protocol/I2cBusConfigurationManagement.h>
 #include <Protocol/SunxiCcm.h>
-#include <Protocol/SunxiGpio.h>
 
 #include "../Common/Driver.h"
 
@@ -37,7 +36,6 @@ extern EFI_COMPONENT_NAME2_PROTOCOL gComponentName2;
 extern EFI_I2C_MASTER_PROTOCOL gSunxiI2cMasterProto;
 extern EFI_I2C_BUS_CONFIGURATION_MANAGEMENT_PROTOCOL gSunxiI2cBusConfigurationProto;
 extern SUNXI_CCM_PROTOCOL *gSunxiCcmProtocol;
-extern SUNXI_GPIO_PROTOCOL *gSunxiGpioProtocol;
 
 #pragma pack(1)
 typedef struct _I2C_VENDOR_PATH {

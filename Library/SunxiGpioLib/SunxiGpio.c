@@ -11,7 +11,7 @@
  */
 #include "SunxiGpioLib.h"
 
-STATIC inline CONST SUNXI_GPIO_PIN_INTERNAL *SunxiGpioPinGetInternal(IN SUNXI_GPIO_PIN Pin)
+STATIC inline CONST SUNXI_GPIO_PIN_INTERNAL *SunxiGpioPinGetInternal(IN UINT32 Pin)
 {
   if (Pin >= gSunxiGpioPinListLength)
     return NULL;
@@ -19,28 +19,33 @@ STATIC inline CONST SUNXI_GPIO_PIN_INTERNAL *SunxiGpioPinGetInternal(IN SUNXI_GP
   if (gSunxiGpioPinList[Pin].MuxTable == NULL)
     return NULL;
 
+  ASSERT(gSunxiGpioPinList[Pin].MuxTable);
+  ASSERT(gSunxiGpioPinList[Pin].MuxTableSize > 0);
+
   return &gSunxiGpioPinList[Pin];
 }
 
-STATIC SUNXI_GPIO_PIN SunxiGpioPinForBank(IN UINTN Bank, IN UINTN Pin)
+STATIC EFI_STATUS SunxiGpioPinForBank(IN UINTN Bank, IN UINTN Pin, OUT UINT32 *OutPin)
 {
   UINTN Index;
 
   if (Pin >= _GPIO_PINS_PER_BANK)
-    return SUNXI_GPIO_PIN_INVALID;
+    return EFI_NOT_FOUND;
 
   Index = Bank * _GPIO_PINS_PER_BANK + Pin;
 
   if (Index >= gSunxiGpioPinListLength)
-    return SUNXI_GPIO_PIN_INVALID;
+    return EFI_NOT_FOUND;
 
-  if (!SunxiGpioPinGetInternal((SUNXI_GPIO_PIN)Index))
-    return SUNXI_GPIO_PIN_INVALID;
+  if (!SunxiGpioPinGetInternal(Index))
+    return EFI_NOT_FOUND;
 
-  return Index;
+  *OutPin = Index;
+
+  return EFI_SUCCESS;
 }
 
-SUNXI_GPIO_PIN SunxiGpioNameToPin(IN CONST CHAR16 *Name)
+EFI_STATUS SunxiGpioGetPin(IN CONST CHAR16 *Name, OUT UINT32 *OutPin)
 {
   CHAR16 *Ptr;
   UINTN NameLen;
@@ -48,16 +53,19 @@ SUNXI_GPIO_PIN SunxiGpioNameToPin(IN CONST CHAR16 *Name)
   UINTN Pin;
   EFI_STATUS Status;
 
+  if (!Name || !OutPin)
+    return EFI_INVALID_PARAMETER;
+
   NameLen = StrLen(Name);
 
   if (NameLen != 4)
-    return SUNXI_GPIO_PIN_INVALID;
+    return EFI_NOT_FOUND;
 
   if (Name[0] != L'P')
-    return SUNXI_GPIO_PIN_INVALID;
+    return EFI_NOT_FOUND;
 
   if (!(Name[1] >= L'A' && Name[1] <= L'Z'))
-    return SUNXI_GPIO_PIN_INVALID;
+    return EFI_NOT_FOUND;
 
   Bank = Name[1] - L'A';
 
@@ -65,43 +73,12 @@ SUNXI_GPIO_PIN SunxiGpioNameToPin(IN CONST CHAR16 *Name)
   ASSERT_EFI_ERROR(Status);
 
   if ((UINTN)Ptr != (UINTN)&Name[4])
-    return SUNXI_GPIO_PIN_INVALID;
+    return EFI_NOT_FOUND;
 
-  return SunxiGpioPinForBank(Bank, Pin);
+  return SunxiGpioPinForBank(Bank, Pin, OutPin);
 }
 
-BOOLEAN SunxiGpioIsPinValid(IN SUNXI_GPIO_PIN Pin)
-{
-  return !!SunxiGpioPinGetInternal(Pin);
-}
-
-UINTN SunxiGpioGetPinCount(VOID)
-{
-  return gSunxiGpioPinListLength;
-}
-
-BOOLEAN SunxiGpioGetPinName(IN SUNXI_GPIO_PIN Pin, IN CHAR16 *Buffer, IN UINTN BufferLength, OUT UINTN *OutBufferLength OPTIONAL)
-{
-  UINTN Temp;
-
-  ASSERT(SunxiGpioIsPinValid(Pin));
-
-  if (BufferLength < 5)
-  {
-    if (OutBufferLength)
-      *OutBufferLength = 5;
-
-    return FALSE;
-  }
-
-  Temp = UnicodeSPrint(Buffer, BufferLength, L"P%c%02d", L'A' + Pin / _GPIO_PINS_PER_BANK, Pin % _GPIO_PINS_PER_BANK);
-  if (OutBufferLength)
-    *OutBufferLength = Temp;
-
-  return TRUE;
-}
-
-CONST CHAR16 *SunxiGpioMuxGetFunction(IN SUNXI_GPIO_PIN Pin)
+EFI_STATUS SunxiGpioGetFunction(IN UINT32 Pin, OUT CONST CHAR16 **OutFunction)
 {
   CONST SUNXI_GPIO_PIN_INTERNAL *Internal;
   INTN i;
@@ -110,165 +87,134 @@ CONST CHAR16 *SunxiGpioMuxGetFunction(IN SUNXI_GPIO_PIN Pin)
   UINT32 Reg;
   UINT32 Function;
 
+  if (!OutFunction)
+    return EFI_INVALID_PARAMETER;
+
   Internal = SunxiGpioPinGetInternal(Pin);
-  if (Internal)
+  if (!Internal)
+    return EFI_NOT_FOUND;
+
+  Offset = (Pin / _GPIO_PINS_PER_BANK) * BANK_MEM_SIZE + (Pin % _GPIO_PINS_PER_BANK) / MUX_PINS_PER_REG * 4;
+  Shift = ((Pin % _GPIO_PINS_PER_BANK) % MUX_PINS_PER_REG) * MUX_PINS_BITS;
+  Reg = MmioRead32(GPIO_BASE + Offset);
+  Function = (Reg >> Shift) & MUX_PINS_MASK;
+
+  for (i = 0; i < Internal->MuxTableSize; i++)
   {
-    ASSERT(Internal->MuxTable);
-    ASSERT(Internal->MuxTableSize > 0);
-
-    Offset = (Pin / _GPIO_PINS_PER_BANK) * BANK_MEM_SIZE + (Pin % _GPIO_PINS_PER_BANK) / MUX_PINS_PER_REG * 4;
-    Shift = ((Pin % _GPIO_PINS_PER_BANK) % MUX_PINS_PER_REG) * MUX_PINS_BITS;
-    Reg = MmioRead32(GPIO_BASE + Offset);
-    Function = (Reg >> Shift) & MUX_PINS_MASK;
-
-    for (i = 0; i < Internal->MuxTableSize; i++)
-    {
-      if (Internal->MuxTable[i].Id == Function)
-        return Internal->MuxTable[i].Name;
+    if (Internal->MuxTable[i].Id == Function) {
+      *OutFunction = Internal->MuxTable[i].Name;
+      return EFI_SUCCESS;
     }
-
-    DEBUG((EFI_D_ERROR, "GPIO: Unkown function %d on %c%02d\n", Function, 'A' + Pin / _GPIO_PINS_PER_BANK, Pin % _GPIO_PINS_PER_BANK));
   }
 
+  DEBUG((EFI_D_ERROR, "GPIO: Unknown function %d on %c%02d\n", Function, 'A' + Pin / _GPIO_PINS_PER_BANK, Pin % _GPIO_PINS_PER_BANK));
   ASSERT(0);
-  return NULL;
+
+  return EFI_DEVICE_ERROR;
 }
 
-BOOLEAN SunxiGpioMuxSetFunction(IN SUNXI_GPIO_PIN Pin, IN CONST CHAR16 *FunctionName)
+EFI_STATUS SunxiGpioSetFunction(IN UINT32 Pin, IN CONST CHAR16 *Function)
 {
   CONST SUNXI_GPIO_PIN_INTERNAL *Internal;
   INTN i;
   UINT32 Offset;
   UINT32 Shift;
-  UINT32 Function;
+  UINT32 FunctionId;
 
-  Function = 0xFFFFFFFF;
+  if (!Function)
+    return EFI_INVALID_PARAMETER;
+
+  FunctionId = 0xFFFFFFFF;
 
   Internal = SunxiGpioPinGetInternal(Pin);
-  if (Internal)
-  {
-    ASSERT(Internal->MuxTable);
-    ASSERT(Internal->MuxTableSize > 0);
+  if (!Internal)
+    return EFI_NOT_FOUND;
 
-    for (i = 0; i < Internal->MuxTableSize; i++)
+  for (i = 0; i < Internal->MuxTableSize; i++)
+  {
+    if (StrCmp(Function, Internal->MuxTable[i].Name) == 0)
     {
-      if (StrCmp(FunctionName, Internal->MuxTable[i].Name) == 0)
-      {
-        Function = Internal->MuxTable[i].Id;
-        break;
-      }
+      FunctionId = Internal->MuxTable[i].Id;
+      break;
     }
-
-    if (Function == 0xFFFFFFFF)
-      return FALSE;
-
-    Offset = (Pin / _GPIO_PINS_PER_BANK) * BANK_MEM_SIZE + (Pin % _GPIO_PINS_PER_BANK) / MUX_PINS_PER_REG * 4;
-    Shift = ((Pin % _GPIO_PINS_PER_BANK) % MUX_PINS_PER_REG) * MUX_PINS_BITS;
-
-    MmioAndThenOr32(GPIO_BASE + Offset, ~(MUX_PINS_MASK << Shift), Function << Shift);
-
-    return TRUE;
-  }
-  else
-    ASSERT(0);
-
-  return FALSE;
-}
-
-CONST CHAR16 *SunxiGpioMuxGetFunctionName(IN SUNXI_GPIO_PIN Pin, IN INTN Index)
-{
-  CONST SUNXI_GPIO_PIN_INTERNAL *Internal;
-
-  Internal = SunxiGpioPinGetInternal(Pin);
-  if (Internal)
-  {
-    ASSERT(Internal->MuxTable);
-    ASSERT(Internal->MuxTableSize);
-
-    if (Index >= Internal->MuxTableSize)
-      return NULL;
-
-    return Internal->MuxTable[Index].Name;
   }
 
-  ASSERT(0);
-  return NULL;
+  if (FunctionId == 0xFFFFFFFF)
+    return EFI_UNSUPPORTED;
+
+  Offset = (Pin / _GPIO_PINS_PER_BANK) * BANK_MEM_SIZE + (Pin % _GPIO_PINS_PER_BANK) / MUX_PINS_PER_REG * 4;
+  Shift = ((Pin % _GPIO_PINS_PER_BANK) % MUX_PINS_PER_REG) * MUX_PINS_BITS;
+
+  MmioAndThenOr32(GPIO_BASE + Offset, ~(MUX_PINS_MASK << Shift), FunctionId << Shift);
+
+  return EFI_SUCCESS;
 }
 
-UINT32 SunxiGpioPullGet(IN SUNXI_GPIO_PIN Pin)
+EFI_STATUS SunxiGpioGetPullMode(IN UINT32 Pin, OUT UINT32 *OutPullMode)
 {
   CONST SUNXI_GPIO_PIN_INTERNAL *Internal;
   UINT32 Offset;
   UINT32 Shift;
 
+  if (!OutPullMode)
+    return EFI_INVALID_PARAMETER;
+
   Internal = SunxiGpioPinGetInternal(Pin);
-  if (Internal)
-  {
-    ASSERT(Internal->MuxTable);
-    ASSERT(Internal->MuxTableSize > 0);
+  if (!Internal)
+    return EFI_NOT_FOUND;
 
-    Offset = PULL_REGS_OFFSET + ((Pin / _GPIO_PINS_PER_BANK) * BANK_MEM_SIZE + (Pin % _GPIO_PINS_PER_BANK) / PULL_PINS_PER_REG * 4);
-    Shift = ((Pin % _GPIO_PINS_PER_BANK) % PULL_PINS_PER_REG) * PULL_PINS_BITS;
+  Offset = PULL_REGS_OFFSET + ((Pin / _GPIO_PINS_PER_BANK) * BANK_MEM_SIZE + (Pin % _GPIO_PINS_PER_BANK) / PULL_PINS_PER_REG * 4);
+  Shift = ((Pin % _GPIO_PINS_PER_BANK) % PULL_PINS_PER_REG) * PULL_PINS_BITS;
 
-    return (MmioRead32(GPIO_BASE + Offset) >> Shift) & PULL_PINS_MASK;
-  }
-
-  ASSERT(0);
-  return 0;
+  *OutPullMode = (MmioRead32(GPIO_BASE + Offset) >> Shift) & PULL_PINS_MASK;
+  return EFI_SUCCESS;
 }
 
-VOID SunxiGpioPullSet(IN SUNXI_GPIO_PIN Pin, IN UINT32 Pull)
+EFI_STATUS SunxiGpioSetPullMode(IN UINT32 Pin, IN UINT32 PullMode)
 {
   CONST SUNXI_GPIO_PIN_INTERNAL *Internal;
   UINT32 Offset;
   UINT32 Shift;
 
-  if ((Pull & ~PULL_PINS_MASK) != 0)
-  {
-    ASSERT(0);
-    return;
-  }
+  if ((PullMode & ~PULL_PINS_MASK) != 0)
+    return EFI_UNSUPPORTED;
 
   Internal = SunxiGpioPinGetInternal(Pin);
-  if (Internal)
-  {
-    ASSERT(Internal->MuxTable);
-    ASSERT(Internal->MuxTableSize > 0);
+  if (!Internal)
+    return EFI_NOT_FOUND;
 
-    Offset = PULL_REGS_OFFSET + ((Pin / _GPIO_PINS_PER_BANK) * BANK_MEM_SIZE + (Pin % _GPIO_PINS_PER_BANK) / PULL_PINS_PER_REG * 4);
-    Shift = ((Pin % _GPIO_PINS_PER_BANK) % PULL_PINS_PER_REG) * PULL_PINS_BITS;
+  Offset = PULL_REGS_OFFSET + ((Pin / _GPIO_PINS_PER_BANK) * BANK_MEM_SIZE + (Pin % _GPIO_PINS_PER_BANK) / PULL_PINS_PER_REG * 4);
+  Shift = ((Pin % _GPIO_PINS_PER_BANK) % PULL_PINS_PER_REG) * PULL_PINS_BITS;
 
-    MmioAndThenOr32(GPIO_BASE + Offset, ~(PULL_PINS_MASK << Shift), Pull << Shift);
-  }
-  else
-    ASSERT(0);
+  MmioAndThenOr32(GPIO_BASE + Offset, ~(PULL_PINS_MASK << Shift), PullMode << Shift);
+
+  return EFI_SUCCESS;
 }
 
-UINT32 SunxiGpioGetDriveStrength(IN SUNXI_GPIO_PIN Pin)
+EFI_STATUS SunxiGpioGetDriveStrength(IN UINT32 Pin, OUT UINT32 *OutStrength)
 {
   CONST SUNXI_GPIO_PIN_INTERNAL *Internal;
   UINT32 Offset;
   UINT32 Shift;
   UINT32 Reg;
 
+  if (!OutStrength)
+    return EFI_INVALID_PARAMETER;
+
   Internal = SunxiGpioPinGetInternal(Pin);
-  if (Internal)
-  {
-    ASSERT(Internal->MuxTable);
-    ASSERT(Internal->MuxTableSize > 0);
+  if (!Internal)
+    return EFI_NOT_FOUND;
 
-    Offset = DLEVEL_REGS_OFFSET + ((Pin / _GPIO_PINS_PER_BANK) * BANK_MEM_SIZE + (Pin % _GPIO_PINS_PER_BANK) / DLEVEL_REGS_OFFSET * 4);
-    Shift = ((Pin % _GPIO_PINS_PER_BANK) % DLEVEL_PINS_PER_REG) * DLEVEL_PINS_BITS;
+  Offset = DLEVEL_REGS_OFFSET + ((Pin / _GPIO_PINS_PER_BANK) * BANK_MEM_SIZE + (Pin % _GPIO_PINS_PER_BANK) / DLEVEL_REGS_OFFSET * 4);
+  Shift = ((Pin % _GPIO_PINS_PER_BANK) % DLEVEL_PINS_PER_REG) * DLEVEL_PINS_BITS;
 
-    Reg = (MmioRead32(GPIO_BASE + Offset) >> Shift) & DLEVEL_PINS_MASK;
-    return (Reg + 1) * 10;
-  }
+  Reg = (MmioRead32(GPIO_BASE + Offset) >> Shift) & DLEVEL_PINS_MASK;
+  *OutStrength = (Reg + 1) * 10;
 
-  ASSERT(0);
-  return 0;
+  return EFI_SUCCESS;
 }
 
-VOID SunxiGpioSetDriveStrength(IN SUNXI_GPIO_PIN Pin, IN UINT32 Strength)
+EFI_STATUS SunxiGpioSetDriveStrength(IN UINT32 Pin, IN UINT32 Strength)
 {
   CONST SUNXI_GPIO_PIN_INTERNAL *Internal;
   UINT32 Offset;
@@ -276,57 +222,74 @@ VOID SunxiGpioSetDriveStrength(IN SUNXI_GPIO_PIN Pin, IN UINT32 Strength)
   UINT32 Raw;
 
   Internal = SunxiGpioPinGetInternal(Pin);
-  if (Internal)
+  if (!Internal)
+    return EFI_NOT_FOUND;
+
+  Offset = DLEVEL_REGS_OFFSET + ((Pin / _GPIO_PINS_PER_BANK) * BANK_MEM_SIZE + (Pin % _GPIO_PINS_PER_BANK) / DLEVEL_REGS_OFFSET * 4);
+  Shift = ((Pin % _GPIO_PINS_PER_BANK) % DLEVEL_PINS_PER_REG) * DLEVEL_PINS_BITS;
+
+  switch (Strength)
   {
-    ASSERT(Internal->MuxTable);
-    ASSERT(Internal->MuxTableSize > 0);
-
-    Offset = DLEVEL_REGS_OFFSET + ((Pin / _GPIO_PINS_PER_BANK) * BANK_MEM_SIZE + (Pin % _GPIO_PINS_PER_BANK) / DLEVEL_REGS_OFFSET * 4);
-    Shift = ((Pin % _GPIO_PINS_PER_BANK) % DLEVEL_PINS_PER_REG) * DLEVEL_PINS_BITS;
-
-    switch (Strength)
-    {
-    case 10:
-      Raw = 0;
-      break;
-    case 20:
-      Raw = 1;
-      break;
-    case 30:
-      Raw = 2;
-      break;
-    case 40:
-      Raw = 3;
-      break;
-    default:
-      return;
-      break;
-    }
-
-    MmioAndThenOr32(GPIO_BASE + Offset, ~(DLEVEL_PINS_MASK << Shift), Raw << Shift);
+  case 10:
+    Raw = 0;
+    break;
+  case 20:
+    Raw = 1;
+    break;
+  case 30:
+    Raw = 2;
+    break;
+  case 40:
+    Raw = 3;
+    break;
+  default: return EFI_UNSUPPORTED;
   }
-  else
-    ASSERT(0);
+
+  MmioAndThenOr32(GPIO_BASE + Offset, ~(DLEVEL_PINS_MASK << Shift), Raw << Shift);
+  return EFI_SUCCESS;
 }
 
-UINT32 SunxiGpioRead(IN SUNXI_GPIO_PIN Pin)
-{
+EFI_STATUS SunxiGpioConfigureAsOutput(IN UINT32 Pin) {
+  return SunxiGpioSetFunction(Pin, L"gpio_out");
+}
+
+EFI_STATUS SunxiGpioConfigureAsInput(IN UINT32 Pin) {
+  return SunxiGpioSetFunction(Pin, L"gpio_in");
+}
+
+EFI_STATUS SunxiGpioSetLevel(IN UINT32 Pin, IN UINT8 Level) {
   CONST SUNXI_GPIO_PIN_INTERNAL *Internal;
   UINT32 Offset;
   UINT32 Shift;
 
   Internal = SunxiGpioPinGetInternal(Pin);
-  if (Internal)
-  {
-    ASSERT(Internal->MuxTable);
-    ASSERT(Internal->MuxTableSize > 0);
+  if (!Internal)
+    return EFI_NOT_FOUND;
 
-    Offset = DATA_REGS_OFFSET + ((Pin / _GPIO_PINS_PER_BANK) * BANK_MEM_SIZE + (Pin % _GPIO_PINS_PER_BANK) / DATA_REGS_OFFSET * 4);
-    Shift = ((Pin % _GPIO_PINS_PER_BANK) % DATA_PINS_PER_REG) * DATA_PINS_PER_REG;
+  Offset = DATA_REGS_OFFSET + ((Pin / _GPIO_PINS_PER_BANK) * BANK_MEM_SIZE + (Pin % _GPIO_PINS_PER_BANK) / DATA_REGS_OFFSET * 4);
+  Shift = ((Pin % _GPIO_PINS_PER_BANK) % DATA_PINS_PER_REG) * DATA_PINS_PER_REG;
 
-    return (MmioRead32(GPIO_BASE + Offset) >> Shift) & DATA_PINS_MASK;
-  }
+  MmioAndThenOr32(GPIO_BASE + Offset, ~(DATA_PINS_MASK << Shift), (!!Level) << Shift);
 
-  ASSERT(0);
-  return 0;
+  return EFI_SUCCESS;
+}
+
+EFI_STATUS SunxiGpioGetLevel(IN UINT32 Pin, OUT UINT8 *OutLevel) {
+  CONST SUNXI_GPIO_PIN_INTERNAL *Internal;
+  UINT32 Offset;
+  UINT32 Shift;
+
+  if (!OutLevel)
+    return EFI_INVALID_PARAMETER;
+
+  Internal = SunxiGpioPinGetInternal(Pin);
+  if (!Internal)
+    return EFI_NOT_FOUND;
+
+  Offset = DATA_REGS_OFFSET + ((Pin / _GPIO_PINS_PER_BANK) * BANK_MEM_SIZE + (Pin % _GPIO_PINS_PER_BANK) / DATA_REGS_OFFSET * 4);
+  Shift = ((Pin % _GPIO_PINS_PER_BANK) % DATA_PINS_PER_REG) * DATA_PINS_PER_REG;
+
+  *OutLevel = (MmioRead32(GPIO_BASE + Offset) >> Shift) & DATA_PINS_MASK;
+
+  return EFI_SUCCESS;
 }

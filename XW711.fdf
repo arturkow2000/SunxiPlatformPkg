@@ -64,7 +64,8 @@ FV = FVMAIN_COMPACT
 ################################################################################
 
 !include Conf/fvmain.fdf.inc
-!include Conf/Sun5i/A13.fdf.inc
+!include Conf/Sun5i/A13.fdf.dxe
+  INF SunxiPlatformPkg/Board/XW711/I2cEnumerate/I2cEnumerateDxe.inf
 
 [FV.FVMAIN_COMPACT]
 FvAlignment        = 16
@@ -92,6 +93,10 @@ READ_LOCK_STATUS   = TRUE
   INF ArmPkg/Drivers/CpuPei/CpuPei.inf
   INF MdeModulePkg/Universal/Variable/Pei/VariablePei.inf
   INF MdeModulePkg/Core/DxeIplPeim/DxeIpl.inf
+
+!include Conf/Sun5i/A13.fdf.pei
+  INF SunxiPlatformPkg/Board/XW711/I2cEnumerate/I2cEnumeratePei.inf
+  INF SunxiPlatformPkg/Drivers/Axp209/Axp209Pei.inf
 
   FILE FV_IMAGE = 9E21FD93-9C72-4c15-8C4B-E77F1DB2D792 {
     SECTION GUIDED EE4E5898-3914-4259-9D6E-DC7BD79403CF PROCESSING_REQUIRED = TRUE {

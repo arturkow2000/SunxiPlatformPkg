@@ -1,0 +1,17 @@
+[Defines]
+  DEC_SPECIFICATION              = 0x00010005
+  PACKAGE_NAME                   = Axp209Pkg
+  PACKAGE_GUID                   = ec44f483-36d7-476a-a05f-a4c60e70e74a
+  PACKAGE_VERSION                = 0.1
+
+[Guids]
+  gAxp209TokenSpaceGuid          = { 0x2818b85d, 0xa0f7, 0x4023, { 0x87, 0x7f, 0x6a, 0x2b, 0x71, 0x3e, 0x8a, 0x8c } }
+
+[PcdsFixedAtBuild]
+  # Voltages in mV
+  # 0xffffffff is invalid and triggers build error
+  gAxp209TokenSpaceGuid.Dcdc2Voltage    | 0xffffffff | UINT32 | 0x00000000
+  gAxp209TokenSpaceGuid.Dcdc3Voltage    | 0xffffffff | UINT32 | 0x00000001
+  gAxp209TokenSpaceGuid.Ldo2Voltage     | 0xffffffff | UINT32 | 0x00000002
+  gAxp209TokenSpaceGuid.Ldo3Voltage     | 0xffffffff | UINT32 | 0x00000003
+  gAxp209TokenSpaceGuid.Ldo4Voltage     | 0xffffffff | UINT32 | 0x00000004

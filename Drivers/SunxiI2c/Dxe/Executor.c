@@ -200,7 +200,6 @@ RunTask(
 
       Driver->CurrentTask.NumTransferedBytes += 1;
     } else {
-      // TODO: support write transfers
       if (InterruptStatus == SUNXI_I2C_STA_TXD_ACK) {
         // byte transmitted, ACK received
         Driver->CurrentTask.NumTransferedBytes += 1;

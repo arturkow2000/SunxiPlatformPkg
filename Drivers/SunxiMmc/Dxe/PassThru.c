@@ -182,7 +182,7 @@ PassThru(
 
   CommandArgument = Packet->SdMmcCmdBlk->CommandArgument;
 
-  if (!Data) {
+  /*if (!Data) {
     DEBUG((
       EFI_D_INFO,
       "Executing CMD%02d arg=0x%x type=%u resp=(%u => %u)\n",
@@ -205,7 +205,7 @@ PassThru(
       Length,
       BlockLength
     ));
-  }
+  }*/
 
   Status = SunxiMmcExecuteCommandEx(
     &This->Mmc,

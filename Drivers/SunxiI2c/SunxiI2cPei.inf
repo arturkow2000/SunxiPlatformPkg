@@ -1,0 +1,65 @@
+/**
+ SPDX-License-Identifier: GPL-2.0+
+
+ Copyright (C) 2021 Artur Kowalski <arturkow2000@gmail.com>
+
+ Based on code Linux code
+ Copyright (C) 2010-2015 Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+ Pan Nan <pannan@allwinnertech.com>
+ Tom Cubie <tanglaing@allwinnertech.com>
+ Victor Wei <weiziheng@allwinnertech.com>
+
+**/
+
+[Defines]
+  INF_VERSION     = 0x00010006
+  BASE_NAME       = SunxiI2cPei
+  FILE_GUID       = 6d783f00-87ed-4f54-b8fd-5e591a1a8412
+  MODULE_TYPE     = PEIM
+  VERSION_STRING  = 1.0
+  ENTRY_POINT     = SunxiI2cInitialize
+
+[Sources]
+  Pei/Driver.h
+  Pei/Driver.c
+  Pei/Master.c
+  Pei/Gate.c
+  Pei/Pll.c
+  Pei/Executor.c
+
+  Common/Driver.h
+  Common/Config.c
+  Common/Hw.h
+  Common/Init.c
+  Common/Clock.c
+  Common/Driver.c
+  Common/GpioInit.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  SunxiPlatformPkg/SunxiPlatformPkg.dec
+
+[LibraryClasses]
+  PeimEntryPoint
+  PeiServicesLib
+  BaseLib
+  DebugLib
+  TimerLib
+  SunxiGpioLib
+
+[Pcd]
+  gSunxiTokenSpaceGuid.I2c0Base
+  gSunxiTokenSpaceGuid.I2c1Base
+  gSunxiTokenSpaceGuid.I2c2Base
+  gSunxiTokenSpaceGuid.I2c3Base
+  gSunxiTokenSpaceGuid.I2c4Base
+
+[Ppis]
+  gSunxiCcmPpiGuid
+  gEfiPeiI2cMasterPpiGuid
+
+[Guids]
+  gSunxiI2cPeiDriverGuid
+
+[Depex]
+  gSunxiCcmPpiGuid

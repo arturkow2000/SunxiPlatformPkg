@@ -1,0 +1,55 @@
+/**
+ SPDX-License-Identifier: GPL-2.0+
+
+ Copyright (C) 2021 Artur Kowalski <arturkow2000@gmail.com>
+
+ Based on code from U-Boot
+
+ Copyright (C) 2012 Henrik Nordstrom <henrik@henriknordstrom.net>
+**/
+
+[Defines]
+  INF_VERSION     = 0x00010006
+  BASE_NAME       = Axp209Pei
+  FILE_GUID       = ab3b6f0d-72fa-4f3a-8565-d689a618dc19
+  MODULE_TYPE     = PEIM
+  VERSION_STRING  = 1.0
+  ENTRY_POINT     = Axp209Initialize
+
+[Sources]
+  Common/Hw.h
+  Common/Driver.h
+  Common/Regulator.c
+
+  Pei/Driver.h
+  Pei/Driver.c
+  Pei/Util.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  SunxiPlatformPkg/SunxiPlatformPkg.dec
+  SunxiPlatformPkg/Drivers/Axp209/Axp209Pkg.dec
+
+[LibraryClasses]
+  PeimEntryPoint
+  PeiServicesLib
+  BaseLib
+  DebugLib
+
+[Ppis]
+  gEfiPeiI2cMasterPpiGuid
+  gI2cEnumeratePpiGuid
+
+[Guids]
+  gSunxiI2cPeiDriverGuid
+  gI2cAxp209Guid
+
+[Pcd]
+  gAxp209TokenSpaceGuid.Dcdc2Voltage
+  gAxp209TokenSpaceGuid.Dcdc3Voltage
+  gAxp209TokenSpaceGuid.Ldo2Voltage
+  gAxp209TokenSpaceGuid.Ldo3Voltage
+  gAxp209TokenSpaceGuid.Ldo4Voltage
+
+[Depex]
+  gEfiPeiI2cMasterPpiGuid AND gI2cEnumeratePpiGuid
