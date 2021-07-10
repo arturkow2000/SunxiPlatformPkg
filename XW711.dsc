@@ -30,3 +30,5 @@
   gAxp209TokenSpaceGuid.Dcdc2Voltage | 1400
   gAxp209TokenSpaceGuid.Dcdc3Voltage | 1200
   gAxp209TokenSpaceGuid.Ldo2Voltage  | 3000
+  gAxp209TokenSpaceGuid.Ldo3Voltage  | 0
+  gAxp209TokenSpaceGuid.Ldo4Voltage  | 0

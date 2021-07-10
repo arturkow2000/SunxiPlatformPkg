@@ -3,6 +3,9 @@
 
 extern EFI_GUID gSunxiI2cPeiDriverGuid;
 extern EFI_GUID gI2cAxp209Guid;
+extern EFI_GUID gAxp209PpiGuid;
+
+STATIC EFI_PEI_PPI_DESCRIPTOR mPpiList;
 
 STATIC
 EFI_STATUS
@@ -50,6 +53,14 @@ AxpSetVoltages(
 #error LDO2 voltage is not set
 #endif
 
+#if FixedPcdGet32(Ldo3Voltage) == 0xffffffff
+#error LDO3 voltage is not set
+#endif
+
+#if FixedPcdGet32(Ldo4Voltage) == 0xffffffff
+#error LDO4 voltage is not set
+#endif
+
   Status = AxpSetVoltage(Driver, AXP209_REGULATOR_DCDC2, FixedPcdGet32(Dcdc2Voltage));
   ASSERT_EFI_ERROR(Status);
   if (EFI_ERROR(Status))
@@ -65,7 +76,15 @@ AxpSetVoltages(
   if (EFI_ERROR(Status))
     return Status;
 
-  //ASSERT(0);
+  Status = AxpSetVoltage(Driver, AXP209_REGULATOR_ALDO3, FixedPcdGet32(Ldo3Voltage));
+  ASSERT_EFI_ERROR(Status);
+  if (EFI_ERROR(Status))
+    return Status;
+
+  Status = AxpSetVoltage(Driver, AXP209_REGULATOR_ALDO4, FixedPcdGet32(Ldo4Voltage));
+  ASSERT_EFI_ERROR(Status);
+  if (EFI_ERROR(Status))
+    return Status;
 
   return Status;
 }
@@ -93,7 +112,10 @@ AxpInitHw(
 
   /* Mask all interrupts */
   for (i = AXP209_REG_IRQ_ENABLE1; i <= AXP209_REG_IRQ_ENABLE5; i++) {
-    // TODO
+    Status = AxpWrite8(&Driver->Common, i, 0);
+    ASSERT_EFI_ERROR(Status);
+    if (EFI_ERROR(Status))
+      return Status;
   }
 
   /*
@@ -203,6 +225,18 @@ Axp209Initialize(
 
             Status = AxpInitHw(&Driver);
             ASSERT_EFI_ERROR(Status);
+            if (EFI_ERROR(Status))
+              return Status;
+
+            // Currently AXP PEI driver does not expose any interface
+            // install dummy interface to signal other drivers
+            // that PMIC is configured, voltages are set, etc.
+            mPpiList.Ppi = NULL;
+            mPpiList.Guid = &gAxp209PpiGuid;
+            mPpiList.Flags = EFI_PEI_PPI_DESCRIPTOR_PPI | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST;
+            Status = PeiServicesInstallPpi(&mPpiList);
+            ASSERT_EFI_ERROR(Status);
+
             return Status;
           }
         } else {

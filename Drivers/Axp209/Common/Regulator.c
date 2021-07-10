@@ -1,6 +1,21 @@
 #include "Driver.h"
 
-#define AXP209_REGULATOR(_Name, _Min, _Max, _Step, _Vreg, _Vshift, _Vwidth, _EnBit, _Flags) \
+// Helper macros for error handling
+#define AXP_READ8(reg, out)                 \
+  {                                         \
+    Status = AxpRead8(Driver, reg, out);    \
+    if (EFI_ERROR(Status))                  \
+      return Status;                        \
+  }
+
+#define AXP_WRITE8(reg, value)              \
+  {                                         \
+    Status = AxpWrite8(Driver, reg, value); \
+    if (EFI_ERROR(Status))                  \
+      return Status;                        \
+  }
+
+#define AXP209_REGULATOR_LINEAR(_Name, _Min, _Max, _Step, _Vreg, _Vshift, _Vwidth, _EnBit, _Flags) \
   {                                                                                         \
     .Name = (_Name),                                                                        \
     .MinVoltage = (_Min),                                                                   \
@@ -14,7 +29,7 @@
     .Flags = (_Flags),                                                                      \
   }
 
-#define AXP209_REGULATOR_VL(_Name, _Min, _Max, _Vreg, _Vshift, _Vwidth, _EnBit, _Flags, _Vlist) \
+#define AXP209_REGULATOR_NON_LINEAR(_Name, _Min, _Max, _Vreg, _Vshift, _Vwidth, _EnBit, _Flags, _Vlist) \
   {                                                                                             \
     .Name = (_Name),                                                                            \
     .MinVoltage = (_Min),                                                                       \
@@ -35,12 +50,24 @@ STATIC CONST UINT16 mLdo4VoltageList[] = {
 };
 
 STATIC CONST AXP209_REGULATOR mRegulatorList[] = {
-  [AXP209_REGULATOR_DCDC2] = AXP209_REGULATOR(L"dcdc2", 700, 2275, 25, AXP209_REG_DCDC2_VOLTAGE, 0, 8, AXP209_OUTPUT_CTRL_DCDC2, AXP209_REGULATOR_CRITICAL | AXP209_REGULATOR_MANUAL_RAMP), // DCDC2 powers CPU
-  [AXP209_REGULATOR_DCDC3] = AXP209_REGULATOR(L"dcdc3", 700, 3500, 25, AXP209_REG_DCDC3_VOLTAGE, 0, 8, AXP209_OUTPUT_CTRL_DCDC3, 0),
-  [AXP209_REGULATOR_ALDO2] = AXP209_REGULATOR(L"aldo2", 1800, 3300, 100, AXP209_REG_LDO24_VOLTAGE, 4, 4, AXP209_OUTPUT_CTRL_LDO2, 0),
-  [AXP209_REGULATOR_ALDO3] = AXP209_REGULATOR(L"aldo3", 700, 3500, 25, AXP209_REG_LDO3_VOLTAGE, 0, 8, AXP209_OUTPUT_CTRL_LDO3, AXP209_REGULATOR_DENY),
-  [AXP209_REGULATOR_ALDO4] = AXP209_REGULATOR_VL(L"aldo4", 1250, 3300, AXP209_REG_LDO24_VOLTAGE, 0, 4, AXP209_OUTPUT_CTRL_LDO4, AXP209_REGULATOR_DENY, mLdo4VoltageList),
+  [AXP209_REGULATOR_DCDC2] = AXP209_REGULATOR_LINEAR(L"dcdc2", 700, 2275, 25, AXP209_REG_DCDC2_VOLTAGE, 0, 8, AXP209_OUTPUT_CTRL_DCDC2, AXP209_REGULATOR_CRITICAL | AXP209_REGULATOR_MANUAL_RAMP), // DCDC2 powers CPU
+  [AXP209_REGULATOR_DCDC3] = AXP209_REGULATOR_LINEAR(L"dcdc3", 700, 3500, 25, AXP209_REG_DCDC3_VOLTAGE, 0, 8, AXP209_OUTPUT_CTRL_DCDC3, 0),
+  [AXP209_REGULATOR_ALDO2] = AXP209_REGULATOR_LINEAR(L"aldo2", 1800, 3300, 100, AXP209_REG_LDO24_VOLTAGE, 4, 4, AXP209_OUTPUT_CTRL_LDO2, 0),
+  [AXP209_REGULATOR_ALDO3] = AXP209_REGULATOR_LINEAR(L"aldo3", 700, 3500, 25, AXP209_REG_LDO3_VOLTAGE, 0, 8, AXP209_OUTPUT_CTRL_LDO3, AXP209_REGULATOR_MANUAL_RAMP),
+  [AXP209_REGULATOR_ALDO4] = AXP209_REGULATOR_NON_LINEAR(L"aldo4", 1250, 3300, AXP209_REG_LDO24_VOLTAGE, 0, 4, AXP209_OUTPUT_CTRL_LDO4, 0, mLdo4VoltageList),
 };
+
+#ifndef MDEPKG_NDEBUG
+STATIC UINT32 CfgToVoltage(CONST AXP209_REGULATOR *Regulator, UINT8 Cfg) {
+  if (Regulator->Step > 0)
+    return Regulator->MinVoltage + (UINT32)Cfg * Regulator->Step;
+  else {
+    ASSERT(Regulator->VoltageList);
+    ASSERT(Regulator->VoltageListLength > Cfg);
+    return Regulator->VoltageList[Cfg];
+  }
+}
+#endif
 
 EFI_STATUS AxpGetRegulator(
   IN UINT32 Regulator,
@@ -71,16 +98,12 @@ EFI_STATUS AxpGetRegulatorState(
   if (Driver == NULL || OutIsEnabled == NULL || Regulator == NULL)
     return EFI_INVALID_PARAMETER;
 
-  Status = AxpRead8(Driver, AXP209_REG_OUTPUT_CTRL, &Data);
-  if (EFI_ERROR(Status))
-    return Status;
+  AXP_READ8(AXP209_REG_OUTPUT_CTRL, &Data);
 
   *OutIsEnabled = (Data & Regulator->EnableBit) == Regulator->EnableBit;
 
   if (OutVoltage) {
-    Status = AxpRead8(Driver, Regulator->VoltageReg, &Data);
-    if (EFI_ERROR(Status))
-      return Status;
+    AXP_READ8(Regulator->VoltageReg, &Data);
 
     Data >>= Regulator->VoltageShift;
     Data &= ((1u << (UINT32)Regulator->VoltageWidth)) - 1;
@@ -114,7 +137,6 @@ EFI_STATUS AxpSetRegulatorVoltage(
   INT32 i;
   BOOLEAN Found = FALSE;
   BOOLEAN IsEnabled = FALSE;
-  UINT8 SavedVoltageReg;
   UINT8 VoltageReg;
   UINT8 VoltageMask;
   BOOLEAN DisableRegulator = FALSE;
@@ -152,21 +174,17 @@ EFI_STATUS AxpSetRegulatorVoltage(
     }
   }
 
+  if (DisableRegulator && Regulator->Flags & AXP209_REGULATOR_CRITICAL)
+    return EFI_UNSUPPORTED;
+
   if (Regulator->Flags & AXP209_REGULATOR_DENY)
     return EFI_ACCESS_DENIED;
-  
-  if (DisableRegulator && Regulator->Flags & AXP209_REGULATOR_CRITICAL)
-    return EFI_ACCESS_DENIED;
 
-  Status = AxpRead8(Driver, AXP209_REG_OUTPUT_CTRL, &CtrlReg);
-  ASSERT_EFI_ERROR(Status);
-  if (EFI_ERROR(Status))
-    return Status;
+  AXP_READ8(AXP209_REG_OUTPUT_CTRL, &CtrlReg);
   
   if (DisableRegulator) {
-    // TODO: support disabling regulators
-    ASSERT(0);
-    return EFI_ACCESS_DENIED;
+    CtrlReg &= ~Regulator->EnableBit;
+    return AxpWrite8(Driver, AXP209_REG_OUTPUT_CTRL, CtrlReg);
   }
 
   IsEnabled = (CtrlReg & Regulator->EnableBit) == Regulator->EnableBit;
@@ -183,31 +201,24 @@ EFI_STATUS AxpSetRegulatorVoltage(
   ASSERT(((LowestVoltageCfg << Regulator->VoltageShift) & ~VoltageMask) == 0);
   ASSERT(((DesiredVoltageCfg << Regulator->VoltageShift) & ~VoltageMask) == 0);
 
+  // Turn on regulator at the lowest voltage
+  // then slowly raise voltage to the desired value
   if (Regulator->Flags & AXP209_REGULATOR_MANUAL_RAMP) {
-    Status = AxpRead8(Driver, Regulator->VoltageReg, &VoltageReg);
-    ASSERT_EFI_ERROR(Status);
-    if (EFI_ERROR(Status))
-      return Status;
+    AXP_READ8(Regulator->VoltageReg, &VoltageReg);
 
+    // Start with lowest voltage
     if (!IsEnabled) {
       VoltageReg &= ~VoltageMask;
       VoltageReg |= LowestVoltageCfg << Regulator->VoltageShift;
 
-      Status = AxpWrite8(Driver, Regulator->VoltageReg, VoltageReg);
-      ASSERT_EFI_ERROR(Status);
-      if (EFI_ERROR(Status))
-        return Status;
+      AXP_WRITE8(Regulator->VoltageReg, VoltageReg);
 
       CtrlReg |= Regulator->EnableBit;
-      Status = AxpWrite8(Driver, AXP209_REG_OUTPUT_CTRL, CtrlReg);
-      ASSERT_EFI_ERROR(Status);
-      if (EFI_ERROR(Status))
-        return Status;
+      AXP_WRITE8(AXP209_REG_OUTPUT_CTRL, CtrlReg);
     }
 
     CurrentVoltageCfg = (VoltageReg & VoltageMask) >> Regulator->VoltageShift;
     ASSERT((CurrentVoltageCfg & ~VoltageMask) == 0);
-    DEBUG((EFI_D_ERROR, "CurrentVoltageCfg = 0x%x, DesiredVoltageCfg = 0x%x\n", CurrentVoltageCfg, DesiredVoltageCfg));
 
     if (CurrentVoltageCfg == DesiredVoltageCfg)
       return EFI_SUCCESS;
@@ -218,23 +229,14 @@ EFI_STATUS AxpSetRegulatorVoltage(
         VoltageReg |= CurrentVoltageCfg << Regulator->VoltageShift;
 
         DEBUG((
-          EFI_D_ERROR,
-          "Set voltage: cfg=0x%x desired=0x%x mask=0x%x shift=0x%x WRITE reg 0x%x = 0x%x\n",
-          CurrentVoltageCfg,
-          DesiredVoltageCfg,
-          VoltageMask,
-          Regulator->VoltageShift,
-          Regulator->VoltageReg,
-          VoltageReg
+          EFI_D_INFO,
+          "Set %s voltage to %dmV desired %dmV\n",
+          Regulator->Name,
+          CfgToVoltage(Regulator, CurrentVoltageCfg),
+          Voltage
         ));
 
-        if (Regulator->VoltageShift == 0 && Regulator->VoltageWidth == 8) {
-          Status = AxpWrite8(Driver, Regulator->VoltageReg, VoltageReg);
-          ASSERT_EFI_ERROR(Status);
-          if (EFI_ERROR(Status))
-            return Status;
-          // TODO
-        } else ASSERT(0);
+        AXP_WRITE8(Regulator->VoltageReg, VoltageReg);
       }
     } else if (CurrentVoltageCfg < DesiredVoltageCfg) {
       CurrentVoltageCfg += 1;
@@ -243,67 +245,46 @@ EFI_STATUS AxpSetRegulatorVoltage(
         VoltageReg |= CurrentVoltageCfg << Regulator->VoltageShift;
 
         DEBUG((
-          EFI_D_ERROR,
-          "Set voltage: cfg=0x%x desired=0x%x mask=0x%x shift=0x%x WRITE reg 0x%x = 0x%x\n",
-          CurrentVoltageCfg,
-          DesiredVoltageCfg,
-          VoltageMask,
-          Regulator->VoltageShift,
-          Regulator->VoltageReg,
-          VoltageReg
+          EFI_D_INFO,
+          "Set %s voltage to %dmV desired %dmV\n",
+          Regulator->Name,
+          CfgToVoltage(Regulator, CurrentVoltageCfg),
+          Voltage
         ));
 
-        if (Regulator->VoltageShift == 0 && Regulator->VoltageWidth == 8) {
-          Status = AxpWrite8(Driver, Regulator->VoltageReg, VoltageReg);
-          ASSERT_EFI_ERROR(Status);
-          if (EFI_ERROR(Status))
-            return Status;
-          // TODO
-        } else ASSERT(0);
+        AXP_WRITE8(Regulator->VoltageReg, VoltageReg);
       }
     }
   } else {
-    if (Regulator->VoltageWidth == 8 && Regulator->VoltageShift == 0)
+    DEBUG((EFI_D_INFO, "Set %s voltage to %dmV\n", Regulator->Name, Voltage));
+
+    if (Regulator->VoltageWidth == 8 && Regulator->VoltageShift == 0) {
+      // If voltage fills entire register value may be writen immediatelly
+      // instead of doing read-modify-write
       Status = AxpWrite8(Driver, Regulator->VoltageReg, DesiredVoltageCfg);
+    }
     else {
-      Status = AxpRead8(Driver, Regulator->VoltageReg, &VoltageReg);
-      ASSERT_EFI_ERROR(Status);
-      if (EFI_ERROR(Status))
-        return Status;
+      AXP_READ8(Regulator->VoltageReg, &VoltageReg);
 
       CurrentVoltageCfg = (VoltageReg & VoltageMask) >> Regulator->VoltageShift;
 
-      SavedVoltageReg = VoltageReg;
+      if (CurrentVoltageCfg != DesiredVoltageCfg) {
+        VoltageReg &= ~VoltageMask;
+        VoltageReg |= DesiredVoltageCfg << Regulator->VoltageShift;
 
-      VoltageReg &= ~VoltageMask;
-      VoltageReg |= DesiredVoltageCfg << Regulator->VoltageShift;
-
-      DEBUG((
-        EFI_D_ERROR,
-        "Set %s voltage to %d: set cfg 0x%x -> 0x%x (mask 0x%x): change reg 0x%x from 0x%x to 0x%x\n",
-        Regulator->Name,
-        Voltage,
-        CurrentVoltageCfg,
-        DesiredVoltageCfg,
-        VoltageMask,
-        Regulator->VoltageReg,
-        SavedVoltageReg,
-        VoltageReg
-      ));
-
-      Status = AxpWrite8(Driver, Regulator->VoltageReg, VoltageReg);
+        Status = AxpWrite8(Driver, Regulator->VoltageReg, VoltageReg);
+      }
+      else {
+        // Voltage already set
+        Status = EFI_SUCCESS;
+      }
     }
-
-    ASSERT_EFI_ERROR(Status);
     if (EFI_ERROR(Status))
       return Status;
 
     if (!IsEnabled) {
       CtrlReg |= Regulator->EnableBit;
-      Status = AxpWrite8(Driver, AXP209_REG_OUTPUT_CTRL, CtrlReg);
-      ASSERT_EFI_ERROR(Status);
-      if (EFI_ERROR(Status))
-        return Status;
+      AXP_WRITE8(AXP209_REG_OUTPUT_CTRL, CtrlReg);
     }
   }
 
