@@ -16,7 +16,6 @@
 extern EFI_GUID gSunxiI2cPeiDriverGuid;
 
 SUNXI_CCM_PPI *gSunxiCcmPpi = NULL;
-SUNXI_GPIO_PPI *gSunxiGpioPpi = NULL;
 
 EFI_STATUS
 EFIAPI
@@ -39,16 +38,6 @@ SunxiI2cInitialize(
     0,
     NULL,
     (VOID**)&gSunxiCcmPpi
-  );
-  ASSERT_EFI_ERROR(Status);
-  if (EFI_ERROR(Status))
-    return Status;
-
-  Status = PeiServicesLocatePpi(
-    &gSunxiGpioPpiGuid,
-    0,
-    NULL,
-    (VOID**)&gSunxiGpioPpi
   );
   ASSERT_EFI_ERROR(Status);
   if (EFI_ERROR(Status))

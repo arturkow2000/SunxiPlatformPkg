@@ -19,13 +19,11 @@
 #include <Library/BaseMemoryLib.h>
 
 #include <Ppi/SunxiCcm.h>
-#include <Ppi/SunxiGpio.h>
 #include <Ppi/I2cMaster.h>
 
 #include "../Common/Driver.h"
 
 extern SUNXI_CCM_PPI *gSunxiCcmPpi;
-extern SUNXI_GPIO_PPI *gSunxiGpioPpi;
 extern EFI_PEI_I2C_MASTER_PPI gI2cMasterPpi;
 
 #define PEI_DRIVER_SIGNATURE SIGNATURE_32('P', 'i', '2', 'c')

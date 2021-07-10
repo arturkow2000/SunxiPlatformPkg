@@ -20,7 +20,7 @@ EFI_STATUS SunxiI2cInitGpio(
   EFI_STATUS Status;
   INT32 i;
   CONST GPIO_CONFIG *Config;
-  SUNXI_GPIO_PIN Pin;
+  UINT32 Pin;
 
   Status = EFI_SUCCESS;
 
@@ -30,38 +30,38 @@ EFI_STATUS SunxiI2cInitGpio(
   for (i = 0; i < Driver->Config->GpioConfigLength; i++) {
     Config = &Driver->Config->GpioConfig[i];
 
-    Status = gSunxiGpioPpi->GetPin(gSunxiGpioPpi, Config->Pin, &Pin);
+    Status = SunxiGpioGetPin(Config->Pin, &Pin);
     if (EFI_ERROR(Status)) {
       DEBUG((EFI_D_ERROR, "Failed to get pin %s: %r\n", Config->Pin, Status));
       ASSERT(0);
       goto Exit;
     }
 
-    Status = gSunxiGpioPpi->SetFunction(gSunxiGpioPpi, Pin, L"gpio_in");
+    Status = SunxiGpioConfigureAsInput(Pin);
     if (EFI_ERROR(Status)) {
       ASSERT(0);
       goto Exit;
     }
 
-    Status = gSunxiGpioPpi->SetPullMode(gSunxiGpioPpi, Pin, Config->Pull);
+    Status = SunxiGpioSetPullMode(Pin, Config->Pull);
     if (EFI_ERROR(Status)) {
       ASSERT(0);
       goto Exit;
     }
 
-    Status = gSunxiGpioPpi->SetDriveStrength(gSunxiGpioPpi, Pin, Config->Drive);
+    Status = SunxiGpioSetDriveStrength(Pin, Config->Drive);
     if (EFI_ERROR(Status)) {
       ASSERT(0);
       goto Exit;
     }
 
-    Status = gSunxiGpioPpi->SetFunction(gSunxiGpioPpi, Pin, Config->Function);
+    Status = SunxiGpioSetFunction(Pin, Config->Function);
     if (EFI_ERROR(Status)) {
       ASSERT(0);
       goto Exit;
     }
   }
 
-  Exit:
+Exit:
   return Status;
 }

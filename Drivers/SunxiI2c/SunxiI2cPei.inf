@@ -25,7 +25,6 @@
   Pei/Master.c
   Pei/Gate.c
   Pei/Pll.c
-  Pei/GpioInit.c
   Pei/Executor.c
 
   Common/Driver.h
@@ -34,6 +33,7 @@
   Common/Init.c
   Common/Clock.c
   Common/Driver.c
+  Common/GpioInit.c
 
 [Packages]
   MdePkg/MdePkg.dec
@@ -45,6 +45,7 @@
   BaseLib
   DebugLib
   TimerLib
+  SunxiGpioLib
 
 [Pcd]
   gSunxiTokenSpaceGuid.I2c0Base
@@ -55,11 +56,10 @@
 
 [Ppis]
   gSunxiCcmPpiGuid
-  gSunxiGpioPpiGuid
   gEfiPeiI2cMasterPpiGuid
 
 [Guids]
   gSunxiI2cPeiDriverGuid
 
 [Depex]
-  gSunxiCcmPpiGuid AND gSunxiGpioPpiGuid
+  gSunxiCcmPpiGuid
