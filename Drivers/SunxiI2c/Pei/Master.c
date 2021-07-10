@@ -34,6 +34,8 @@ I2cLazyInit(
   if (EFI_ERROR(Status))
     return Status;
 
+  Driver->Initialized = TRUE;
+
   return EFI_SUCCESS;
 }
 
