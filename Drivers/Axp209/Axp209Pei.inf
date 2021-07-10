@@ -39,6 +39,7 @@
 [Ppis]
   gEfiPeiI2cMasterPpiGuid
   gI2cEnumeratePpiGuid
+  gAxp209PpiGuid
 
 [Guids]
   gSunxiI2cPeiDriverGuid
