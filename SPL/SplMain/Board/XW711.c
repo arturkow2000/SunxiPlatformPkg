@@ -12,13 +12,13 @@ VOID SplXW711InitGpio(VOID)
 {
   // On XW711 PG03 and PG04 are used for TX and RX respectively
   // Disable PE10 and PE11 to avoid conflict
-  SunxiGpioMuxSetFunction(SUNXI_GPIO_PIN_PE(10), L"gpio_in");
-  SunxiGpioMuxSetFunction(SUNXI_GPIO_PIN_PE(11), L"gpio_in");
+  SunxiGpioConfigureAsInput(SUNXI_GPIO_PIN_PE(10));
+  SunxiGpioConfigureAsInput(SUNXI_GPIO_PIN_PE(11));
   // Enable PG03 and PG04
-  SunxiGpioPullSet(SUNXI_GPIO_PIN_PG(03), SUNXI_GPIO_PULL_UP);
-  SunxiGpioPullSet(SUNXI_GPIO_PIN_PG(04), SUNXI_GPIO_PULL_UP);
-  SunxiGpioMuxSetFunction(SUNXI_GPIO_PIN_PG(03), L"uart1");
-  SunxiGpioMuxSetFunction(SUNXI_GPIO_PIN_PG(04), L"uart1");
+  SunxiGpioSetPullMode(SUNXI_GPIO_PIN_PG(03), SUNXI_GPIO_PULL_UP);
+  SunxiGpioSetPullMode(SUNXI_GPIO_PIN_PG(04), SUNXI_GPIO_PULL_UP);
+  SunxiGpioSetFunction(SUNXI_GPIO_PIN_PG(03), L"uart1");
+  SunxiGpioSetFunction(SUNXI_GPIO_PIN_PG(04), L"uart1");
 }
 
 // TODO: should move this into SunxiUartLib

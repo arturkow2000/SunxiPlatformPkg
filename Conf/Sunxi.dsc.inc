@@ -83,7 +83,6 @@
   SerialPortLib|SunxiPlatformPkg/Library/SunxiSerialPortLib/SunxiSerialPortLib.inf
   TimerLib|SunxiPlatformPkg/Sun4i/Library/TimerLib/TimerLib.inf
 
-  SunxiGpioLib|SunxiPlatformPkg/Library/SunxiGpioLib/SunxiGpioLib.inf
   #SunxiClockLib|SunxiPlatformPkg/Library/SunxiClockLib/SunxiClockLib.inf
   ResetSystemLib|SunxiPlatformPkg/Library/ResetSystemLib/ResetSystemLib.inf
 
@@ -122,6 +121,7 @@
   PlatformPeiLib|ArmPlatformPkg/PlatformPei/PlatformPeiLib.inf
   MemoryInitPeiLib|ArmPlatformPkg/MemoryInitPei/MemoryInitPeiLib.inf
   BaseMemoryLib|MdePkg/Library/BaseMemoryLib/BaseMemoryLib.inf
+  SunxiGpioLib|SunxiPlatformPkg/Library/SunxiGpioLib/SunxiGpioLibSec.inf
 
 [LibraryClasses.common.PEI_CORE]
   PcdLib|MdePkg/Library/PeiPcdLib/PeiPcdLib.inf
@@ -143,6 +143,7 @@
   PlatformPeiLib|ArmPlatformPkg/PlatformPei/PlatformPeiLib.inf
   MemoryInitPeiLib|ArmPlatformPkg/MemoryInitPei/MemoryInitPeiLib.inf
   ExtractGuidedSectionLib|MdePkg/Library/PeiExtractGuidedSectionLib/PeiExtractGuidedSectionLib.inf
+  SunxiGpioLib|SunxiPlatformPkg/Library/SunxiGpioLib/SunxiGpioLibPei.inf
 
 [LibraryClasses.common.DXE_CORE]
   DxeCoreEntryPoint|MdePkg/Library/DxeCoreEntryPoint/DxeCoreEntryPoint.inf
@@ -155,10 +156,14 @@
 [LibraryClasses.common.DXE_DRIVER]
   SecurityManagementLib|MdeModulePkg/Library/DxeSecurityManagementLib/DxeSecurityManagementLib.inf
   PerformanceLib|MdeModulePkg/Library/DxePerformanceLib/DxePerformanceLib.inf
+  SunxiGpioLib|SunxiPlatformPkg/Library/SunxiGpioLib/SunxiGpioLibDxe.inf
 
 [LibraryClasses.common.DXE_RUNTIME_DRIVER]
   SecurityManagementLib|MdeModulePkg/Library/DxeSecurityManagementLib/DxeSecurityManagementLib.inf
   VariablePolicyLib|MdeModulePkg/Library/VariablePolicyLib/VariablePolicyLibRuntimeDxe.inf
+
+[LibraryClasses.common.UEFI_DRIVER]
+  SunxiGpioLib|SunxiPlatformPkg/Library/SunxiGpioLib/SunxiGpioLibDxe.inf
 
 [Components.common]
   #
@@ -182,7 +187,10 @@
   #
   # PEI Drivers
   #
-  SunxiPlatformPkg/Drivers/SunxiGpio/SunxiGpioPei.inf
+  SunxiPlatformPkg/Drivers/SunxiGpio/SunxiGpioPei.inf {
+    <LibraryClasses>
+      SunxiGpioLib|SunxiPlatformPkg/Library/SunxiGpioLib/SunxiGpioLibSec.inf
+  }
   SunxiPlatformPkg/Drivers/SunxiI2c/SunxiI2cPei.inf
   SunxiPlatformPkg/Drivers/Axp209/Axp209Pei.inf
 
@@ -254,7 +262,10 @@
   # FIXME: eMMC support broken
   #MdeModulePkg/Bus/Sd/EmmcDxe/EmmcDxe.inf
   MdeModulePkg/Bus/Sd/SdDxe/SdDxe.inf
-  SunxiPlatformPkg/Drivers/SunxiGpio/SunxiGpioDxe.inf
+  SunxiPlatformPkg/Drivers/SunxiGpio/SunxiGpioDxe.inf {
+    <LibraryClasses>
+      SunxiGpioLib|SunxiPlatformPkg/Library/SunxiGpioLib/SunxiGpioLibSec.inf
+  }
   SunxiPlatformPkg/Drivers/SunxiI2c/SunxiI2cDxe.inf
   MdeModulePkg/Bus/I2c/I2cDxe/I2cDxe.inf
   SunxiPlatformPkg/Drivers/Axp209/Axp209Dxe.inf {

@@ -1,0 +1,25 @@
+[Defines]
+  INF_VERSION                    = 0x00010006
+  BASE_NAME                      = SunxiGpio
+  FILE_GUID                      = 88bb2dbd-ea06-44df-b99a-e92b51d121f1
+  MODULE_TYPE                    = DXE_DRIVER
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = SunxiGpio
+  CONSTRUCTOR                    = SunxiGpioLibConstructor
+
+[Sources]
+  GpioDxe.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  SunxiPlatformPkg/SunxiPlatformPkg.dec
+
+[LibraryClasses]
+  UefiBootServicesTableLib
+  DebugLib
+
+[Protocols]
+  gSunxiGpioProtocolGuid         ## CONSUMES
+
+[Depex]
+  gSunxiGpioProtocolGuid

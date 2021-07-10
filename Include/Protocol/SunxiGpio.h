@@ -6,29 +6,9 @@
   }
 
 typedef struct _SUNXI_GPIO_PROTOCOL SUNXI_GPIO_PROTOCOL;
-typedef UINT32 SUNXI_GPIO_PIN;
-
-// FIXME: workaround to allow using both SunxiGpioLib and Gpio protocol headers
-#ifdef SUNXI_GPIO_PULL_DISABLE
-#undef SUNXI_GPIO_PULL_DISABLE
-#endif
-
-#ifdef SUNXI_GPIO_PULL_UP
-#undef SUNXI_GPIO_PULL_UP
-#endif
-
-#ifdef SUNXI_GPIO_PULL_DOWN
-#undef SUNXI_GPIO_PULL_DOWN
-#endif
-
-typedef enum {
-  SUNXI_GPIO_PULL_DISABLE = 0,
-  SUNXI_GPIO_PULL_UP = 1,
-  SUNXI_GPIO_PULL_DOWN = 2,
-} SUNXI_GPIO_PULL_MODE;
 
 /**
- Obtains SUNXI_GPIO_PIN from pin name.
+ Obtains pin ID from pin name.
 
  @param This                   Pointer to SUNXI_GPIO_PROTOCOL instance.
  @param Name                   Pin name in format Pxyy where x is bank letter and yy is pin number.
@@ -43,7 +23,7 @@ EFI_STATUS
 (EFIAPI *SUNXI_GPIO_GET_PIN)(
   IN  SUNXI_GPIO_PROTOCOL *This,
   IN  CONST CHAR16 *Name,
-  OUT SUNXI_GPIO_PIN *OutPin
+  OUT UINT32 *OutPin
 );
 
 /**
@@ -61,7 +41,7 @@ typedef
 EFI_STATUS
 (EFIAPI *SUNXI_GPIO_GET_FUNCTION)(
   IN  SUNXI_GPIO_PROTOCOL *This,
-  IN  SUNXI_GPIO_PIN Pin,
+  IN  UINT32 Pin,
   OUT CONST CHAR16 **OutFunction
 );
 
@@ -81,7 +61,7 @@ typedef
 EFI_STATUS
 (EFIAPI *SUNXI_GPIO_SET_FUNCTION)(
   IN SUNXI_GPIO_PROTOCOL *This,
-  IN SUNXI_GPIO_PIN Pin,
+  IN UINT32 Pin,
   IN CONST CHAR16 *Function
 );
 
@@ -100,8 +80,8 @@ typedef
 EFI_STATUS
 (EFIAPI *SUNXI_GPIO_GET_PULL_MODE)(
   IN  SUNXI_GPIO_PROTOCOL *This,
-  IN  SUNXI_GPIO_PIN Pin,
-  OUT SUNXI_GPIO_PULL_MODE *OutPullMode
+  IN  UINT32 Pin,
+  OUT UINT32 *OutPullMode
 );
 
 /**
@@ -119,8 +99,8 @@ typedef
 EFI_STATUS
 (EFIAPI *SUNXI_GPIO_SET_PULL_MODE)(
   IN SUNXI_GPIO_PROTOCOL *This,
-  IN SUNXI_GPIO_PIN Pin,
-  IN SUNXI_GPIO_PULL_MODE Mode
+  IN UINT32 Pin,
+  IN UINT32 PullMode
 );
 
 /**
@@ -138,7 +118,7 @@ typedef
 EFI_STATUS
 (EFIAPI *SUNXI_GPIO_GET_DRIVE_STRENGTH)(
   IN  SUNXI_GPIO_PROTOCOL *This,
-  IN  SUNXI_GPIO_PIN Pin,
+  IN  UINT32 Pin,
   OUT UINT32 *OutDriveStrength
 );
 
@@ -157,8 +137,77 @@ typedef
 EFI_STATUS
 (EFIAPI *SUNXI_GPIO_SET_DRIVE_STRENGTH)(
   IN SUNXI_GPIO_PROTOCOL *This,
-  IN SUNXI_GPIO_PIN Pin,
+  IN UINT32 Pin,
   IN UINT32 DriveStrength
+);
+
+/**
+ Set pin direction to output
+
+ @param This                   Pointer to SUNXI_GPIO_PROTOCOL instance.
+ @param Pin                    Pin ID obtained using SUNXI_GPIO_GET_PIN.
+
+ @retval EFI_SUCCESS           Pin was configured as output.
+ @retval EFI_NOT_FOUND         Requested pin was not found.
+**/
+typedef
+EFI_STATUS
+(EFIAPI *SUNXI_GPIO_CONFIGURE_AS_OUTPUT)(
+  IN SUNXI_GPIO_PROTOCOL *This,
+  IN UINT32 Pin
+);
+
+/**
+ Set pin direction to input
+
+ @param This                   Pointer to SUNXI_GPIO_PROTOCOL instance.
+ @param Pin                    Pin ID obtained using SUNXI_GPIO_GET_PIN.
+
+ @retval EFI_SUCCESS           Pin was configured as input.
+ @retval EFI_NOT_FOUND         Requested pin was not found.
+**/
+typedef
+EFI_STATUS
+(EFIAPI *SUNXI_GPIO_CONFIGURE_AS_INPUT)(
+  IN SUNXI_GPIO_PROTOCOL *This,
+  IN UINT32 Pin
+);
+
+/**
+ Set pin output level
+
+ @param This                   Pointer to SUNXI_GPIO_PPI instance.
+ @param Pin                    Pin ID obtained using SUNXI_GPIO_GET_PIN.
+ @param Level                  Level to set, 0 for low, > 0 for high.
+
+ @retval EFI_SUCCESS           Output level set.
+ @retval EFI_NOT_FOUND         Requested pin was not found.
+**/
+typedef
+EFI_STATUS
+(EFIAPI *SUNXI_GPIO_SET_LEVEL)(
+  IN SUNXI_GPIO_PROTOCOL *This,
+  IN UINT32 Pin,
+  IN UINT8 Level
+);
+
+/**
+ Read pin input level
+
+ @param This                   Pointer to SUNXI_GPIO_PPI instance.
+ @param Pin                    Pin ID obtained using SUNXI_GPIO_GET_PIN.
+ @param OutLevel               Variable to receive level.
+
+ @retval EFI_SUCCESS           Output level set.
+ @retval EFI_NOT_FOUND         Requested pin was not found.
+ @retval EFI_INVALID_PARAMETER OutLevel is NULL.
+**/
+typedef
+EFI_STATUS
+(EFIAPI *SUNXI_GPIO_GET_LEVEL)(
+  IN SUNXI_GPIO_PROTOCOL *This,
+  IN UINT32 Pin,
+  OUT UINT8 *OutLevel
 );
 
 struct _SUNXI_GPIO_PROTOCOL {
@@ -169,6 +218,10 @@ struct _SUNXI_GPIO_PROTOCOL {
   SUNXI_GPIO_SET_PULL_MODE SetPullMode;
   SUNXI_GPIO_GET_DRIVE_STRENGTH GetDriveStrength;
   SUNXI_GPIO_SET_DRIVE_STRENGTH SetDriveStrength;
+  SUNXI_GPIO_CONFIGURE_AS_OUTPUT ConfigureAsOutput;
+  SUNXI_GPIO_CONFIGURE_AS_INPUT ConfigureAsInput;
+  SUNXI_GPIO_SET_LEVEL SetLevel;
+  SUNXI_GPIO_GET_LEVEL GetLevel;
 };
 
 extern EFI_GUID gSunxiGpioProtocolGuid;

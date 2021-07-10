@@ -7,29 +7,16 @@
 
 #include <Ppi/SunxiGpio.h>
 
-// TODO: improve error handling
-
 STATIC
 EFI_STATUS
 EFIAPI
 GetPin(
   IN  SUNXI_GPIO_PPI *This,
   IN  CONST CHAR16 *Name,
-  OUT SUNXI_GPIO_PIN *OutPin
+  OUT UINT32 *OutPin
   )
 {
-  SUNXI_GPIO_PIN Pin;
-
-  if (Name == NULL || OutPin == NULL)
-    return EFI_INVALID_PARAMETER;
-
-  Pin = SunxiGpioNameToPin(Name);
-  if (Pin == SUNXI_GPIO_PIN_INVALID)
-    return EFI_NOT_FOUND;
-  
-  *OutPin = Pin;
-
-  return EFI_SUCCESS;
+  return SunxiGpioGetPin(Name, OutPin);
 }
 
 STATIC
@@ -37,16 +24,11 @@ EFI_STATUS
 EFIAPI
 GetFunction(
   IN  SUNXI_GPIO_PPI *This,
-  IN  SUNXI_GPIO_PIN Pin,
+  IN  UINT32 Pin,
   OUT CONST CHAR16 **OutFunction
   )
 {
-  if (OutFunction == NULL)
-    return EFI_INVALID_PARAMETER;
-
-  *OutFunction = SunxiGpioMuxGetFunction(Pin);
-
-  return EFI_SUCCESS;
+  return SunxiGpioGetFunction(Pin, OutFunction);
 }
 
 STATIC
@@ -54,17 +36,11 @@ EFI_STATUS
 EFIAPI
 SetFunction(
   IN SUNXI_GPIO_PPI *This,
-  IN SUNXI_GPIO_PIN Pin,
+  IN UINT32 Pin,
   IN CONST CHAR16 *Function
   )
 {
-  if (Function == NULL)
-    return EFI_INVALID_PARAMETER;
-
-  if (!SunxiGpioMuxSetFunction(Pin, Function))
-    return EFI_UNSUPPORTED;
-
-  return EFI_SUCCESS;
+  return SunxiGpioSetFunction(Pin, Function);
 }
 
 STATIC
@@ -72,16 +48,11 @@ EFI_STATUS
 EFIAPI
 GetPullMode(
   IN  SUNXI_GPIO_PPI *This,
-  IN  SUNXI_GPIO_PIN Pin,
-  OUT SUNXI_GPIO_PULL_MODE *OutPullMode
+  IN  UINT32 Pin,
+  OUT UINT32 *OutPullMode
   )
 {
-  if (OutPullMode == NULL)
-    return EFI_INVALID_PARAMETER;
-
-  *OutPullMode = SunxiGpioPullGet(Pin);
-
-  return EFI_SUCCESS;
+  return SunxiGpioGetPullMode(Pin, OutPullMode);
 }
 
 STATIC
@@ -89,13 +60,11 @@ EFI_STATUS
 EFIAPI
 SetPullMode(
   IN SUNXI_GPIO_PPI *This,
-  IN SUNXI_GPIO_PIN Pin,
-  IN SUNXI_GPIO_PULL_MODE Mode
+  IN UINT32 Pin,
+  IN UINT32 PullMode
   )
 {
-  SunxiGpioPullSet(Pin, Mode);
-
-  return EFI_SUCCESS;
+  return SunxiGpioSetPullMode(Pin, PullMode);
 }
 
 STATIC
@@ -103,16 +72,11 @@ EFI_STATUS
 EFIAPI
 GetDriveStrength(
   IN  SUNXI_GPIO_PPI *This,
-  IN  SUNXI_GPIO_PIN Pin,
+  IN  UINT32 Pin,
   OUT UINT32 *OutDriveStrength
   )
 {
-  if (OutDriveStrength == NULL)
-    return EFI_INVALID_PARAMETER;
-
-  *OutDriveStrength = SunxiGpioGetDriveStrength(Pin);
-
-  return EFI_SUCCESS;
+  return SunxiGpioGetDriveStrength(Pin, OutDriveStrength);
 }
 
 STATIC
@@ -120,13 +84,55 @@ EFI_STATUS
 EFIAPI
 SetDriveStrength(
   IN SUNXI_GPIO_PPI *This,
-  IN SUNXI_GPIO_PIN Pin,
+  IN UINT32 Pin,
   IN UINT32 DriveStrength
   )
 {
-  SunxiGpioSetDriveStrength(Pin, DriveStrength);
+  return SunxiGpioSetDriveStrength(Pin, DriveStrength);
+}
 
-  return EFI_SUCCESS;
+STATIC
+EFI_STATUS
+EFIAPI
+ConfigureAsOutput(
+  IN SUNXI_GPIO_PPI *This,
+  IN UINT32 Pin
+  )
+{
+  return SunxiGpioConfigureAsOutput(Pin);
+}
+
+STATIC
+EFI_STATUS
+EFIAPI
+ConfigureAsInput(
+  IN SUNXI_GPIO_PPI *This,
+  IN UINT32 Pin
+  )
+{
+  return SunxiGpioConfigureAsInput(Pin);
+}
+
+STATIC
+EFI_STATUS
+SetLevel(
+  IN SUNXI_GPIO_PPI *This,
+  IN UINT32 Pin,
+  IN UINT8 Level
+  )
+{
+  return SunxiGpioSetLevel(Pin, Level);
+}
+
+STATIC
+EFI_STATUS
+GetLevel(
+  IN SUNXI_GPIO_PPI *This,
+  IN UINT32 Pin,
+  OUT UINT8 *OutLevel
+  )
+{
+  return SunxiGpioGetLevel(Pin, OutLevel);
 }
 
 STATIC CONST SUNXI_GPIO_PPI mSunxiGpioPpi = {
@@ -137,6 +143,10 @@ STATIC CONST SUNXI_GPIO_PPI mSunxiGpioPpi = {
   SetPullMode,
   GetDriveStrength,
   SetDriveStrength,
+  ConfigureAsOutput,
+  ConfigureAsInput,
+  SetLevel,
+  GetLevel,
 };
 
 STATIC CONST EFI_PEI_PPI_DESCRIPTOR mPpiList = {

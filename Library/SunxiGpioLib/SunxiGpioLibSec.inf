@@ -2,7 +2,7 @@
   INF_VERSION                    = 0x00010005
   BASE_NAME                      = SunxiGpio
   FILE_GUID                      = 745a1544-ac7e-46d2-9187-86c1a1f76ea7
-  MODULE_TYPE                    = BASE
+  MODULE_TYPE                    = SEC
   VERSION_STRING                 = 1.0
   LIBRARY_CLASS                  = SunxiGpio
 
@@ -18,9 +18,3 @@
   BaseLib
   DebugLib
   IoLib
-
-[Guids]
-
-[Protocols]
-
-[FixedPcd]

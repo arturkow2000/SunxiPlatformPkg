@@ -233,15 +233,15 @@ EFI_STATUS SunxiMmcExecuteCommandEx(
     Resp[2] = MmioRead32(Mmc->Config->Base + SUNXI_MMC_RESP1);
     Resp[3] = MmioRead32(Mmc->Config->Base + SUNXI_MMC_RESP0);
 
-    DEBUG((EFI_D_INFO, "CMD%02d resp: 0x%x 0x%x 0x%x 0x%x\n", Opcode, Resp[0], Resp[1], Resp[2], Resp[3]));
+    //DEBUG((EFI_D_INFO, "CMD%02d resp: 0x%x 0x%x 0x%x 0x%x\n", Opcode, Resp[0], Resp[1], Resp[2], Resp[3]));
   } else if (ResponseType & MMC_RSP_PRESENT) {
     RespLength = 1;
     Resp[0] = MmioRead32(Mmc->Config->Base + SUNXI_MMC_RESP0);
 
-    DEBUG((EFI_D_INFO, "CMD%02d resp: 0x%x\n", Opcode, Resp[0]));
+    //DEBUG((EFI_D_INFO, "CMD%02d resp: 0x%x\n", Opcode, Resp[0]));
   } else {
     RespLength = 0;
-    DEBUG((EFI_D_INFO, "CMD%02d OK (no response)\n", Opcode));
+    //DEBUG((EFI_D_INFO, "CMD%02d OK (no response)\n", Opcode));
   }
 
   Exit:

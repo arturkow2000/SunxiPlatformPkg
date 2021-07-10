@@ -7,7 +7,7 @@ EFI_STATUS SunxiMmcInitGpio(
   EFI_STATUS Status;
   INT32 i;
   CONST SUNXI_GPIO_CONFIG *Config;
-  SUNXI_GPIO_PIN Pin;
+  UINT32 Pin;
 
   Status = EFI_SUCCESS;
 

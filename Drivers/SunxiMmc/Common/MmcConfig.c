@@ -2,6 +2,7 @@
 #include <Library/BaseLib.h>
 #include <Library/PcdLib.h>
 
+#include <Library/SunxiGpioLib.h>
 #include <Protocol/SunxiGpio.h>
 
 #include "Driver.h"
