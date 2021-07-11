@@ -21,7 +21,6 @@
 #include <Library/PeiServicesLib.h>
 
 #include <Ppi/SunxiCcm.h>
-#include <Ppi/SunxiGpio.h>
 
 #include "../Common/Driver.h"
 
@@ -36,4 +35,3 @@ typedef struct _USB_PHY_PEI_DRIVER {
 } USB_PHY_PEI_DRIVER;
 
 extern SUNXI_CCM_PPI *gSunxiCcmPpi;
-extern SUNXI_GPIO_PPI *gSunxiGpioPpi;

@@ -14,8 +14,10 @@
 
 #include "Driver.h"
 
+extern EFI_GUID gSunxiUsbPhyPpiGuid;
 SUNXI_CCM_PPI *gSunxiCcmPpi = NULL;
-SUNXI_GPIO_PPI *gSunxiGpioPpi = NULL;
+
+STATIC EFI_PEI_PPI_DESCRIPTOR mPpiDesc;
 
 EFI_STATUS
 EFIAPI
@@ -37,17 +39,7 @@ UsbPhyPeiInitialize(
   if (EFI_ERROR(Status))
     return Status;
 
-  Status = PeiServicesLocatePpi(
-    &gSunxiGpioPpiGuid,
-    0,
-    NULL,
-    (VOID**)&gSunxiGpioPpi
-  );
-  ASSERT_EFI_ERROR(Status);
-  if (EFI_ERROR(Status))
-    return Status;
-
-  Driver = PeiServicesAllocatePool(
+  Status = PeiServicesAllocatePool(
     sizeof(USB_PHY_PEI_DRIVER),
     (VOID**)&Driver
   );
@@ -59,7 +51,17 @@ UsbPhyPeiInitialize(
 
   Status = UsbPhyInit(&Driver->Common);
   ASSERT_EFI_ERROR(Status);
+  if (EFI_ERROR(Status))
+    return Status;
 
-  ASSERT(0);
-  return EFI_SUCCESS;
+  // currently phy driver does not expose any api to outside world
+  // we only intialize phy for operation in gadget mode
+  // and install dummy interface to signal musb driver
+  mPpiDesc.Flags = EFI_PEI_PPI_DESCRIPTOR_PPI | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST;
+  mPpiDesc.Guid = &gSunxiUsbPhyPpiGuid;
+  mPpiDesc.Ppi = NULL;
+  Status = PeiServicesInstallPpi(&mPpiDesc);
+  ASSERT_EFI_ERROR(Status);
+
+  return Status;
 }
