@@ -29,6 +29,7 @@
 /* Private Control Bits for Each PHY */
 #define PHY_TX_AMPLITUDE_TUNE     0x20
 #define PHY_TX_SLEWRATE_TUNE      0x22
+#define PHY_OTG_FUNC_EN           0x28
 #define PHY_DISCON_TH_SEL         0x2a
 #define PHY_SQUELCH_DETECT        0x3c
 
@@ -37,11 +38,6 @@
 
 #define PHY_TX_RATE               (1 << 4)
 #define PHY_TX_MAGNITUDE          (1 << 2)
-#define PHY_TX_AMPLITUDE_LEN       5
-
-#define PHY_RES45_CAL_DATA        (1 << 0)
-#define PHY_RES45_CAL_LEN         1
-#define PHY_DISCON_TH_LEN         2
 
 #define SUNXI_AHB_ICHR8_EN        (1 << 10)
 #define SUNXI_AHB_INCR4_BURST_EN  (1 << 9)

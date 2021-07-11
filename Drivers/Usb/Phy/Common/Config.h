@@ -28,14 +28,13 @@
 
 typedef struct _USB_PHY_SOC_CONFIG {
   UINT32 PhyCtrlBase;
-  UINT32 Pmu1;
+  CONST UINT32 *Pmu;
   UINT32 NumPhys;
   UINT32 Type;
-  UINT32 DiscThresh;
+  UINT32 DisconnectThreshold;
   UINT8 PhyCtlOffset;
   BOOLEAN DedicatedClocks;
   BOOLEAN EnablePmuUnk1;
-  BOOLEAN Phy0DualRoute;
   UINT32 MissingPhys;
   // If DedicatedClocks is FALSE then all PHYs have one common clock
   // this field points to clock name to enable

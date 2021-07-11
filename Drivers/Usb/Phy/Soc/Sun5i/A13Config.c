@@ -15,6 +15,11 @@
 #include "../../Common/Config.h"
 #include "../../Common/Hw.h"
 
+STATIC CONST UINT32 PmuList[] = {
+  0,
+  0x01c14800
+};
+
 STATIC CONST CHAR16 *mUsb0IdDetectPins[] = {
   L"PG02",
   NULL
@@ -32,16 +37,15 @@ STATIC CONST CHAR16 *mUsb0VbusSupplyPins[] = {
 
 CONST USB_PHY_SOC_CONFIG gUsbPhySocConfig = {
   .PhyCtrlBase = 0x01c13400,
-  .Pmu1 = 0x01c14800,
+  .Pmu = PmuList,
   .NumPhys = 2,
   .Type = PHY_TYPE_SUN4I_A10,
-  .DiscThresh = 2,
+  .DisconnectThreshold = 2,
   .PhyCtlOffset = REG_PHYCTL_A10,
   .DedicatedClocks = FALSE,
   .EnablePmuUnk1 = FALSE,
-  .Phy0DualRoute = FALSE,
   .MissingPhys = 0,
-  .CcmClock = NULL,
+  .CcmClock = L"usb-phy",
   .CcmReset = NULL,
   // FIXME: move board specific stuff somewhere else
   .GpioUsb0IdDetect = mUsb0IdDetectPins,

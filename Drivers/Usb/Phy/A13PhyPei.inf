@@ -13,10 +13,13 @@
   Common/Hw.h
   Common/Driver.h
   Common/Driver.c
+  Common/Gpio.c
+  Common/Clock.c
+  Common/Phy.c
 
   Pei/Driver.h
   Pei/Driver.c
-  Pei/Gpio.cc
+  Pei/Gate.c
 
 [Packages]
   MdePkg/MdePkg.dec
@@ -27,10 +30,12 @@
   PeiServicesLib
   BaseLib
   DebugLib
+  IoLib
+  SunxiGpioLib
 
 [Ppis]
   gSunxiCcmPpiGuid
-  gSunxiGpioPpiGuid
+  gSunxiUsbPhyPpiGuid
 
 [Depex]
   gSunxiCcmPpiGuid
