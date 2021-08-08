@@ -1,0 +1,40 @@
+[Defines]
+  INF_VERSION     = 0x00010006
+  BASE_NAME       = OtgPei
+  FILE_GUID       = 76522ca7-2d14-494d-9b70-2f15fbbd4698
+  MODULE_TYPE     = PEIM
+  VERSION_STRING  = 1.0
+  ENTRY_POINT     = OtgPeiInitialize
+
+[Sources]
+  Pei/Driver.h
+  Pei/Driver.c
+
+  Common/Hw.h
+  Common/Driver.h
+  Common/Driver.c
+  Common/Irq.c
+  Common/Phy.c
+  Common/Init.c
+  Common/Fifo.c
+  Common/GadgetEp0.c
+
+  Soc/A13.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  SunxiPlatformPkg/SunxiPlatformPkg.dec
+
+[LibraryClasses]
+  PeimEntryPoint
+  PeiServicesLib
+  BaseLib
+  DebugLib
+  IoLib
+  TimerLib
+
+[Ppis]
+  gSunxiUsbPhyPpiGuid
+
+[Depex]
+  gSunxiUsbPhyPpiGuid
