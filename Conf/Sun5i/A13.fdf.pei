@@ -3,3 +3,4 @@
   INF SunxiPlatformPkg/Drivers/SunxiI2c/SunxiI2cPei.inf
   INF SunxiPlatformPkg/Drivers/Usb/Phy/A13PhyPei.inf
   INF SunxiPlatformPkg/Drivers/Usb/Otg/A13OtgPei.inf
+  INF SunxiPlatformPkg/Drivers/Usb/ExperimentalGadgetDriver/Driver.inf

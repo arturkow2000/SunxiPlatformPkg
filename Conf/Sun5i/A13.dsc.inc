@@ -28,6 +28,8 @@
   SunxiPlatformPkg/Drivers/Usb/Phy/A13PhyPei.inf
   SunxiPlatformPkg/Drivers/Usb/Otg/A13OtgPei.inf
 
+  SunxiPlatformPkg/Drivers/Usb/ExperimentalGadgetDriver/Driver.inf
+
 [Components]
   #
   # PEI

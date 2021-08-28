@@ -2,6 +2,8 @@
 #include "Hw.h"
 
 EFI_STATUS UsbInit(USB_DRIVER *Driver) {
+  InitializeListHead(&Driver->Ep0Queue);
+
   // TODO: ungate clocks before doing anything
 
   USBC_ConfigFIFO_Base();
@@ -14,7 +16,7 @@ EFI_STATUS UsbInit(USB_DRIVER *Driver) {
 
   UsbDisable(Driver);
   UsbCoreInit(Driver);
-  UsbEnable(Driver);
+  /*UsbEnable(Driver);
 
   // FIXME: remove this, in DXE when timer is available interrupt handler will be called periodically
   // in PEI phase when no timer interrupts are available
@@ -22,7 +24,7 @@ EFI_STATUS UsbInit(USB_DRIVER *Driver) {
   DEBUG((EFI_D_INFO, "Waiting for interrupts\n"));
   while (TRUE) {
     UsbHandleInterrupt(Driver);
-  }
+  }*/
 
   return EFI_SUCCESS;
 }

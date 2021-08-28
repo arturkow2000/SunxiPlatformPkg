@@ -1,0 +1,30 @@
+[Defines]
+  INF_VERSION     = 0x00010006
+  BASE_NAME       = ExperimentalGadgetDriver
+  FILE_GUID       = 7752da62-99f9-4c24-a6fa-80ee8b35dc16
+  MODULE_TYPE     = PEIM
+  VERSION_STRING  = 1.0
+  ENTRY_POINT     = GadgetInitialize
+
+[Sources]
+  Driver.h
+  Driver.c
+  ControlRequest.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  SunxiPlatformPkg/SunxiPlatformPkg.dec
+
+[LibraryClasses]
+  PeimEntryPoint
+  PeiServicesLib
+  BaseLib
+  DebugLib
+  IoLib
+  TimerLib
+
+[Ppis]
+  gUsbPpiGuid
+
+[Depex]
+  gUsbPpiGuid
