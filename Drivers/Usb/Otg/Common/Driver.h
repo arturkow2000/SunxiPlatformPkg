@@ -6,6 +6,8 @@
 #include <Library/IoLib.h>
 #include <Library/TimerLib.h>
 
+#include <IndustryStandard/UsbEx.h>
+
 #define MUSB_EP0_STAGE_IDLE 0      /* idle, waiting for SETUP */
 #define MUSB_EP0_STAGE_SETUP 1     /* received SETUP */
 #define MUSB_EP0_STAGE_TX 2        /* IN data */
@@ -20,6 +22,8 @@
 #define USB_FIFO_TX (1 << 0)
 #define USB_FIFO_RX (1 << 1)
 #define USB_FIFO_SHARED (1 << 2)
+
+typedef struct _USB_REQUEST USB_REQUEST;
 
 typedef struct _USB_EP_FIFO_CONFIG {
   UINT8 TxMaxPacketSizeLog2;
@@ -43,7 +47,25 @@ typedef struct _USB_DRIVER {
   UINT16 AckPending;
   BOOLEAN SetAddress;
   UINT8 Address;
+
+  LIST_ENTRY Ep0Queue;
 } USB_DRIVER;
+
+#define USB_REQUEST_FROM_LINK(Record)        \
+  BASE_CR(Record, USB_REQUEST, Node)
+
+struct _USB_REQUEST {
+  LIST_ENTRY Node;
+
+  VOID *Buffer;
+  UINT32 Length;
+
+  // Number of bytes already transferred
+  UINT32 Actual;
+  UINT8 Zero : 1;
+
+  INT8 *OutStatus;
+};
 
 EFI_STATUS UsbInit(USB_DRIVER *Driver);
 VOID UsbEnable(USB_DRIVER *Driver);
@@ -53,8 +75,15 @@ VOID UsbSetupFifo(USB_DRIVER *Driver);
 VOID UsbHandleInterrupt(USB_DRIVER *Driver);
 VOID UsbEp0HandleIrq(USB_DRIVER *Driver);
 
+// Internal APIs used for forwarding data to gadget driver
+INT8 UsbForwardControlRequestToGadgetDriver(USB_DRIVER *Driver, USB_DEVICE_REQUEST *Request);
+
+// Internal APIs
+VOID UsbEp0CompleteRequest(USB_DRIVER *Driver, USB_REQUEST *Request);
+
 // FIFO access functions
 VOID UsbReadFifo(USB_DRIVER *Driver, UINT8 Endpoint, UINT16 Length, UINT8* OutData);
+VOID UsbWriteFifo(USB_DRIVER *Driver, UINT8 Endpoint, UINT16 Length, CONST UINT8 *Data);
 
 /// FIXME: move PHY stuff into PHY driver
 VOID USBC_EnableIdPullUp(USB_DRIVER *Driver);
@@ -64,3 +93,5 @@ VOID USBC_ForceIdToHigh(USB_DRIVER *Driver);
 VOID USBC_ForceVbusValidToLow(USB_DRIVER *Driver);
 VOID USBC_ForceVbusValidToHigh(USB_DRIVER *Driver);
 VOID USBC_ConfigFIFO_Base(VOID);
+
+EFI_STATUS UsbEp0QueuePacket(USB_DRIVER *Driver, USB_REQUEST *Request);

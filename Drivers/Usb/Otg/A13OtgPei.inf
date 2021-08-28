@@ -9,6 +9,7 @@
 [Sources]
   Pei/Driver.h
   Pei/Driver.c
+  Pei/Forward.c
 
   Common/Hw.h
   Common/Driver.h
@@ -32,9 +33,11 @@
   DebugLib
   IoLib
   TimerLib
+  MemoryAllocationLib
 
 [Ppis]
   gSunxiUsbPhyPpiGuid
+  gUsbPpiGuid
 
 [Depex]
   gSunxiUsbPhyPpiGuid
