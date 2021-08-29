@@ -7,8 +7,6 @@ STATIC EFI_STATUS UsbGadgetInitialize(GADGET_DRIVER_INTERNAL *Driver) {
   if (EFI_ERROR(Status))
     return Status;
 
-  Driver->ControlRequestStatus = 1;
-
   return EFI_SUCCESS;
 }
 

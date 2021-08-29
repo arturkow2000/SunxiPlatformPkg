@@ -128,11 +128,15 @@ STATIC EFI_STATUS InitRequest(
   IN VOID *Buffer,
   IN UINT32 Length,
   IN UINT32 Flags,
-  OUT INT8 *OutStatus OPTIONAL
+  IN USB_PPI_REQ_COMPLETE_CALLBACK Callback OPTIONAL,
+  IN VOID *UserData OPTIONAL
 ) {
   USB_PEI_DRIVER *Driver;
   
-  if (!This || !Request || !Buffer || Length == 0 || Flags != 0)
+  if (!This || !Request || Flags != 0)
+    return EFI_INVALID_PARAMETER;
+
+  if ((!Buffer && Length > 0) || (Buffer && Length == 0))
     return EFI_INVALID_PARAMETER;
 
   Driver = USB_PPI_INTO_PEI_DRIVER(This);
@@ -140,12 +144,13 @@ STATIC EFI_STATUS InitRequest(
   Request->Buffer = Buffer;
   Request->Length = Length;
   Request->Zero = 0;
-  Request->OutStatus = OutStatus;
+  Request->Callback = Callback;
+  Request->UserData = UserData;
 
   return EFI_SUCCESS;
 }
 
-STATIC EFI_STATUS QueueEp0Packet(
+STATIC EFI_STATUS Ep0Queue(
   IN USB_PPI *This,
   IN USB_REQUEST *Request
 ) {
@@ -167,7 +172,7 @@ STATIC USB_PPI mUsbPpi = {
   GetEndpointInfo,
   AllocateRequests,
   InitRequest,
-  QueueEp0Packet
+  Ep0Queue
 };
 
 STATIC EFI_PEI_PPI_DESCRIPTOR mPpiDesc;

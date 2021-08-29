@@ -64,7 +64,8 @@ struct _USB_REQUEST {
   UINT32 Actual;
   UINT8 Zero : 1;
 
-  INT8 *OutStatus;
+  VOID *Callback;
+  VOID *UserData;
 };
 
 EFI_STATUS UsbInit(USB_DRIVER *Driver);
@@ -77,9 +78,10 @@ VOID UsbEp0HandleIrq(USB_DRIVER *Driver);
 
 // Internal APIs used for forwarding data to gadget driver
 INT8 UsbForwardControlRequestToGadgetDriver(USB_DRIVER *Driver, USB_DEVICE_REQUEST *Request);
+VOID UsbSignalCompletion(USB_DRIVER *Driver, UINT32 Endpoint, USB_REQUEST *Request, EFI_STATUS Status);
 
 // Internal APIs
-VOID UsbEp0CompleteRequest(USB_DRIVER *Driver, USB_REQUEST *Request);
+VOID UsbEp0CompleteRequest(USB_DRIVER *Driver, USB_REQUEST *Request, EFI_STATUS Status);
 
 // FIFO access functions
 VOID UsbReadFifo(USB_DRIVER *Driver, UINT8 Endpoint, UINT16 Length, UINT8* OutData);

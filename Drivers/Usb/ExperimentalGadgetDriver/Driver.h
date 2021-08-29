@@ -25,7 +25,6 @@ typedef struct _GADGET_DRIVER_INTERNAL {
   USB_PPI *Usb;
 
   USB_REQUEST *ControlRequest;
-  INT8 ControlRequestStatus;
 } GADGET_DRIVER_INTERNAL;
 
 EFI_STATUS UsbGadgetHandleControlRequest(
@@ -33,4 +32,7 @@ EFI_STATUS UsbGadgetHandleControlRequest(
   USB_DRIVER *Driver,
   USB_DEVICE_REQUEST *Request
   );
-  
+
+EFI_STATUS UsbGadgetHandleCdcRequest(GADGET_DRIVER_INTERNAL *Internal, USB_DEVICE_REQUEST *Request);
+
+EFI_STATUS UsbGadgetEp0Queue(GADGET_DRIVER_INTERNAL *Internal, VOID *Buffer, UINT32 Length, USB_PPI_REQ_COMPLETE_CALLBACK Callback);

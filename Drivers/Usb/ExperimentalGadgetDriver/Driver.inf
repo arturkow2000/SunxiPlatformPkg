@@ -10,6 +10,8 @@
   Driver.h
   Driver.c
   ControlRequest.c
+  Cdc.c
+  Util.c
 
 [Packages]
   MdePkg/MdePkg.dec

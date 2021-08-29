@@ -1,23 +1,22 @@
 #include "Driver.h"
+#include <IndustryStandard/CdcAcm.h>
 
 #define USB_STR_MANUFACTURER 1
-#define USB_STR_PRODUCT 1
-#define USB_STR_ACM_INTERFACE_DESC 2
-#define USB_STR_DATA_INTERFACE_DESC 3
+#define USB_STR_PRODUCT 2
 
-#define MAKE_STRING_DESCRIPTOR(InternalName, Name, Text)  \
-  struct InternalName {                                   \
+#define MAKE_STRING_DESCRIPTOR(Name, Text)                \
+  STATIC struct {                                         \
     UINT8 __Length;                                       \
     UINT8 __DescriptorType;                               \
     CHAR16 __String[sizeof(Text)];                        \
-  };                                                      \
-  STATIC struct InternalName Name = {                     \
+  } Name = {                                              \
     .__Length = 2 + sizeof(Text),                         \
-    .__DescriptorType = USB_DT_STRING,                    \
+    .__DescriptorType = USB_DESC_TYPE_STRING,             \
     .__String = Text,                                     \
   };
 
-MAKE_STRING_DESCRIPTOR(__STRING_DESC_MANUFACTURER, mManufacturerString, L"Hehe");
+MAKE_STRING_DESCRIPTOR(mManufacturerString, L"Allwinner");
+MAKE_STRING_DESCRIPTOR(mProductString, L"Sunxi device in PEI mode");
 
 STATIC USB_DEVICE_DESCRIPTOR mDeviceDescriptor = {
   .Length = sizeof(USB_DEVICE_DESCRIPTOR),
@@ -28,14 +27,29 @@ STATIC USB_DEVICE_DESCRIPTOR mDeviceDescriptor = {
   .StrManufacturer = USB_STR_MANUFACTURER,
   .StrProduct = USB_STR_PRODUCT,
   .NumConfigurations = 1,
-  // FIXME: should fill this basing on data provided by USB controller driver
-  .MaxPacketSize0 = 64
+  // Values required by USB IAD specification
+  .DeviceClass = 0xEF,
+  .DeviceSubClass = 0x02,
+  .DeviceProtocol = 0x01,
+  // From USB 2.0 spec:
+  // If the device is operating at high-speed, the bMaxPacketSize0 field must be 64 indicating a 64 byte
+  // maximum packet. High-speed operation does not allow other maximum packet sizes for the control
+  // endpoint (endpoint 0).
+  .MaxPacketSize0 = 64,
 };
 
 typedef struct _DEVICE_CONFIG {
   USB_CONFIG_DESCRIPTOR Config;
-  USB_INTERFACE_DESCRIPTOR AcmControl;
-  //USB_INTERFACE_DESCRIPTOR AcmData;
+  USB_INTERFACE_ASSOCIATION_DESCRIPTOR Iad;
+  USB_INTERFACE_DESCRIPTOR CdcAt;
+  USB_CDC_FUNCTIONAL_DESCRIPTOR CdcFunctional;
+  USB_CDC_CALL_MANAGEMENT_DESCRIPTOR CdcCallManagement;
+  USB_CDC_ACM_DESCRIPTOR CdcAcm;
+  USB_CDC_UNION_DESCRIPTOR CdcUnion;
+  USB_ENDPOINT_DESCRIPTOR CdcControlEp;
+  USB_INTERFACE_DESCRIPTOR CdcData;
+  USB_ENDPOINT_DESCRIPTOR CdcDataEpIn;
+  USB_ENDPOINT_DESCRIPTOR CdcDataEpOut;
 } DEVICE_CONFIG;
 
 STATIC DEVICE_CONFIG mConfigDescriptor = {
@@ -43,63 +57,88 @@ STATIC DEVICE_CONFIG mConfigDescriptor = {
     .Length = sizeof(USB_CONFIG_DESCRIPTOR),
     .DescriptorType = USB_DT_CONFIG,
     .TotalLength = sizeof(DEVICE_CONFIG),
-    .NumInterfaces = 1,
+    .NumInterfaces = 2,
     .ConfigurationValue = 1,
-    .Configuration = 2,
-    .Attributes = (1 << 7) | (1 << 6),
-    .MaxPower = 1
+    // Use same properties as FEL mode - bus powered + 300 mA
+    .Attributes = (1 << 7),
+    .MaxPower = (300 / 2)
   },
-  .AcmControl = {
+  .Iad = {
+    .Length = sizeof(USB_INTERFACE_ASSOCIATION_DESCRIPTOR),
+    .DescriptorType = USB_DT_INTERFACE_ASSOCIATION,
+    .FirstInterface = 0,
+    .InterfaceCount = 2,
+    .FunctionClass = USB_CLASS_COMM,
+    .FunctionSubClass = USB_CDC_SUBCLASS_ACM,
+    .FunctionProtocol = USB_CDC_ACM_PROTO_AT_V25TER
+  },
+  .CdcAt = {
     .Length = sizeof(USB_INTERFACE_DESCRIPTOR),
     .DescriptorType = USB_DT_INTERFACE,
     .InterfaceNumber = 0,
     .InterfaceClass = USB_CLASS_COMM,
     .InterfaceSubClass = USB_CDC_SUBCLASS_ACM,
     .InterfaceProtocol = USB_CDC_PROTO_NONE,
-    .Interface = USB_STR_ACM_INTERFACE_DESC
+    .NumEndpoints = 1,
   },
-  /*.AcmData = {
+  .CdcFunctional = {
+    .Length = sizeof(USB_CDC_FUNCTIONAL_DESCRIPTOR),
+    .DescriptorType = 0x24,
+    .DescriptorSubType = USB_CDC_FDT_HEADER,
+    .BcdCDC = 0x0110, // 1.10
+  },
+  .CdcCallManagement = {
+    .Length = sizeof(USB_CDC_CALL_MANAGEMENT_DESCRIPTOR),
+    .DescriptorType = 0x24,
+    .DescriptorSubType = USB_CDC_FDT_CALL_MANAGEMENT,
+    .Capabilities = 0,
+    .DataInterface = 1,
+  },
+  .CdcAcm = {
+    .Length = sizeof(USB_CDC_FDT_ACM),
+    .DescriptorType = 0x24,
+    .DescriptorSubType = USB_CDC_FDT_ACM,
+    .Capabilities = 0x02
+  },
+  .CdcUnion = {
+    .Length = sizeof(USB_CDC_UNION_DESCRIPTOR),
+    .DescriptorType = 0x24,
+    .DescriptorSubType = USB_CDC_FDT_UNION,
+    .MasterInterface = 0,
+    .SlaveInterface = 1,
+  },
+  .CdcControlEp = {
+    .Length = sizeof(USB_ENDPOINT_DESCRIPTOR),
+    .DescriptorType = 5,
+    .EndpointAddress = 0x82,
+    .Attributes = 3,
+    .MaxPacketSize = 64,
+    .Interval = 9,
+  },
+  .CdcData = {
     .Length = sizeof(USB_INTERFACE_DESCRIPTOR),
     .DescriptorType = USB_DT_INTERFACE,
     .InterfaceNumber = 1,
+    .NumEndpoints = 2,
     .InterfaceClass = USB_CLASS_DATA,
     .InterfaceSubClass = 0,
     .InterfaceProtocol = 0,
-    .Interface = USB_STR_DATA_INTERFACE_DESC
-  },*/
+  },
+  .CdcDataEpIn = {
+    .Length = sizeof(USB_ENDPOINT_DESCRIPTOR),
+    .DescriptorType = USB_DT_ENDPOINT,
+    .EndpointAddress = 0x81,
+    .Attributes = 2,
+    .MaxPacketSize = 512,
+  },
+  .CdcDataEpOut = {
+    .Length = sizeof(USB_ENDPOINT_DESCRIPTOR),
+    .DescriptorType = USB_DT_ENDPOINT,
+    .EndpointAddress = 0x01,
+    .Attributes = 2,
+    .MaxPacketSize = 512,
+  },
 };
-
-/*STATIC USB_CONFIG_DESCRIPTOR mConfigDescriptor = {
-  .Length = sizeof(USB_CONFIG_DESCRIPTOR),
-  .DescriptorType = USB_DT_CONFIG,
-  .TotalLength = sizeof(USB_CONFIG_DESCRIPTOR),
-  .NumInterfaces = 0,
-  .ConfigurationValue = 1,
-  .Configuration = 2,
-  .Attributes = (1 << 7) | (1 << 6),
-  .MaxPower = 1
-};*/
-
-EFI_STATUS UsbGadgetEp0Write(GADGET_DRIVER_INTERNAL *Internal, VOID *Buffer, UINT32 Length) {
-  EFI_STATUS Status;
-
-  Status = Internal->Usb->InitRequest(
-    Internal->Usb,
-    Internal->ControlRequest,
-    Buffer,
-    Length,
-    0,
-    &Internal->ControlRequestStatus
-  );
-
-  if (EFI_ERROR(Status))
-    return Status;
-    
-  return Internal->Usb->QueueEp0Packet(
-    Internal->Usb,
-    Internal->ControlRequest
-  );
-}
 
 EFI_STATUS UsbGadgetSendStringDescriptor(
   GADGET_DRIVER_INTERNAL *Internal,
@@ -115,13 +154,13 @@ EFI_STATUS UsbGadgetSendStringDescriptor(
     Buffer[2] = 9;
     Buffer[3] = 4;
 
-    return UsbGadgetEp0Write(Internal, Buffer, Buffer[0]);
+    return UsbGadgetEp0Queue(Internal, Buffer, Buffer[0], NULL);
   }
 
   switch (Id)
   {
-  case 1:
-    return UsbGadgetEp0Write(Internal, &mManufacturerString, sizeof(mManufacturerString));
+  case USB_STR_MANUFACTURER: return UsbGadgetEp0Queue(Internal, &mManufacturerString, sizeof(mManufacturerString), NULL);
+  case USB_STR_PRODUCT: return UsbGadgetEp0Queue(Internal, &mProductString, sizeof(mProductString), NULL);
   
   default:
     DEBUG((EFI_D_ERROR, "Unknown string descriptor #%d lang=0x%04x\n", Id, Language));
@@ -131,66 +170,80 @@ EFI_STATUS UsbGadgetSendStringDescriptor(
   }
 }
 
-EFI_STATUS UsbGadgetHandleControlRequest(
-  USB_GADGET_DRIVER *This,
-  USB_DRIVER *Driver,
+EFI_STATUS UsbGadgetHandleStandardControlRequest(
+  GADGET_DRIVER_INTERNAL *Internal,
   USB_DEVICE_REQUEST *Request
   )
 {
-  GADGET_DRIVER_INTERNAL *Internal = GADGET_DRIVER_GET_INTERNAL(This);
   EFI_STATUS Status;
+  UINT8 DescriptorIndex;
 
   if (Request->Request == USB_REQ_GET_DESCRIPTOR) {
+    if (Request->RequestType != USB_ENDPOINT_DIR_IN)
+      return EFI_DEVICE_ERROR;
+
     switch(Request->Value >> 8) {
     case USB_DT_DEVICE:
-      DEBUG((EFI_D_INFO, "Sending device descriptor\n"));
-      ASSERT(Internal->ControlRequestStatus = 1);
-      Status = Internal->Usb->InitRequest(
-        Internal->Usb,
-        Internal->ControlRequest,
-        (VOID*)&mDeviceDescriptor,
-        sizeof(USB_DEVICE_DESCRIPTOR),
-        0,
-        &Internal->ControlRequestStatus
-      );
-      ASSERT_EFI_ERROR(Status);
+      return UsbGadgetEp0Queue(Internal, &mDeviceDescriptor, sizeof(mDeviceDescriptor), NULL);
 
-      Status = Internal->Usb->QueueEp0Packet(
-        Internal->Usb,
-        Internal->ControlRequest
-      );
-      ASSERT_EFI_ERROR(Status);
-      return Status;
-    
     case USB_DT_CONFIG:
-      DEBUG((EFI_D_INFO, "Sending config descriptor\n"));
-      ASSERT(Internal->ControlRequestStatus == 1);
-      Status = Internal->Usb->InitRequest(
-        Internal->Usb,
-        Internal->ControlRequest,
-        (VOID*)&mConfigDescriptor,
-        sizeof(mConfigDescriptor),
-        0,
-        &Internal->ControlRequestStatus
-      );
-      ASSERT_EFI_ERROR(Status);
+      DescriptorIndex = Request->Value;
 
-      Status = Internal->Usb->QueueEp0Packet(
-        Internal->Usb,
-        Internal->ControlRequest
-      );
-      ASSERT_EFI_ERROR(Status);
+      if (DescriptorIndex == 0)
+        Status = UsbGadgetEp0Queue(Internal, &mConfigDescriptor, MIN(sizeof(mConfigDescriptor), Request->Length), NULL);
+      else {
+        DEBUG((EFI_D_ERROR, "Unknown config descriptor index %d\n", DescriptorIndex));
+        Status = EFI_DEVICE_ERROR;
+      }
+
       return Status;
 
     case USB_DT_STRING:
       return UsbGadgetSendStringDescriptor(Internal, Request->Value, 0x0000);
+
     default:
       DEBUG((EFI_D_ERROR, "Unknown descriptor type %d\n", Request->Value >> 8));
       break;
     }
 
     return EFI_DEVICE_ERROR;
+  } else if (Request->Request == USB_REQ_SET_CONFIG) {
+    if (Request->RequestType != 0)
+      return EFI_DEVICE_ERROR;
+
+    if (Request->Value != 1) {
+      DEBUG((EFI_D_ERROR, "Invalid configuration requested (%d)\n", Request->Value));
+      return EFI_DEVICE_ERROR;
+    }
+
+    // Signal configuration was set successfully
+    return UsbGadgetEp0Queue(Internal, NULL, 0, NULL);
   }
 
   return EFI_UNSUPPORTED;
+}
+
+EFI_STATUS UsbGadgetHandleControlRequest(
+  USB_GADGET_DRIVER *This,
+  USB_DRIVER *Driver,
+  USB_DEVICE_REQUEST *Request
+  )
+{
+  EFI_STATUS Status;
+  GADGET_DRIVER_INTERNAL *Internal = GADGET_DRIVER_GET_INTERNAL(This);
+
+  switch (Request->RequestType & USB_TYPE_MASK) {
+  case USB_REQ_TYPE_STANDARD:
+    Status = UsbGadgetHandleStandardControlRequest(Internal, Request);
+    break;
+  case USB_REQ_TYPE_CLASS:
+    DEBUG((EFI_D_ERROR, "Unhandled class specific request %d\n", Request->Request));
+    Status = UsbGadgetHandleCdcRequest(Internal, Request);
+    break;
+  default:
+    Status = EFI_UNSUPPORTED;
+    break;
+  }
+
+  return Status;
 }

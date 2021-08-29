@@ -9,6 +9,17 @@ typedef struct _USB_PPI USB_PPI;
 typedef struct _USB_GADGET_DRIVER USB_GADGET_DRIVER;
 typedef struct _USB_REQUEST USB_REQUEST;
 
+typedef
+VOID
+(EFIAPI *USB_PPI_REQ_COMPLETE_CALLBACK)(
+  USB_PPI *Usb,
+  UINT32 Endpoint,
+  VOID *Buffer,
+  UINT32 Length,
+  VOID *UserData,
+  EFI_STATUS Status
+);
+
 /**
  Registers gadget driver and enables USB.
  Only single gadget driver is supported.
@@ -103,7 +114,7 @@ EFI_STATUS
 /**
  Allocates driver's internal structures for keeping track of queued transfers.
  These are initialized using USB_PPI_INIT_REQUEST and then passed to
- USB_PPI_QUEUE_EP0_PACKET
+ USB_PPI_EP0_QUEUE
 
  @param This                        Pointer to USB_PPI instance
  @param NumRequests                 Number of request structures to allocate
@@ -129,9 +140,8 @@ EFI_STATUS
  @param Buffer                      Pointer to packet data buffer
  @param Length                      Length of data in buffer
  @param Flags                       Reserved, should be 0
- @param OutStatus                   Pointer to variable that upon completion will be receive status,
-                                    1 on success, -1 on error, when packet is queued status will be initialized to 0,
-                                    this field is optional.
+ @param Callback                    Callback function called upon completion
+ @param UserData                    Optional data passed to callback
 
  @retval EFI_SUCCESS                Pointer to USB_PPI instance.
  @retval EFI_INVALID_PARAMETER      At least one of parameters is invalid:
@@ -147,7 +157,8 @@ EFI_STATUS
   IN VOID *Buffer,
   IN UINT32 Length,
   IN UINT32 Flags,
-  OUT INT8 *OutStatus OPTIONAL
+  IN USB_PPI_REQ_COMPLETE_CALLBACK Callback OPTIONAL,
+  IN VOID *UserData OPTIONAL
 );
 
 /**
@@ -162,7 +173,7 @@ EFI_STATUS
 **/
 typedef
 EFI_STATUS
-(EFIAPI *USB_PPI_QUEUE_EP0_PACKET)(
+(EFIAPI *USB_PPI_EP0_QUEUE)(
   IN USB_PPI *This,
   IN USB_REQUEST *Request
 );
@@ -175,7 +186,7 @@ struct _USB_PPI {
   USB_PPI_GET_ENDPOINT_INFO GetEndpointInfo;
   USB_PPI_ALLOCATE_REQUESTS AllocateRequests;
   USB_PPI_INIT_REQUEST InitRequest;
-  USB_PPI_QUEUE_EP0_PACKET QueueEp0Packet;
+  USB_PPI_EP0_QUEUE Ep0Queue;
 };
 
 extern EFI_GUID gUsbPpiGuid;

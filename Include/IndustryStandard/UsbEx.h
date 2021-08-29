@@ -13,6 +13,7 @@
 #define USB_DT_STRING         0x03
 #define USB_DT_INTERFACE      0x04
 #define USB_DT_ENDPOINT       0x05
+#define USB_DT_INTERFACE_ASSOCIATION    0x0b
 
 #define USB_CLASS_PER_INTERFACE  0
 #define USB_CLASS_AUDIO          1
@@ -24,19 +25,13 @@
 #define USB_CLASS_DATA           10
 #define USB_CLASS_VENDOR_SPEC    0xff
 
-#define USB_CDC_SUBCLASS_ACM      0x02
-#define USB_CDC_SUBCLASS_ETHERNET 0x06
-#define USB_CDC_SUBCLASS_WHCM     0x08
-#define USB_CDC_SUBCLASS_DMM      0x09
-#define USB_CDC_SUBCLASS_MDLM     0x0a
-#define USB_CDC_SUBCLASS_OBEX     0x0b
-
-#define USB_CDC_PROTO_NONE        0
-
-#define USB_CDC_ACM_PROTO_AT_V25TER       1
-#define USB_CDC_ACM_PROTO_AT_PCCA101      2
-#define USB_CDC_ACM_PROTO_AT_PCCA101_WAKE 3
-#define USB_CDC_ACM_PROTO_AT_GSM          4
-#define USB_CDC_ACM_PROTO_AT_3G           5
-#define USB_CDC_ACM_PROTO_AT_CDMA         6
-#define USB_CDC_ACM_PROTO_VENDOR          0xff
+typedef struct {
+  UINT8 Length;
+  UINT8 DescriptorType;
+  UINT8 FirstInterface;
+  UINT8 InterfaceCount;
+  UINT8 FunctionClass;
+  UINT8 FunctionSubClass;
+  UINT8 FunctionProtocol;
+  UINT8 Function;
+} USB_INTERFACE_ASSOCIATION_DESCRIPTOR;
