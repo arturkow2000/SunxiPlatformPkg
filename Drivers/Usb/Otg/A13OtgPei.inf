@@ -19,6 +19,7 @@
   Common/Init.c
   Common/Fifo.c
   Common/GadgetEp0.c
+  Common/Debug.c
 
   Soc/A13.c
 

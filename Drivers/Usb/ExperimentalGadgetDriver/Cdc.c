@@ -1,24 +1,26 @@
 #include "Driver.h"
-#include <IndustryStandard/CdcAcm.h>
-
-//STATIC EFI_STATUS UsbCdcDumpLineCoding(USB_CDC_LINE_CODING )
-
-STATIC USB_CDC_LINE_CODING mLineCoding;
 
 STATIC VOID SetLineCoding(
   USB_PPI *Usb,
   UINT32 Endpoint,
   VOID *Buffer,
   UINT32 Length,
-  GADGET_DRIVER_INTERNAL *UserData,
+  GADGET_DRIVER_INTERNAL *Internal,
   EFI_STATUS Status
   )
 {
-  DEBUG((EFI_D_INFO, "SET_LINE_CODING %p %d %d\n", Buffer, Length, sizeof(mLineCoding)));
-  DEBUG((EFI_D_INFO, "Status = %r\n", Status));
+  USB_CDC_LINE_CODING *LineCoding = Buffer;
 
-  DEBUG((EFI_D_INFO, "Rate: %d\n", mLineCoding.RteRate));
-  switch(mLineCoding.ParityType) {
+  if (EFI_ERROR(Status))
+    return;
+
+  if (Length != sizeof(USB_CDC_LINE_CODING)) {
+    Internal->Usb->Halt(Internal->Usb, 0);
+    return;
+  }
+
+  DEBUG((EFI_D_INFO, "Rate: %d\n", LineCoding->RteRate));
+  switch(LineCoding->ParityType) {
   case USB_CDC_NO_PARITY:
     DEBUG((EFI_D_INFO, "Parity: None\n"));
     break;
@@ -38,7 +40,7 @@ STATIC VOID SetLineCoding(
     DEBUG((EFI_D_INFO, "Parity: Unknown\n"));
     break;
   }
-  switch(mLineCoding.CharFormat) {
+  switch(LineCoding->CharFormat) {
   case USB_CDC_1_STOP_BITS:
     DEBUG((EFI_D_INFO, "Stop bits: 1\n"));
     break;
@@ -52,24 +54,37 @@ STATIC VOID SetLineCoding(
     DEBUG((EFI_D_INFO, "Stop bits: unknown\n"));
     break;
   }
-  DEBUG((EFI_D_INFO, "Data bits: %d\n", mLineCoding.DataBits));
+  DEBUG((EFI_D_INFO, "Data bits: %d\n", LineCoding->DataBits));
 }
 
 EFI_STATUS UsbGadgetHandleCdcRequest(GADGET_DRIVER_INTERNAL *Internal, USB_DEVICE_REQUEST *Request) {
   EFI_STATUS Status;
 
-  switch (Request->Request)
+  // Match direction, target and request
+  // Request type was already handled by caller
+  switch (((Request->RequestType & (USB_ENDPOINT_DIR_IN | 3)) << 8) | Request->Request)
   {
-  case USB_CDC_REQ_SET_LINE_CODING:
-    DEBUG((EFI_D_INFO, "Reading line coding\n"));
-    Status = UsbGadgetEp0Queue(Internal, &mLineCoding, sizeof(mLineCoding), (USB_PPI_REQ_COMPLETE_CALLBACK)SetLineCoding);
-    ASSERT_EFI_ERROR(Status);
+  case (USB_TARGET_INTERFACE << 8) | USB_CDC_REQ_SET_LINE_CODING:
+    return UsbGadgetEp0Queue(Internal, &Internal->CdcState.LineCoding, sizeof(USB_CDC_LINE_CODING), (USB_PPI_REQ_COMPLETE_CALLBACK)SetLineCoding, 0);
 
-    return EFI_SUCCESS;
-    break;
+  case ((USB_ENDPOINT_DIR_IN | USB_TARGET_INTERFACE) << 8) | USB_CDC_REQ_GET_LINE_CODING:
+    DEBUG((EFI_D_INFO, "============================ Sending line coding\n"));
+    Status = UsbGadgetEp0Queue(
+      Internal,
+      &Internal->CdcState.LineCoding,
+      sizeof(Internal->CdcState.LineCoding),
+      NULL,
+      0
+    );
+
+    ASSERT_EFI_ERROR(Status);
+    return Status;
+
+  case (USB_TARGET_INTERFACE << 8) | USB_CDC_REQ_SET_CONTROL_LINE_STATE:
+    return UsbGadgetEp0Queue(Internal, NULL, 0, NULL, 0);
   
   default:
-    DEBUG((EFI_D_ERROR, "Unknown CDC request %d\n", Request->Request));
+    DEBUG((EFI_D_ERROR, "Unknown CDC request %d dir %s\n", Request->Request, (Request->RequestType & USB_ENDPOINT_DIR_IN) ? L"IN" : L"OUT"));
     return EFI_UNSUPPORTED;
   }
 }

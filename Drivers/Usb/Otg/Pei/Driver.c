@@ -122,6 +122,8 @@ STATIC EFI_STATUS AllocateRequests(
   return EFI_SUCCESS;
 }
 
+#define ALL_VALID_FLAGS (USB_PPI_FLAG_ZLP)
+
 STATIC EFI_STATUS InitRequest(
   IN USB_PPI *This,
   IN OUT USB_REQUEST *Request,
@@ -133,7 +135,7 @@ STATIC EFI_STATUS InitRequest(
 ) {
   USB_PEI_DRIVER *Driver;
   
-  if (!This || !Request || Flags != 0)
+  if (!This || !Request)
     return EFI_INVALID_PARAMETER;
 
   if ((!Buffer && Length > 0) || (Buffer && Length == 0))
@@ -143,7 +145,7 @@ STATIC EFI_STATUS InitRequest(
 
   Request->Buffer = Buffer;
   Request->Length = Length;
-  Request->Zero = 0;
+  Request->Zero = !!(Flags & USB_PPI_FLAG_ZLP);
   Request->Callback = Callback;
   Request->UserData = UserData;
 
@@ -155,13 +157,33 @@ STATIC EFI_STATUS Ep0Queue(
   IN USB_REQUEST *Request
 ) {
   USB_PEI_DRIVER *Driver;
-  
+
   if (!This || !Request)
     return EFI_INVALID_PARAMETER;
 
   Driver = USB_PPI_INTO_PEI_DRIVER(This);
 
   return UsbEp0QueuePacket(&Driver->Common, Request);
+}
+
+STATIC EFI_STATUS Halt(
+  IN USB_PPI *This,
+  IN UINT32 Endpoint
+) {
+  USB_PEI_DRIVER *Driver;
+
+  if (!This)
+    return EFI_INVALID_PARAMETER;
+
+  Driver = USB_PPI_INTO_PEI_DRIVER(This);
+
+  if (Endpoint == 0) {
+    return UsbEp0Halt(&Driver->Common);
+  } else {
+    // TODO: support other endpoints
+    ASSERT(0);
+    return EFI_NOT_FOUND;
+  }
 }
 
 STATIC USB_PPI mUsbPpi = {
@@ -172,7 +194,8 @@ STATIC USB_PPI mUsbPpi = {
   GetEndpointInfo,
   AllocateRequests,
   InitRequest,
-  Ep0Queue
+  Ep0Queue,
+  Halt
 };
 
 STATIC EFI_PEI_PPI_DESCRIPTOR mPpiDesc;

@@ -7,6 +7,11 @@ STATIC EFI_STATUS UsbGadgetInitialize(GADGET_DRIVER_INTERNAL *Driver) {
   if (EFI_ERROR(Status))
     return Status;
 
+  Driver->CdcState.LineCoding.RteRate = 115200;
+  Driver->CdcState.LineCoding.ParityType = USB_CDC_NO_PARITY;
+  Driver->CdcState.LineCoding.CharFormat = USB_CDC_1_STOP_BITS;
+  Driver->CdcState.LineCoding.DataBits = 8;
+
   return EFI_SUCCESS;
 }
 
@@ -30,6 +35,8 @@ GadgetInitialize(
   ASSERT_EFI_ERROR(Status);
   if (EFI_ERROR(Status))
     return Status;
+
+  ZeroMem(Driver, sizeof(GADGET_DRIVER_INTERNAL));
 
   Driver->Public.HandleControlRequest = UsbGadgetHandleControlRequest;
   Driver->Usb = Usb;

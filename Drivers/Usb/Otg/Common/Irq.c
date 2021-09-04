@@ -19,6 +19,12 @@ VOID UsbHandleInterrupt(USB_DRIVER *Driver) {
   if (IntrUsb || IntrTx || IntrRx)
     DEBUG((EFI_D_INFO, "INTR USB 0x%08x TX 0x%08x RX 0x%08x\n", IntrUsb, IntrTx, IntrRx));
 
+  // On bus reset set device address to 0, this is required for USB to work
+  // after reconnecting device
+  if (IntrUsb & MUSB_INTR_RESET) {
+    MmioWrite8(Driver->Base + MUSB_FADDR, 0);
+  }
+
   // Handle incoming data on EP0
   if (IntrTx & 1)
     UsbEp0HandleIrq(Driver);

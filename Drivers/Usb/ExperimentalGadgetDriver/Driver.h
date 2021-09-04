@@ -11,20 +11,24 @@
 #include <Ppi/UsbPpi.h>
 
 #include <IndustryStandard/UsbEx.h>
+#include <IndustryStandard/CdcAcm.h>
+
+#define CDC_CONTROL_INTERFACE 1
 
 #define GADGET_DRIVER_GET_INTERNAL(Record)        \
   BASE_CR(Record, GADGET_DRIVER_INTERNAL, Public)
 
-typedef struct _USB_STRING_TABLE {
-  UINT8 Id;
-  CONST CHAR16 *String;
-} USB_STRING_TABLE;
+typedef struct {
+  USB_CDC_LINE_CODING LineCoding;
+} CDC_STATE;
 
 typedef struct _GADGET_DRIVER_INTERNAL {
   USB_GADGET_DRIVER Public;
   USB_PPI *Usb;
 
   USB_REQUEST *ControlRequest;
+
+  CDC_STATE CdcState;
 } GADGET_DRIVER_INTERNAL;
 
 EFI_STATUS UsbGadgetHandleControlRequest(
@@ -35,4 +39,4 @@ EFI_STATUS UsbGadgetHandleControlRequest(
 
 EFI_STATUS UsbGadgetHandleCdcRequest(GADGET_DRIVER_INTERNAL *Internal, USB_DEVICE_REQUEST *Request);
 
-EFI_STATUS UsbGadgetEp0Queue(GADGET_DRIVER_INTERNAL *Internal, VOID *Buffer, UINT32 Length, USB_PPI_REQ_COMPLETE_CALLBACK Callback);
+EFI_STATUS UsbGadgetEp0Queue(GADGET_DRIVER_INTERNAL *Internal, VOID *Buffer, UINT32 Length, USB_PPI_REQ_COMPLETE_CALLBACK Callback, UINT32 Flags);

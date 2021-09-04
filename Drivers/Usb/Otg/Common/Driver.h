@@ -97,3 +97,8 @@ VOID USBC_ForceVbusValidToHigh(USB_DRIVER *Driver);
 VOID USBC_ConfigFIFO_Base(VOID);
 
 EFI_STATUS UsbEp0QueuePacket(USB_DRIVER *Driver, USB_REQUEST *Request);
+EFI_STATUS UsbEp0Halt(USB_DRIVER *Driver);
+
+// Debugging
+VOID UsbDumpSetupPacket(USB_DEVICE_REQUEST *Setup);
+

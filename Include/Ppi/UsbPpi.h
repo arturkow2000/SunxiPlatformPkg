@@ -132,6 +132,8 @@ EFI_STATUS
   OUT USB_REQUEST **OutRequests
 );
 
+#define USB_PPI_FLAG_ZLP (1 << 0)
+
 /**
  Initializes request structure previously allocated with USB_PPI_ALLOCATE_REQUESTS.
 
@@ -178,6 +180,24 @@ EFI_STATUS
   IN USB_REQUEST *Request
 );
 
+/**
+ Halts endpoint
+
+ @param This                        Pointer to USB_PPI instance.
+ @param Endpoint                    Number of endpoint to halt.
+
+ @retval EFI_SUCCESS                Endpoint halted.
+ @retval EFI_INVALID_PARAMETER      This is NULL.
+ @retval EFI_NOT_FOUND              Endpoint not found.
+ @retval EFI_DEVICE_ERROR           Unknown internal device or driver error.
+**/
+typedef
+EFI_STATUS
+(EFIAPI *USB_PPI_HALT)(
+  IN USB_PPI *This,
+  IN UINT32 Endpoint
+);
+
 struct _USB_PPI {
   USB_PPI_REGISTER_GADGET_DRIVER RegisterGadgetDriver;
   USB_PPI_UNREGISTER_GADGET_DRIVER UnregisterGadgetDriver;
@@ -187,6 +207,7 @@ struct _USB_PPI {
   USB_PPI_ALLOCATE_REQUESTS AllocateRequests;
   USB_PPI_INIT_REQUEST InitRequest;
   USB_PPI_EP0_QUEUE Ep0Queue;
+  USB_PPI_HALT Halt;
 };
 
 extern EFI_GUID gUsbPpiGuid;

@@ -35,7 +35,10 @@ VOID UsbEnable(USB_DRIVER *Driver) {
   MmioWrite8(Driver->Base + MUSB_TESTMODE, 0);
 
   /* put into basic highspeed mode and start session */
-  MmioWrite8(Driver->Base + MUSB_POWER, MUSB_POWER_ISOUPDATE | MUSB_POWER_HSENAB | MUSB_POWER_SOFTCONN);
+  //MmioWrite8(Driver->Base + MUSB_POWER, MUSB_POWER_ISOUPDATE | MUSB_POWER_HSENAB | MUSB_POWER_SOFTCONN);
+
+  // FIXME: High speed does now work properly
+  MmioWrite8(Driver->Base + MUSB_POWER, MUSB_POWER_ISOUPDATE | MUSB_POWER_SOFTCONN);
 
   DevCtl = MmioRead8(Driver->Base + MUSB_DEVCTL);
   DEBUG((EFI_D_INFO, "MUSB_DEVCTL : 0x%x VBUS : %u\n", DevCtl, (DevCtl & MUSB_DEVCTL_VBUS) >> MUSB_DEVCTL_VBUS_SHIFT));

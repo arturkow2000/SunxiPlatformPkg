@@ -1,6 +1,6 @@
 #include "Driver.h"
 
-EFI_STATUS UsbGadgetEp0Queue(GADGET_DRIVER_INTERNAL *Internal, VOID *Buffer, UINT32 Length, USB_PPI_REQ_COMPLETE_CALLBACK Callback) {
+EFI_STATUS UsbGadgetEp0Queue(GADGET_DRIVER_INTERNAL *Internal, VOID *Buffer, UINT32 Length, USB_PPI_REQ_COMPLETE_CALLBACK Callback, UINT32 Flags) {
   EFI_STATUS Status;
 
   Status = Internal->Usb->InitRequest(
@@ -8,7 +8,7 @@ EFI_STATUS UsbGadgetEp0Queue(GADGET_DRIVER_INTERNAL *Internal, VOID *Buffer, UIN
     Internal->ControlRequest,
     Buffer,
     Length,
-    0,
+    Flags,
     Callback,
     Internal
   );

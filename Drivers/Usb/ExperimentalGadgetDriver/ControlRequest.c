@@ -1,5 +1,4 @@
 #include "Driver.h"
-#include <IndustryStandard/CdcAcm.h>
 
 #define USB_STR_MANUFACTURER 1
 #define USB_STR_PRODUCT 2
@@ -22,11 +21,9 @@ STATIC USB_DEVICE_DESCRIPTOR mDeviceDescriptor = {
   .Length = sizeof(USB_DEVICE_DESCRIPTOR),
   .DescriptorType = USB_DT_DEVICE,
   .BcdUSB = 0x200,
-  .IdVendor = 0x4444,
-  .IdProduct = 0x5555,
-  .StrManufacturer = USB_STR_MANUFACTURER,
-  .StrProduct = USB_STR_PRODUCT,
-  .NumConfigurations = 1,
+  .IdVendor = 0x1F3A,
+  .IdProduct = 0x8E10,
+  .NumConfigurations = 0,
   // Values required by USB IAD specification
   .DeviceClass = 0xEF,
   .DeviceSubClass = 0x02,
@@ -118,7 +115,7 @@ STATIC DEVICE_CONFIG mConfigDescriptor = {
   .CdcData = {
     .Length = sizeof(USB_INTERFACE_DESCRIPTOR),
     .DescriptorType = USB_DT_INTERFACE,
-    .InterfaceNumber = 1,
+    .InterfaceNumber = CDC_CONTROL_INTERFACE,
     .NumEndpoints = 2,
     .InterfaceClass = USB_CLASS_DATA,
     .InterfaceSubClass = 0,
@@ -143,9 +140,13 @@ STATIC DEVICE_CONFIG mConfigDescriptor = {
 EFI_STATUS UsbGadgetSendStringDescriptor(
   GADGET_DRIVER_INTERNAL *Internal,
   UINT8 Id,
-  UINT16 Language
+  UINT16 Language,
+  UINT16 Length
 ) {
   STATIC UINT8 Buffer[4];
+  VOID *String;
+  UINT32 Size;
+  UINT32 Flags = 0;
 
   if (Id == 0) {
     Buffer[0] = 4;
@@ -154,13 +155,20 @@ EFI_STATUS UsbGadgetSendStringDescriptor(
     Buffer[2] = 9;
     Buffer[3] = 4;
 
-    return UsbGadgetEp0Queue(Internal, Buffer, Buffer[0], NULL);
+    return UsbGadgetEp0Queue(Internal, Buffer, Buffer[0], NULL, Length > 4 ? USB_PPI_FLAG_ZLP : 0);
   }
 
   switch (Id)
   {
-  case USB_STR_MANUFACTURER: return UsbGadgetEp0Queue(Internal, &mManufacturerString, sizeof(mManufacturerString), NULL);
-  case USB_STR_PRODUCT: return UsbGadgetEp0Queue(Internal, &mProductString, sizeof(mProductString), NULL);
+  case USB_STR_MANUFACTURER:
+    String = &mManufacturerString;
+    Size = sizeof mManufacturerString;
+    break;
+
+  case USB_STR_PRODUCT:
+    String = &mProductString;
+    Size = sizeof mProductString;
+    break;
   
   default:
     DEBUG((EFI_D_ERROR, "Unknown string descriptor #%d lang=0x%04x\n", Id, Language));
@@ -168,6 +176,11 @@ EFI_STATUS UsbGadgetSendStringDescriptor(
     // Stall
     return EFI_NOT_FOUND;
   }
+
+  if (Size < Length)
+    Flags |= USB_PPI_FLAG_ZLP;
+
+  return UsbGadgetEp0Queue(Internal, String, Size, NULL, Flags);
 }
 
 EFI_STATUS UsbGadgetHandleStandardControlRequest(
@@ -184,13 +197,14 @@ EFI_STATUS UsbGadgetHandleStandardControlRequest(
 
     switch(Request->Value >> 8) {
     case USB_DT_DEVICE:
-      return UsbGadgetEp0Queue(Internal, &mDeviceDescriptor, sizeof(mDeviceDescriptor), NULL);
+      DEBUG((EFI_D_ERROR, "----------------------------------------- DT_DEVICE len=%d zlp=%d\n", Request->Length, sizeof mDeviceDescriptor < Request->Length ? 1 : 0));
+      return UsbGadgetEp0Queue(Internal, &mDeviceDescriptor, sizeof(mDeviceDescriptor), NULL, sizeof mDeviceDescriptor < Request->Length ? USB_PPI_FLAG_ZLP : 0);
 
     case USB_DT_CONFIG:
       DescriptorIndex = Request->Value;
 
       if (DescriptorIndex == 0)
-        Status = UsbGadgetEp0Queue(Internal, &mConfigDescriptor, MIN(sizeof(mConfigDescriptor), Request->Length), NULL);
+        Status = UsbGadgetEp0Queue(Internal, &mConfigDescriptor, MIN(sizeof(mConfigDescriptor), Request->Length), NULL, 0);
       else {
         DEBUG((EFI_D_ERROR, "Unknown config descriptor index %d\n", DescriptorIndex));
         Status = EFI_DEVICE_ERROR;
@@ -199,7 +213,8 @@ EFI_STATUS UsbGadgetHandleStandardControlRequest(
       return Status;
 
     case USB_DT_STRING:
-      return UsbGadgetSendStringDescriptor(Internal, Request->Value, 0x0000);
+      //return UsbGadgetSendStringDescriptor(Internal, Request->Value, 0x0000, Request->Length);
+      return EFI_NOT_FOUND;
 
     default:
       DEBUG((EFI_D_ERROR, "Unknown descriptor type %d\n", Request->Value >> 8));
@@ -217,7 +232,7 @@ EFI_STATUS UsbGadgetHandleStandardControlRequest(
     }
 
     // Signal configuration was set successfully
-    return UsbGadgetEp0Queue(Internal, NULL, 0, NULL);
+    return UsbGadgetEp0Queue(Internal, NULL, 0, NULL, 0);
   }
 
   return EFI_UNSUPPORTED;
@@ -237,8 +252,8 @@ EFI_STATUS UsbGadgetHandleControlRequest(
     Status = UsbGadgetHandleStandardControlRequest(Internal, Request);
     break;
   case USB_REQ_TYPE_CLASS:
-    DEBUG((EFI_D_ERROR, "Unhandled class specific request %d\n", Request->Request));
-    Status = UsbGadgetHandleCdcRequest(Internal, Request);
+    //Status = UsbGadgetHandleCdcRequest(Internal, Request);
+    return EFI_DEVICE_ERROR;
     break;
   default:
     Status = EFI_UNSUPPORTED;
