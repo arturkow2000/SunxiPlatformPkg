@@ -22,6 +22,7 @@ VOID UsbHandleInterrupt(USB_DRIVER *Driver) {
   // On bus reset set device address to 0, this is required for USB to work
   // after reconnecting device
   if (IntrUsb & MUSB_INTR_RESET) {
+    DEBUG((EFI_D_INFO, "USB RESET\n\n\n"));
     MmioWrite8(Driver->Base + MUSB_FADDR, 0);
   }
 

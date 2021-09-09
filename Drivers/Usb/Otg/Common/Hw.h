@@ -147,6 +147,73 @@
 #define MUSB_CONFIGDATA_SOFTCONE  0x02 /* SoftConnect */
 #define MUSB_CONFIGDATA_UTMIDW    0x01 /* Data width 0/1 => 8/16bits */
 
+/* TXCSR in Peripheral and Host mode */
+#define MUSB_TXCSR_AUTOSET        0x8000
+#define MUSB_TXCSR_DMAENAB        0x1000
+#define MUSB_TXCSR_FRCDATATOG     0x0800
+#define MUSB_TXCSR_DMAMODE        0x0400
+#define MUSB_TXCSR_CLRDATATOG     0x0040
+#define MUSB_TXCSR_FLUSHFIFO      0x0008
+#define MUSB_TXCSR_FIFONOTEMPTY   0x0002
+#define MUSB_TXCSR_TXPKTRDY       0x0001
+
+/* TXCSR in Peripheral mode */
+#define MUSB_TXCSR_P_ISO          0x4000
+#define MUSB_TXCSR_P_INCOMPTX     0x0080
+#define MUSB_TXCSR_P_SENTSTALL    0x0020
+#define MUSB_TXCSR_P_SENDSTALL    0x0010
+#define MUSB_TXCSR_P_UNDERRUN     0x0004
+
+/* TXCSR in Host mode */
+#define MUSB_TXCSR_H_WR_DATATOGGLE  0x0200
+#define MUSB_TXCSR_H_DATATOGGLE     0x0100
+#define MUSB_TXCSR_H_NAKTIMEOUT     0x0080
+#define MUSB_TXCSR_H_RXSTALL        0x0020
+#define MUSB_TXCSR_H_ERROR          0x0004
+
+/* TXCSR bits to avoid zeroing (write zero clears, write 1 ignored) */
+#define MUSB_TXCSR_P_WZC_BITS \
+  (MUSB_TXCSR_P_INCOMPTX | MUSB_TXCSR_P_SENTSTALL \
+  | MUSB_TXCSR_P_UNDERRUN | MUSB_TXCSR_FIFONOTEMPTY)
+#define MUSB_TXCSR_H_WZC_BITS \
+  (MUSB_TXCSR_H_NAKTIMEOUT | MUSB_TXCSR_H_RXSTALL \
+  | MUSB_TXCSR_H_ERROR | MUSB_TXCSR_FIFONOTEMPTY)
+
+/* RXCSR in Peripheral and Host mode */
+#define MUSB_RXCSR_AUTOCLEAR  0x8000
+#define MUSB_RXCSR_DMAENAB    0x2000
+#define MUSB_RXCSR_DISNYET    0x1000
+#define MUSB_RXCSR_PID_ERR    0x1000
+#define MUSB_RXCSR_DMAMODE    0x0800
+#define MUSB_RXCSR_INCOMPRX   0x0100
+#define MUSB_RXCSR_CLRDATATOG 0x0080
+#define MUSB_RXCSR_FLUSHFIFO  0x0010
+#define MUSB_RXCSR_DATAERROR  0x0008
+#define MUSB_RXCSR_FIFOFULL   0x0002
+#define MUSB_RXCSR_RXPKTRDY   0x0001
+
+/* RXCSR in Peripheral mode */
+#define MUSB_RXCSR_P_ISO        0x4000
+#define MUSB_RXCSR_P_SENTSTALL  0x0040
+#define MUSB_RXCSR_P_SENDSTALL  0x0020
+#define MUSB_RXCSR_P_OVERRUN    0x0004
+
+/* RXCSR in Host mode */
+#define MUSB_RXCSR_H_AUTOREQ        0x4000
+#define MUSB_RXCSR_H_WR_DATATOGGLE  0x0400
+#define MUSB_RXCSR_H_DATATOGGLE     0x0200
+#define MUSB_RXCSR_H_RXSTALL        0x0040
+#define MUSB_RXCSR_H_REQPKT         0x0020
+#define MUSB_RXCSR_H_ERROR          0x0004
+
+/* RXCSR bits to avoid zeroing (write zero clears, write 1 ignored) */
+#define MUSB_RXCSR_P_WZC_BITS \
+  (MUSB_RXCSR_P_SENTSTALL | MUSB_RXCSR_P_OVERRUN \
+  | MUSB_RXCSR_RXPKTRDY)
+#define MUSB_RXCSR_H_WZC_BITS \
+  (MUSB_RXCSR_H_RXSTALL | MUSB_RXCSR_H_ERROR \
+  | MUSB_RXCSR_DATAERROR | MUSB_RXCSR_RXPKTRDY)
+
 inline VOID UsbSelectEndpoint(USB_DRIVER *Driver, UINT8 Endpoint) {
   MmioWrite8(Driver->Base + MUSB_INDEX, Endpoint);
 }

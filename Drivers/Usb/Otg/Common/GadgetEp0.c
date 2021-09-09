@@ -8,7 +8,6 @@ STATIC VOID UsbEp0TxState(USB_DRIVER *Driver) {
   UINT8 *Source;
   UINT32 Count;
   UINT16 Csr = MUSB_CSR0_TXPKTRDY;
-  UINT16 FifoSize = 1 << (UINT16)gSunxiSocConfig.EpFifoConfig[0].TxMaxPacketSizeLog2;
 
   Node = GetFirstNode(&Driver->Ep0Queue);
   if (Node == &Driver->Ep0Queue)
@@ -24,12 +23,12 @@ STATIC VOID UsbEp0TxState(USB_DRIVER *Driver) {
 
   /* load the data */
   Source = (UINT8*)Request->Buffer + Request->Actual;
-  Count = MIN(FifoSize, Request->Length - Request->Actual);
+  Count = MIN(64, Request->Length - Request->Actual);
   UsbWriteFifo(Driver, 0, Count, Source);
   Request->Actual += Count;
 
   /* update the flags */
-  if (Count < FifoSize || (Request->Length == Request->Actual && !Request->Zero)) {
+  if (Count < 64 || (Request->Length == Request->Actual && !Request->Zero)) {
     Driver->Ep0State = MUSB_EP0_STAGE_STATUSOUT;
     Csr |= MUSB_CSR0_P_DATAEND;
   } else Request = NULL;
@@ -78,7 +77,7 @@ STATIC VOID UsbEp0RxState(USB_DRIVER *Driver) {
     Length = Request->Length - Request->Actual;
     
     /* read the buffer */
-    Count = MmioRead16(Driver->Base + MUSB_COUNT0);
+    Count = MmioRead8(Driver->Base + MUSB_COUNT0);
     if (Count > Length) {
       Status = EFI_BUFFER_TOO_SMALL;
       Count = Length;
@@ -113,16 +112,6 @@ STATIC VOID UsbReadSetup(USB_DRIVER *Driver, USB_DEVICE_REQUEST *Setup) {
   USB_REQUEST *Request;
 
   UsbReadFifo(Driver, 0, sizeof *Setup, (UINT8*)Setup);
-
-  /*DEBUG((
-    EFI_D_INFO,
-    "SETUP req%02x.%02x v%04x i%04x l%d\n",
-    Setup->RequestType,
-    Setup->Request,
-    Setup->Value,
-    Setup->Index,
-    Setup->Length
-  ));*/
 
   UsbDumpSetupPacket(Setup);
 
@@ -225,13 +214,80 @@ STATIC INT8 UsbServiceZeroDataRequest(USB_DRIVER *Driver, USB_DEVICE_REQUEST *Se
   return Handled;
 }
 
+STATIC INT8 HandleGetStatusRequest(USB_DRIVER *Driver, USB_DEVICE_REQUEST *Request) {
+  INT8 Handled = 1;
+  UINT8 Target = Request->RequestType & 0x1f;
+  UINT8 Result[2];
+  UINT8 EndpointNumber;
+  BOOLEAN IsIn;
+  UINT16 Temp;
+  UINT16 Len;
+
+  Result[1] = 0;
+
+  switch (Target)
+  {
+  case USB_TARGET_DEVICE:
+    // Currently always report af bus powered
+    Result[0] = 0;
+    break;
+
+  case USB_TARGET_INTERFACE:
+    Result[0] = 0;
+    break;
+
+  case USB_TARGET_ENDPOINT: {
+    EndpointNumber = Request->Index & 0xff;
+    if (EndpointNumber == 0) {
+      Result[0] = 0;
+      break;
+    }
+
+    IsIn = !!(EndpointNumber & USB_ENDPOINT_DIR_IN);
+    if (IsIn)
+      EndpointNumber &= 0x0f;
+
+    if (EndpointNumber >= gSunxiSocConfig.NumEndpoints) {
+      Handled = -1;
+      break;
+    }
+
+    UsbSelectEndpoint(Driver, EndpointNumber);
+    if (IsIn)
+      Temp = MmioRead16(Driver->Base + MUSB_TXCSR) & MUSB_TXCSR_P_SENDSTALL;
+    else
+      Temp = MmioRead16(Driver->Base + MUSB_RXCSR) & MUSB_RXCSR_P_SENDSTALL;
+    UsbSelectEndpoint(Driver, EndpointNumber);
+
+    Result[0] = Temp ? 1 : 0;
+  } break;
+
+  default:
+    /* class, vendor, etc ... delegate */
+    Handled = 0;
+    break;
+  }
+
+  /* fill up the fifo; caller updates csr0 */
+  if (Handled > 0) {
+    Len = Request->Length;
+
+    if (Len > 2)
+      Len = 2;
+
+    UsbWriteFifo(Driver, 0, Len, Result);
+  }
+
+  return Handled;
+}
+
 STATIC INT8 UsbServiceInRequest(USB_DRIVER *Driver, USB_DEVICE_REQUEST *Setup) {
   INT8 Handled = 0;
 
   if ((Setup->RequestType & USB_TYPE_MASK) == USB_REQ_TYPE_STANDARD) {
     switch (Setup->Request) {
     case USB_REQ_GET_STATUS:
-      DEBUG((EFI_D_INFO, "USB_REQ_GET_STATUS\n"));
+      Handled = HandleGetStatusRequest(Driver, Setup);
       break;
 
     default:
@@ -252,7 +308,7 @@ VOID UsbEp0HandleIrq(USB_DRIVER *Driver) {
   UsbSelectEndpoint(Driver, 0);
 
   Csr0 = MmioRead16(Driver->Base + MUSB_CSR0);
-  Len = MmioRead16(Driver->Base + MUSB_COUNT0);
+  Len = MmioRead8(Driver->Base + MUSB_COUNT0);
 
   DEBUG((
     EFI_D_INFO,
@@ -473,7 +529,6 @@ EFI_STATUS UsbEp0QueuePacket(USB_DRIVER *Driver, USB_REQUEST *Request) {
     if (Request->Length > 0)
       return EFI_DEVICE_ERROR;
     else {
-      DEBUG((EFI_D_INFO, "+++++++++++++++++++++++++++++++++++++++++ SENDING STATUS\n"));
       Driver->Ep0State = MUSB_EP0_STAGE_STATUSIN;
       MmioWrite16(Driver->Base + MUSB_CSR0, Driver->AckPending | MUSB_CSR0_P_DATAEND);
       Driver->AckPending = 0;
