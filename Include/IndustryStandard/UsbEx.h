@@ -25,6 +25,9 @@
 #define USB_CLASS_DATA           10
 #define USB_CLASS_VENDOR_SPEC    0xff
 
+// Request type used by Windows for querying Microsoft OS Descriptors
+#define USB_REQ_GET_OS_FEATURE_DESCRIPTOR 0x20
+
 typedef struct {
   UINT8 Length;
   UINT8 DescriptorType;
@@ -35,3 +38,17 @@ typedef struct {
   UINT8 FunctionProtocol;
   UINT8 Function;
 } USB_INTERFACE_ASSOCIATION_DESCRIPTOR;
+
+#define MICROSOFT_FEATURE_DESCRIPTOR_VERSION 0x0100
+typedef struct {
+  UINT32 Length;
+  UINT16 Version;
+  UINT16 CompatibilityId;
+  UINT8 NumberOfSections;
+  UINT8 Reserved0[7];
+  UINT8 InterfaceNumber;
+  UINT8 One;
+  UINT8 CompatibleId[8];
+  UINT8 SubCompatibleId[8];
+  UINT8 Reserved1[6];
+} MICROSOFT_FEATURE_DESCRIPTOR;

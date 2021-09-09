@@ -3,6 +3,8 @@
 #define USB_STR_MANUFACTURER 1
 #define USB_STR_PRODUCT 2
 
+#define MOS_VENDOR_CODE 0xac
+
 #define MAKE_STRING_DESCRIPTOR(Name, Text)                \
   STATIC struct {                                         \
     UINT8 __Length;                                       \
@@ -17,27 +19,59 @@
 MAKE_STRING_DESCRIPTOR(mManufacturerString, L"Allwinner");
 MAKE_STRING_DESCRIPTOR(mProductString, L"Sunxi device in PEI mode");
 
+STATIC struct {
+  UINT8 __Length;
+  UINT8 __DescriptorType;
+  CHAR8 __String[16];
+} mMsftString = {
+  18, 3,
+  { 'M', 0, 'S', 0, 'F', 0, 'T', 0, '1', 0, '0', 0, '0', 0, MOS_VENDOR_CODE, 0x00 }
+};
+
+STATIC MICROSOFT_FEATURE_DESCRIPTOR mMicrosoftFeatureDescriptor = {
+  .Length = sizeof(MICROSOFT_FEATURE_DESCRIPTOR),
+  .Version = MICROSOFT_FEATURE_DESCRIPTOR_VERSION,
+  .CompatibilityId = 4,
+  .NumberOfSections = 1,
+  .Reserved0 = { 0, 0, 0, 0, 0, 0, 0 },
+  .InterfaceNumber = CUSTOM_INTERFACE,
+  .One = 1,
+  .CompatibleId = { 'W', 'I', 'N', 'U', 'S', 'B', 0, 0 },
+  .SubCompatibleId = { 0, 0, 0, 0, 0, 0, 0, 0 },
+  .Reserved1 = { 0, 0, 0, 0, 0, 0 },
+};
+
 STATIC USB_DEVICE_DESCRIPTOR mDeviceDescriptor = {
   .Length = sizeof(USB_DEVICE_DESCRIPTOR),
   .DescriptorType = USB_DT_DEVICE,
   .BcdUSB = 0x200,
   .IdVendor = 0x1F3A,
   .IdProduct = 0x8E10,
-  .NumConfigurations = 0,
-  // Values required by USB IAD specification
-  .DeviceClass = 0xEF,
-  .DeviceSubClass = 0x02,
-  .DeviceProtocol = 0x01,
+  .NumConfigurations = 1,
+  // These must be zero for composite device
+  .DeviceClass = 0x00,
+  .DeviceSubClass = 0x00,
+  .DeviceProtocol = 0x00,
   // From USB 2.0 spec:
   // If the device is operating at high-speed, the bMaxPacketSize0 field must be 64 indicating a 64 byte
   // maximum packet. High-speed operation does not allow other maximum packet sizes for the control
   // endpoint (endpoint 0).
   .MaxPacketSize0 = 64,
+  .BcdDevice = 0x0001,
+  .StrManufacturer = USB_STR_MANUFACTURER,
+  .StrProduct = USB_STR_PRODUCT
 };
 
 typedef struct _DEVICE_CONFIG {
   USB_CONFIG_DESCRIPTOR Config;
-  USB_INTERFACE_ASSOCIATION_DESCRIPTOR Iad;
+  // Interface with custom protocol used for controlling device
+  // currently dummy,
+  // it will be used to transfer EFI image when booting from USB
+  // and possibly for debugging purposes
+  //
+  // CDC will be used to emulate serial port
+  USB_INTERFACE_DESCRIPTOR Custom;
+  USB_INTERFACE_ASSOCIATION_DESCRIPTOR Iad0;
   USB_INTERFACE_DESCRIPTOR CdcAt;
   USB_CDC_FUNCTIONAL_DESCRIPTOR CdcFunctional;
   USB_CDC_CALL_MANAGEMENT_DESCRIPTOR CdcCallManagement;
@@ -54,16 +88,24 @@ STATIC DEVICE_CONFIG mConfigDescriptor = {
     .Length = sizeof(USB_CONFIG_DESCRIPTOR),
     .DescriptorType = USB_DT_CONFIG,
     .TotalLength = sizeof(DEVICE_CONFIG),
-    .NumInterfaces = 2,
+    .NumInterfaces = 3,
     .ConfigurationValue = 1,
     // Use same properties as FEL mode - bus powered + 300 mA
     .Attributes = (1 << 7),
     .MaxPower = (300 / 2)
   },
-  .Iad = {
+  .Custom = {
+    .Length = sizeof(USB_INTERFACE_DESCRIPTOR),
+    .DescriptorType = USB_DT_INTERFACE,
+    .InterfaceNumber = CUSTOM_INTERFACE,
+    .InterfaceClass = 255,
+    .InterfaceSubClass = 255,
+    .InterfaceProtocol = 255,
+  },
+  .Iad0 = {
     .Length = sizeof(USB_INTERFACE_ASSOCIATION_DESCRIPTOR),
     .DescriptorType = USB_DT_INTERFACE_ASSOCIATION,
-    .FirstInterface = 0,
+    .FirstInterface = CDC_CONTROL_INTERFACE,
     .InterfaceCount = 2,
     .FunctionClass = USB_CLASS_COMM,
     .FunctionSubClass = USB_CDC_SUBCLASS_ACM,
@@ -72,10 +114,10 @@ STATIC DEVICE_CONFIG mConfigDescriptor = {
   .CdcAt = {
     .Length = sizeof(USB_INTERFACE_DESCRIPTOR),
     .DescriptorType = USB_DT_INTERFACE,
-    .InterfaceNumber = 0,
+    .InterfaceNumber = CDC_CONTROL_INTERFACE,
     .InterfaceClass = USB_CLASS_COMM,
     .InterfaceSubClass = USB_CDC_SUBCLASS_ACM,
-    .InterfaceProtocol = USB_CDC_PROTO_NONE,
+    .InterfaceProtocol = USB_CDC_ACM_PROTO_AT_V25TER,
     .NumEndpoints = 1,
   },
   .CdcFunctional = {
@@ -89,10 +131,10 @@ STATIC DEVICE_CONFIG mConfigDescriptor = {
     .DescriptorType = 0x24,
     .DescriptorSubType = USB_CDC_FDT_CALL_MANAGEMENT,
     .Capabilities = 0,
-    .DataInterface = 1,
+    .DataInterface = CDC_DATA_INTEFACE,
   },
   .CdcAcm = {
-    .Length = sizeof(USB_CDC_FDT_ACM),
+    .Length = sizeof(USB_CDC_ACM_DESCRIPTOR),
     .DescriptorType = 0x24,
     .DescriptorSubType = USB_CDC_FDT_ACM,
     .Capabilities = 0x02
@@ -101,8 +143,8 @@ STATIC DEVICE_CONFIG mConfigDescriptor = {
     .Length = sizeof(USB_CDC_UNION_DESCRIPTOR),
     .DescriptorType = 0x24,
     .DescriptorSubType = USB_CDC_FDT_UNION,
-    .MasterInterface = 0,
-    .SlaveInterface = 1,
+    .MasterInterface = CDC_CONTROL_INTERFACE,
+    .SlaveInterface = CDC_DATA_INTEFACE,
   },
   .CdcControlEp = {
     .Length = sizeof(USB_ENDPOINT_DESCRIPTOR),
@@ -115,7 +157,7 @@ STATIC DEVICE_CONFIG mConfigDescriptor = {
   .CdcData = {
     .Length = sizeof(USB_INTERFACE_DESCRIPTOR),
     .DescriptorType = USB_DT_INTERFACE,
-    .InterfaceNumber = CDC_CONTROL_INTERFACE,
+    .InterfaceNumber = CDC_DATA_INTEFACE,
     .NumEndpoints = 2,
     .InterfaceClass = USB_CLASS_DATA,
     .InterfaceSubClass = 0,
@@ -139,36 +181,32 @@ STATIC DEVICE_CONFIG mConfigDescriptor = {
 
 EFI_STATUS UsbGadgetSendStringDescriptor(
   GADGET_DRIVER_INTERNAL *Internal,
+  USB_DEVICE_REQUEST *Request,
   UINT8 Id,
-  UINT16 Language,
-  UINT16 Length
+  UINT16 Language
 ) {
   STATIC UINT8 Buffer[4];
-  VOID *String;
-  UINT32 Size;
-  UINT32 Flags = 0;
 
   if (Id == 0) {
-    Buffer[0] = 4;
+    Buffer[0] = sizeof Buffer;
     Buffer[1] = USB_DT_STRING;
     // English
-    Buffer[2] = 9;
-    Buffer[3] = 4;
+    Buffer[4] = 9;
+    Buffer[5] = 4;
 
-    return UsbGadgetEp0Queue(Internal, Buffer, Buffer[0], NULL, Length > 4 ? USB_PPI_FLAG_ZLP : 0);
+    return UsbGadgetEp0Respond(Internal, Request, Buffer, sizeof Buffer);
   }
 
   switch (Id)
   {
+  case 0xEE:
+    return UsbGadgetEp0Respond(Internal, Request, &mMsftString, sizeof mMsftString);
+
   case USB_STR_MANUFACTURER:
-    String = &mManufacturerString;
-    Size = sizeof mManufacturerString;
-    break;
+    return UsbGadgetEp0Respond(Internal, Request, &mManufacturerString, sizeof mManufacturerString);
 
   case USB_STR_PRODUCT:
-    String = &mProductString;
-    Size = sizeof mProductString;
-    break;
+    return UsbGadgetEp0Respond(Internal, Request, &mProductString, sizeof mProductString);
   
   default:
     DEBUG((EFI_D_ERROR, "Unknown string descriptor #%d lang=0x%04x\n", Id, Language));
@@ -176,11 +214,6 @@ EFI_STATUS UsbGadgetSendStringDescriptor(
     // Stall
     return EFI_NOT_FOUND;
   }
-
-  if (Size < Length)
-    Flags |= USB_PPI_FLAG_ZLP;
-
-  return UsbGadgetEp0Queue(Internal, String, Size, NULL, Flags);
 }
 
 EFI_STATUS UsbGadgetHandleStandardControlRequest(
@@ -197,14 +230,13 @@ EFI_STATUS UsbGadgetHandleStandardControlRequest(
 
     switch(Request->Value >> 8) {
     case USB_DT_DEVICE:
-      DEBUG((EFI_D_ERROR, "----------------------------------------- DT_DEVICE len=%d zlp=%d\n", Request->Length, sizeof mDeviceDescriptor < Request->Length ? 1 : 0));
-      return UsbGadgetEp0Queue(Internal, &mDeviceDescriptor, sizeof(mDeviceDescriptor), NULL, sizeof mDeviceDescriptor < Request->Length ? USB_PPI_FLAG_ZLP : 0);
+      return UsbGadgetEp0Respond(Internal, Request, &mDeviceDescriptor, sizeof mDeviceDescriptor);
 
     case USB_DT_CONFIG:
       DescriptorIndex = Request->Value;
 
       if (DescriptorIndex == 0)
-        Status = UsbGadgetEp0Queue(Internal, &mConfigDescriptor, MIN(sizeof(mConfigDescriptor), Request->Length), NULL, 0);
+        Status = UsbGadgetEp0Respond(Internal, Request, &mConfigDescriptor, sizeof mConfigDescriptor);
       else {
         DEBUG((EFI_D_ERROR, "Unknown config descriptor index %d\n", DescriptorIndex));
         Status = EFI_DEVICE_ERROR;
@@ -213,8 +245,7 @@ EFI_STATUS UsbGadgetHandleStandardControlRequest(
       return Status;
 
     case USB_DT_STRING:
-      //return UsbGadgetSendStringDescriptor(Internal, Request->Value, 0x0000, Request->Length);
-      return EFI_NOT_FOUND;
+      return UsbGadgetSendStringDescriptor(Internal, Request, Request->Value, 0x0000);
 
     default:
       DEBUG((EFI_D_ERROR, "Unknown descriptor type %d\n", Request->Value >> 8));
@@ -238,6 +269,19 @@ EFI_STATUS UsbGadgetHandleStandardControlRequest(
   return EFI_UNSUPPORTED;
 }
 
+STATIC EFI_STATUS HandleMosRequest(
+  GADGET_DRIVER_INTERNAL *Internal,
+  USB_DEVICE_REQUEST *Request
+  )
+{
+  UINT8 Target = Request->RequestType & 0x1f;
+
+  if (Target != USB_TARGET_DEVICE || !(Request->RequestType & USB_ENDPOINT_DIR_IN))
+    return EFI_UNSUPPORTED;
+
+  return UsbGadgetEp0Respond(Internal, Request, &mMicrosoftFeatureDescriptor, sizeof mMicrosoftFeatureDescriptor);
+}
+
 EFI_STATUS UsbGadgetHandleControlRequest(
   USB_GADGET_DRIVER *This,
   USB_DRIVER *Driver,
@@ -252,9 +296,12 @@ EFI_STATUS UsbGadgetHandleControlRequest(
     Status = UsbGadgetHandleStandardControlRequest(Internal, Request);
     break;
   case USB_REQ_TYPE_CLASS:
-    //Status = UsbGadgetHandleCdcRequest(Internal, Request);
-    return EFI_DEVICE_ERROR;
+    Status = UsbGadgetHandleCdcRequest(Internal, Request);
     break;
+  case USB_REQ_TYPE_VENDOR:
+    if (Request->Request == MOS_VENDOR_CODE && Request->Index == 0x04)
+      return HandleMosRequest(Internal, Request);
+    /* fallthrough */
   default:
     Status = EFI_UNSUPPORTED;
     break;

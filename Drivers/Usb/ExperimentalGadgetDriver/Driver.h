@@ -13,7 +13,9 @@
 #include <IndustryStandard/UsbEx.h>
 #include <IndustryStandard/CdcAcm.h>
 
+#define CUSTOM_INTERFACE 0
 #define CDC_CONTROL_INTERFACE 1
+#define CDC_DATA_INTEFACE 2
 
 #define GADGET_DRIVER_GET_INTERNAL(Record)        \
   BASE_CR(Record, GADGET_DRIVER_INTERNAL, Public)
@@ -38,5 +40,10 @@ EFI_STATUS UsbGadgetHandleControlRequest(
   );
 
 EFI_STATUS UsbGadgetHandleCdcRequest(GADGET_DRIVER_INTERNAL *Internal, USB_DEVICE_REQUEST *Request);
+
+/**
+ Responds to USB IN request
+**/
+EFI_STATUS UsbGadgetEp0Respond(GADGET_DRIVER_INTERNAL *Internal, USB_DEVICE_REQUEST *Request, VOID *Buffer, UINT32 Length);
 
 EFI_STATUS UsbGadgetEp0Queue(GADGET_DRIVER_INTERNAL *Internal, VOID *Buffer, UINT32 Length, USB_PPI_REQ_COMPLETE_CALLBACK Callback, UINT32 Flags);
