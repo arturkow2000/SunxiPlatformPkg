@@ -4,23 +4,20 @@
 #include <Library/MemoryAllocationLib.h>
 
 EFI_STATUS UsbInit(USB_DRIVER *Driver) {
-  UINT32 i;
-
   InitializeListHead(&Driver->Ep0Queue);
 
   Driver->Epx = AllocatePool(sizeof(USB_EPX) * (gSunxiSocConfig.NumEndpoints - 1));
   if (!Driver->Epx)
     return EFI_OUT_OF_RESOURCES;
-  
-  for (i = 0; i < gSunxiSocConfig.NumEndpoints - 1; i++) {
-    InitializeListHead(&Driver->Epx[i].TxQueue);
-    InitializeListHead(&Driver->Epx[i].RxQueue);
-    Driver->Epx[i].Busy = FALSE;
-    Driver->Epx[i].TxPacketSize = 0;
-    Driver->Epx[i].RxPacketSize = 0;
-  }
 
   // TODO: ungate clocks before doing anything
+
+  // disable interrupts, we are not going to use them
+  MmioWrite8(Driver->Base + MUSB_INTRUSBE, 0);
+  MmioWrite16(Driver->Base + MUSB_INTRTXE, 0);
+  MmioWrite16(Driver->Base + MUSB_INTRRXE, 0);
+
+  UsbReset(Driver, TRUE);
 
   USBC_ConfigFIFO_Base();
   USBC_EnableDpDmPullUp(Driver);
@@ -47,9 +44,6 @@ VOID UsbEnable(USB_DRIVER *Driver) {
   DevCtl = MmioRead8(Driver->Base + MUSB_DEVCTL);
   DEBUG((EFI_D_INFO, "MUSB_DEVCTL : 0x%x VBUS : %u\n", DevCtl, (DevCtl & MUSB_DEVCTL_VBUS) >> MUSB_DEVCTL_VBUS_SHIFT));
 
-  UsbSelectEndpoint(Driver, 0);
-  MmioWrite8(Driver->Base + MUSB_FADDR, 0);
-
   /* select PIO mode */
   MmioWrite8(Driver->Base + USBC_REG_o_VEND0, 0);
 
@@ -57,7 +51,7 @@ VOID UsbEnable(USB_DRIVER *Driver) {
 
   MmioWrite8(Driver->Base + MUSB_DEVCTL, DevCtl & ~MUSB_DEVCTL_SESSION);
 
-  UsbReset(Driver);
+  UsbReset(Driver, FALSE);
 
   Driver->Enabled = TRUE;
 }
@@ -73,22 +67,31 @@ VOID UsbDisable(USB_DRIVER *Driver) {
   MmioWrite8(Driver->Base + MUSB_DEVCTL, 0);
   MmioWrite8(Driver->Base + MUSB_POWER, 0);
 
-  // disable interrupts, we are not going to use them
-  MmioWrite8(Driver->Base + MUSB_INTRUSBE, 0);
-  MmioWrite16(Driver->Base + MUSB_INTRTXE, 0);
-  MmioWrite16(Driver->Base + MUSB_INTRRXE, 0);
-
   // flush pending interrupts
   MmioRead8(Driver->Base + MUSB_INTRUSB);
   MmioRead16(Driver->Base + MUSB_INTRTX);
   MmioRead16(Driver->Base + MUSB_INTRRX);
 }
 
-VOID UsbReset(USB_DRIVER *Driver) {
+VOID UsbReset(USB_DRIVER *Driver, BOOLEAN FirstReset) {
+  UINT32 i;
+
+  if (!FirstReset) {
+    // TODO: abort all transfers
+  }
+
+  for (i = 0; i < gSunxiSocConfig.NumEndpoints - 1; i++) {
+    InitializeListHead(&Driver->Epx[i].TxQueue);
+    InitializeListHead(&Driver->Epx[i].RxQueue);
+    Driver->Epx[i].Busy = FALSE;
+    Driver->Epx[i].TxPacketSize = 0;
+    Driver->Epx[i].RxPacketSize = 0;
+  }
+
   UsbSelectEndpoint(Driver, 0);
   MmioWrite8(Driver->Base + MUSB_FADDR, 0);
 
-  Driver->Ep0State = MUSB_EP0_STAGE_SETUP;
+  Driver->Ep0State = MUSB_EP0_STAGE_IDLE;
   Driver->AckPending = 0;
   Driver->SetAddress = FALSE;
   Driver->Address = 0;

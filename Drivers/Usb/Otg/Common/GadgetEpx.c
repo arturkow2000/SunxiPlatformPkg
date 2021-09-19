@@ -162,7 +162,7 @@ VOID UsbEpxHandleTxIrq(USB_DRIVER *Driver, UINT32 EndpointNumber) {
   UsbEpxTxState(Driver, EndpointNumber, Urb);
 }
 
-STATIC VOID UsbEpxRestart(USB_DRIVER *Driver, UINT32 Endpoint, USB_REQUEST_BLOCK *Urb) {
+VOID UsbEpxRestart(USB_DRIVER *Driver, UINT32 Endpoint, USB_REQUEST_BLOCK *Urb) {
   UsbSelectEndpoint(Driver, Endpoint);
   if (Urb->Flags & USB_FLAG_TX) {
     UsbEpxTxState(Driver, Endpoint, Urb);

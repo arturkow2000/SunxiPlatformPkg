@@ -86,7 +86,7 @@ struct _USB_REQUEST_BLOCK {
 };
 
 EFI_STATUS UsbInit(USB_DRIVER *Driver);
-VOID UsbReset(USB_DRIVER *Driver);
+VOID UsbReset(USB_DRIVER *Driver, BOOLEAN FirstReset);
 VOID UsbEnable(USB_DRIVER *Driver);
 VOID UsbDisable(USB_DRIVER *Driver);
 VOID UsbCoreInit(USB_DRIVER *Driver);
@@ -95,6 +95,7 @@ VOID UsbHandleInterrupt(USB_DRIVER *Driver);
 VOID UsbEp0HandleIrq(USB_DRIVER *Driver);
 VOID UsbEpxHandleRxIrq(USB_DRIVER *Driver, UINT32 EndpointNumber);
 VOID UsbEpxHandleTxIrq(USB_DRIVER *Driver, UINT32 EndpointNumber);
+VOID UsbEpxRestart(USB_DRIVER *Driver, UINT32 Endpoint, USB_REQUEST_BLOCK *Urb);
 
 // Internal APIs used for forwarding data to gadget driver
 INT8 UsbForwardControlRequestToGadgetDriver(USB_DRIVER *Driver, USB_DEVICE_REQUEST *Request);

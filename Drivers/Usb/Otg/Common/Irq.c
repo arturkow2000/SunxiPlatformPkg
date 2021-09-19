@@ -25,7 +25,7 @@ VOID UsbHandleInterrupt(USB_DRIVER *Driver) {
   // after reconnecting device
   if (IntrUsb & MUSB_INTR_RESET) {
     DEBUG((EFI_D_INFO, "USB RESET\n\n\n"));
-    UsbReset(Driver);
+    UsbReset(Driver, FALSE);
   }
 
   // Handle incoming data on EP0

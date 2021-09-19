@@ -158,10 +158,14 @@ STATIC VOID UsbReadSetup(USB_DRIVER *Driver, USB_DEVICE_REQUEST *Setup) {
  *
  */
 STATIC INT8 UsbServiceZeroDataRequest(USB_DRIVER *Driver, USB_DEVICE_REQUEST *Setup) {
-  UINT8 Recip = Setup->RequestType & 0x1f;
+  UINT8 Target = Setup->RequestType & 0x1f;
   INT8 Handled = -1;
   UINT8 Endpoint;
-  //UINT16 Csr;
+  BOOLEAN IsIn;
+  USB_EPX *Ep;
+  LIST_ENTRY *UrbList;
+  LIST_ENTRY *Node;
+  USB_REQUEST_BLOCK *Urb;
 
   /* the gadget driver handles everything except what we MUST handle */
   if ((Setup->RequestType & USB_TYPE_MASK) != USB_REQ_TYPE_STANDARD)
@@ -176,28 +180,59 @@ STATIC INT8 UsbServiceZeroDataRequest(USB_DRIVER *Driver, USB_DEVICE_REQUEST *Se
     break;
 
   case USB_REQ_CLEAR_FEATURE:
-    DEBUG((EFI_D_INFO, "USB_REQ_CLEAR_FEATURE\n"));
-    switch (Recip) {
-    case USB_RECIP_DEVICE:
-    case USB_RECIP_INTERFACE:
+    switch (Target) {
+    case USB_TARGET_DEVICE:
+    case USB_TARGET_INTERFACE:
       break;
-    case USB_RECIP_ENDPOINT:
+    case USB_TARGET_ENDPOINT:
       Endpoint = Setup->Index & 0x0f;
-      if (Endpoint == 0 || Endpoint >= gSunxiSocConfig.NumEndpoints || Setup->Value == USB_FEATURE_ENDPOINT_HALT)
+      if (Endpoint == 0 || Endpoint >= gSunxiSocConfig.NumEndpoints || Setup->Value != USB_FEATURE_ENDPOINT_HALT)
         break;
+
+      IsIn = !!(Setup->Index & USB_ENDPOINT_DIR_IN);
+      Ep = &Driver->Epx[Endpoint - 1];
+
+      if (IsIn) {
+        if (!(Driver->EndpointsUsedForTx & (1u << (UINT32)Endpoint))) {
+          DEBUG((EFI_D_ERROR, "attempting to clear halt on disabled EP%d (TX)\n", Endpoint));
+          break;
+        }
+      } else {
+        if (!(Driver->EndpointsUsedForRx & (1u << (UINT32)Endpoint))) {
+          DEBUG((EFI_D_ERROR, "attempting to clear halt on disabled EP%d (RX)\n", Endpoint));
+          break;
+        }
+      }
 
       Handled = 1;
 
       UsbSelectEndpoint(Driver, Endpoint);
-      if (Setup->Index & USB_ENDPOINT_DIR_IN) {
-        //Csr = MmioRead16(Driver->Base + MUSB_TXCSR);
-        //Csr |= 
-        /*MmioAndThenOr16(
+      if (IsIn) {
+        MmioAndThenOr16(
           Driver->Base + MUSB_TXCSR,
           ~(MUSB_TXCSR_P_SENDSTALL | MUSB_TXCSR_P_SENTSTALL | MUSB_TXCSR_TXPKTRDY),
           MUSB_TXCSR_CLRDATATOG | MUSB_TXCSR_P_WZC_BITS
-        );*/
+        );
+      } else {
+        MmioAndThenOr16(
+          Driver->Base + MUSB_RXCSR,
+          ~(MUSB_RXCSR_P_SENDSTALL | MUSB_RXCSR_P_SENTSTALL),
+          MUSB_RXCSR_CLRDATATOG | MUSB_RXCSR_P_WZC_BITS
+        );
       }
+
+      if (IsIn)
+        UrbList = &Ep->TxQueue;
+      else
+        UrbList = &Ep->RxQueue;
+
+      Node = GetFirstNode(UrbList);
+      if (Node != UrbList) {
+        Urb = USB_URB_FROM_LINK(Node);
+        UsbEpxRestart(Driver, Endpoint, Urb);
+      }
+
+      UsbSelectEndpoint(Driver, 0);
 
       break;
     }
