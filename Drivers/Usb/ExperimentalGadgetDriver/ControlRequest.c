@@ -43,7 +43,7 @@ STATIC MICROSOFT_FEATURE_DESCRIPTOR mMicrosoftFeatureDescriptor = {
 
 STATIC USB_DEVICE_DESCRIPTOR mDeviceDescriptor = {
   .Length = sizeof(USB_DEVICE_DESCRIPTOR),
-  .DescriptorType = USB_DT_DEVICE,
+  .DescriptorType = USB_DESC_TYPE_DEVICE,
   .BcdUSB = 0x200,
   .IdVendor = 0x1F3A,
   .IdProduct = 0x8E10,
@@ -62,31 +62,10 @@ STATIC USB_DEVICE_DESCRIPTOR mDeviceDescriptor = {
   .StrProduct = USB_STR_PRODUCT
 };
 
-typedef struct _DEVICE_CONFIG {
-  USB_CONFIG_DESCRIPTOR Config;
-  // Interface with custom protocol used for controlling device
-  // currently dummy,
-  // it will be used to transfer EFI image when booting from USB
-  // and possibly for debugging purposes
-  //
-  // CDC will be used to emulate serial port
-  USB_INTERFACE_DESCRIPTOR Custom;
-  USB_INTERFACE_ASSOCIATION_DESCRIPTOR Iad0;
-  USB_INTERFACE_DESCRIPTOR CdcAt;
-  USB_CDC_FUNCTIONAL_DESCRIPTOR CdcFunctional;
-  USB_CDC_CALL_MANAGEMENT_DESCRIPTOR CdcCallManagement;
-  USB_CDC_ACM_DESCRIPTOR CdcAcm;
-  USB_CDC_UNION_DESCRIPTOR CdcUnion;
-  USB_ENDPOINT_DESCRIPTOR CdcControlEp;
-  USB_INTERFACE_DESCRIPTOR CdcData;
-  USB_ENDPOINT_DESCRIPTOR CdcDataEpIn;
-  USB_ENDPOINT_DESCRIPTOR CdcDataEpOut;
-} DEVICE_CONFIG;
-
-STATIC DEVICE_CONFIG mConfigDescriptor = {
+DEVICE_CONFIG gConfigDescriptorTemplate = {
   .Config = {
     .Length = sizeof(USB_CONFIG_DESCRIPTOR),
-    .DescriptorType = USB_DT_CONFIG,
+    .DescriptorType = USB_DESC_TYPE_CONFIG,
     .TotalLength = sizeof(DEVICE_CONFIG),
     .NumInterfaces = 3,
     .ConfigurationValue = 1,
@@ -96,11 +75,26 @@ STATIC DEVICE_CONFIG mConfigDescriptor = {
   },
   .Custom = {
     .Length = sizeof(USB_INTERFACE_DESCRIPTOR),
-    .DescriptorType = USB_DT_INTERFACE,
+    .DescriptorType = USB_DESC_TYPE_INTERFACE,
     .InterfaceNumber = CUSTOM_INTERFACE,
     .InterfaceClass = 255,
     .InterfaceSubClass = 255,
     .InterfaceProtocol = 255,
+    .NumEndpoints = 2,
+  },
+  .CustomEpIn = {
+    .Length = sizeof(USB_ENDPOINT_DESCRIPTOR),
+    .DescriptorType = USB_DESC_TYPE_ENDPOINT,
+    .Attributes = USB_ENDPOINT_BULK,
+    .MaxPacketSize = 512,
+    .EndpointAddress = 0x81,
+  },
+  .CustomEpOut = {
+    .Length = sizeof(USB_ENDPOINT_DESCRIPTOR),
+    .DescriptorType = USB_DESC_TYPE_ENDPOINT,
+    .Attributes = USB_ENDPOINT_BULK,
+    .MaxPacketSize = 512,
+    .EndpointAddress = 0x1,
   },
   .Iad0 = {
     .Length = sizeof(USB_INTERFACE_ASSOCIATION_DESCRIPTOR),
@@ -113,7 +107,7 @@ STATIC DEVICE_CONFIG mConfigDescriptor = {
   },
   .CdcAt = {
     .Length = sizeof(USB_INTERFACE_DESCRIPTOR),
-    .DescriptorType = USB_DT_INTERFACE,
+    .DescriptorType = USB_DESC_TYPE_INTERFACE,
     .InterfaceNumber = CDC_CONTROL_INTERFACE,
     .InterfaceClass = USB_CLASS_COMM,
     .InterfaceSubClass = USB_CDC_SUBCLASS_ACM,
@@ -148,15 +142,14 @@ STATIC DEVICE_CONFIG mConfigDescriptor = {
   },
   .CdcControlEp = {
     .Length = sizeof(USB_ENDPOINT_DESCRIPTOR),
-    .DescriptorType = 5,
-    .EndpointAddress = 0x82,
-    .Attributes = 3,
+    .DescriptorType = USB_DESC_TYPE_ENDPOINT,
+    .Attributes = USB_ENDPOINT_INTERRUPT,
     .MaxPacketSize = 64,
     .Interval = 9,
   },
   .CdcData = {
     .Length = sizeof(USB_INTERFACE_DESCRIPTOR),
-    .DescriptorType = USB_DT_INTERFACE,
+    .DescriptorType = USB_DESC_TYPE_INTERFACE,
     .InterfaceNumber = CDC_DATA_INTEFACE,
     .NumEndpoints = 2,
     .InterfaceClass = USB_CLASS_DATA,
@@ -165,16 +158,14 @@ STATIC DEVICE_CONFIG mConfigDescriptor = {
   },
   .CdcDataEpIn = {
     .Length = sizeof(USB_ENDPOINT_DESCRIPTOR),
-    .DescriptorType = USB_DT_ENDPOINT,
-    .EndpointAddress = 0x81,
-    .Attributes = 2,
+    .DescriptorType = USB_DESC_TYPE_ENDPOINT,
+    .Attributes = USB_ENDPOINT_BULK,
     .MaxPacketSize = 512,
   },
   .CdcDataEpOut = {
     .Length = sizeof(USB_ENDPOINT_DESCRIPTOR),
     .DescriptorType = USB_DT_ENDPOINT,
-    .EndpointAddress = 0x01,
-    .Attributes = 2,
+    .Attributes = USB_ENDPOINT_BULK,
     .MaxPacketSize = 512,
   },
 };
@@ -236,7 +227,7 @@ EFI_STATUS UsbGadgetHandleStandardControlRequest(
       DescriptorIndex = Request->Value;
 
       if (DescriptorIndex == 0)
-        Status = UsbGadgetEp0Respond(Internal, Request, &mConfigDescriptor, sizeof mConfigDescriptor);
+        Status = UsbGadgetEp0Respond(Internal, Request, Internal->ConfigDescriptor, sizeof gConfigDescriptorTemplate);
       else {
         DEBUG((EFI_D_ERROR, "Unknown config descriptor index %d\n", DescriptorIndex));
         Status = EFI_DEVICE_ERROR;
@@ -262,6 +253,14 @@ EFI_STATUS UsbGadgetHandleStandardControlRequest(
       return EFI_DEVICE_ERROR;
     }
 
+    Status = CdcEnable(Internal);
+    if (EFI_ERROR(Status)) {
+      DEBUG((EFI_D_ERROR, "Failed to enable CDC: %r\n", Status));
+      ASSERT_EFI_ERROR(Status);
+      // Stall
+      return EFI_DEVICE_ERROR;
+    }
+
     // Signal configuration was set successfully
     return UsbGadgetEp0Queue(Internal, NULL, 0, NULL, 0);
   }
@@ -276,10 +275,16 @@ STATIC EFI_STATUS HandleMosRequest(
 {
   UINT8 Target = Request->RequestType & 0x1f;
 
-  if (Target != USB_TARGET_DEVICE || !(Request->RequestType & USB_ENDPOINT_DIR_IN))
-    return EFI_UNSUPPORTED;
+  if (Request->Index == 0x04) {
+    if (Target != USB_TARGET_DEVICE || !(Request->RequestType & USB_ENDPOINT_DIR_IN))
+      return EFI_UNSUPPORTED;
 
-  return UsbGadgetEp0Respond(Internal, Request, &mMicrosoftFeatureDescriptor, sizeof mMicrosoftFeatureDescriptor);
+    return UsbGadgetEp0Respond(Internal, Request, &mMicrosoftFeatureDescriptor, sizeof mMicrosoftFeatureDescriptor);
+  } else if (Request->Index == 0x05) {
+    
+  }
+
+  return EFI_UNSUPPORTED;
 }
 
 EFI_STATUS UsbGadgetHandleControlRequest(
@@ -296,10 +301,10 @@ EFI_STATUS UsbGadgetHandleControlRequest(
     Status = UsbGadgetHandleStandardControlRequest(Internal, Request);
     break;
   case USB_REQ_TYPE_CLASS:
-    Status = UsbGadgetHandleCdcRequest(Internal, Request);
+    Status = CdcHandleRequest(Internal, Request);
     break;
   case USB_REQ_TYPE_VENDOR:
-    if (Request->Request == MOS_VENDOR_CODE && Request->Index == 0x04)
+    if (Request->Request == MOS_VENDOR_CODE)
       return HandleMosRequest(Internal, Request);
     /* fallthrough */
   default:

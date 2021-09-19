@@ -101,32 +101,32 @@ STATIC EFI_STATUS GetEndpointInfo(
   return EFI_SUCCESS;
 }
 
-STATIC EFI_STATUS AllocateRequests(
+STATIC EFI_STATUS AllocateUrbs(
   IN USB_PPI *This,
-  IN UINT32 NumRequests,
-  OUT USB_REQUEST **OutRequests
+  IN UINT32 NumUrbs,
+  OUT USB_REQUEST_BLOCK **OutUrbs
 ) {
   USB_PEI_DRIVER *Driver;
-  USB_REQUEST *Requests;
+  USB_REQUEST_BLOCK *Urbs;
   
-  if (!This || !OutRequests || NumRequests == 0)
+  if (!This || !OutUrbs || NumUrbs == 0)
     return EFI_INVALID_PARAMETER;
 
   Driver = USB_PPI_INTO_PEI_DRIVER(This);
 
-  Requests = AllocateZeroPool(sizeof(USB_REQUEST) * NumRequests);
-  if (!Requests)
+  Urbs = AllocateZeroPool(sizeof(USB_REQUEST_BLOCK) * NumUrbs);
+  if (!Urbs)
     return EFI_OUT_OF_RESOURCES;
 
-  *OutRequests = Requests;
+  *OutUrbs = Urbs;
   return EFI_SUCCESS;
 }
 
-#define ALL_VALID_FLAGS (USB_PPI_FLAG_ZLP)
+#define ALL_VALID_FLAGS (USB_PPI_FLAG_ZLP | USB_PPI_FLAG_TX)
 
-STATIC EFI_STATUS InitRequest(
+STATIC EFI_STATUS InitUrb(
   IN USB_PPI *This,
-  IN OUT USB_REQUEST *Request,
+  OUT USB_REQUEST_BLOCK *Urb,
   IN VOID *Buffer,
   IN UINT32 Length,
   IN UINT32 Flags,
@@ -134,36 +134,46 @@ STATIC EFI_STATUS InitRequest(
   IN VOID *UserData OPTIONAL
 ) {
   USB_PEI_DRIVER *Driver;
-  
-  if (!This || !Request)
+
+  if (!This || !Urb)
     return EFI_INVALID_PARAMETER;
 
   if ((!Buffer && Length > 0) || (Buffer && Length == 0))
     return EFI_INVALID_PARAMETER;
 
-  Driver = USB_PPI_INTO_PEI_DRIVER(This);
-
-  Request->Buffer = Buffer;
-  Request->Length = Length;
-  Request->Zero = !!(Flags & USB_PPI_FLAG_ZLP);
-  Request->Callback = Callback;
-  Request->UserData = UserData;
-
-  return EFI_SUCCESS;
-}
-
-STATIC EFI_STATUS Ep0Queue(
-  IN USB_PPI *This,
-  IN USB_REQUEST *Request
-) {
-  USB_PEI_DRIVER *Driver;
-
-  if (!This || !Request)
+  if (Flags & ~ALL_VALID_FLAGS)
     return EFI_INVALID_PARAMETER;
 
   Driver = USB_PPI_INTO_PEI_DRIVER(This);
 
-  return UsbEp0QueuePacket(&Driver->Common, Request);
+  Urb->Buffer = Buffer;
+  Urb->Length = Length;
+  Urb->Flags = Flags;
+  Urb->Callback = Callback;
+  Urb->UserData = UserData;
+
+  return EFI_SUCCESS;
+}
+
+STATIC EFI_STATUS Queue(
+  IN USB_PPI *This,
+  IN UINT32 Endpoint,
+  IN USB_REQUEST_BLOCK *Urb
+) {
+  USB_PEI_DRIVER *Driver;
+
+  if (!This || !Urb)
+    return EFI_INVALID_PARAMETER;
+
+  if (Endpoint >= gSunxiSocConfig.NumEndpoints)
+    return EFI_NOT_FOUND;
+
+  Driver = USB_PPI_INTO_PEI_DRIVER(This);
+
+  if (Endpoint == 0)
+    return UsbEp0QueuePacket(&Driver->Common, Urb);
+  
+  return UsbEpxQueue(&Driver->Common, Endpoint, Urb);
 }
 
 STATIC EFI_STATUS Halt(
@@ -186,16 +196,32 @@ STATIC EFI_STATUS Halt(
   }
 }
 
+STATIC EFI_STATUS EnableEndpoint(
+  IN USB_PPI *This,
+  IN USB_ENDPOINT_DESCRIPTOR *Descriptor
+) {
+  USB_PEI_DRIVER *Driver;
+
+  if (!This)
+    return EFI_INVALID_PARAMETER;
+
+  Driver = USB_PPI_INTO_PEI_DRIVER(This);
+
+  return UsbEnableEndpoint(&Driver->Common, Descriptor);
+}
+
+
 STATIC USB_PPI mUsbPpi = {
   RegisterGadgetDriver,
   UnregisterGadgetDriver,
   HandleInterrupts,
   GetNumberOfEndpoints,
   GetEndpointInfo,
-  AllocateRequests,
-  InitRequest,
-  Ep0Queue,
-  Halt
+  AllocateUrbs,
+  InitUrb,
+  Queue,
+  Halt,
+  EnableEndpoint
 };
 
 STATIC EFI_PEI_PPI_DESCRIPTOR mPpiDesc;

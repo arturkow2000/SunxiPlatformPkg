@@ -7,7 +7,7 @@
 
 typedef struct _USB_PPI USB_PPI;
 typedef struct _USB_GADGET_DRIVER USB_GADGET_DRIVER;
-typedef struct _USB_REQUEST USB_REQUEST;
+typedef struct _USB_REQUEST_BLOCK USB_REQUEST_BLOCK;
 
 typedef
 VOID
@@ -113,32 +113,33 @@ EFI_STATUS
 
 /**
  Allocates driver's internal structures for keeping track of queued transfers.
- These are initialized using USB_PPI_INIT_REQUEST and then passed to
- USB_PPI_EP0_QUEUE
+ These are initialized using USB_PPI_INIT_URB and then passed to
+ USB_PPI_QUEUE
 
  @param This                        Pointer to USB_PPI instance
- @param NumRequests                 Number of request structures to allocate
- @param OutRequests                 Variable to receive pointer to structure array
+ @param NumUrbs                     Number of URB structures to allocate
+ @param OutUrbs                     Variable to receive pointer to structure array
 
  @retval EFI_SUCCESS                Allocation successful.
- @retval EFI_INVALID_PARAMETER      This == NULL or OutRequests == NULL or NumRequests == 0
+ @retval EFI_INVALID_PARAMETER      This == NULL or OutUrbs == NULL or NumUrbs == 0
  @retval EFI_OUT_OF_RESOURCES       Out of memory.
 **/
 typedef
 EFI_STATUS
-(EFIAPI *USB_PPI_ALLOCATE_REQUESTS)(
+(EFIAPI *USB_PPI_ALLOCATE_URBS)(
   IN USB_PPI *This,
-  IN UINT32 NumRequests,
-  OUT USB_REQUEST **OutRequests
+  IN UINT32 NumUrbs,
+  OUT USB_REQUEST_BLOCK **OutUrbs
 );
 
 #define USB_PPI_FLAG_ZLP (1 << 0)
+#define USB_PPI_FLAG_TX (1 << 1)
 
 /**
- Initializes request structure previously allocated with USB_PPI_ALLOCATE_REQUESTS.
+ Initializes URB previously allocated with USB_PPI_ALLOCATE_URBS.
 
  @param This                        Pointer to USB_PPI instance
- @param Request                     Pointer to USB_REQUEST structure allocated with USB_PPI_ALLOCATE_REQUESTS
+ @param Urb                         Pointer to USB_REQUEST_BLOCK structure allocated with USB_PPI_ALLOCATE_URBS
  @param Buffer                      Pointer to packet data buffer
  @param Length                      Length of data in buffer
  @param Flags                       Reserved, should be 0
@@ -147,15 +148,15 @@ EFI_STATUS
 
  @retval EFI_SUCCESS                Pointer to USB_PPI instance.
  @retval EFI_INVALID_PARAMETER      At least one of parameters is invalid:
-                                     - This or Request is NULL 
+                                     - This or Urb is NULL 
                                      - Buffer is NULL or Length == 0, currently zero length packets are not supported
                                      - Invalid flag passed
 **/
 typedef
 EFI_STATUS
-(EFIAPI *USB_PPI_INIT_REQUEST)(
+(EFIAPI *USB_PPI_INIT_URB)(
   IN USB_PPI *This,
-  OUT USB_REQUEST *Request,
+  OUT USB_REQUEST_BLOCK *Urb,
   IN VOID *Buffer,
   IN UINT32 Length,
   IN UINT32 Flags,
@@ -164,20 +165,23 @@ EFI_STATUS
 );
 
 /**
- Queues control packet on EP0, this accepts pointer to USB_REQUEST initialized with
- USB_PPI_ALLOCATE_REQUESTS.
+ Queues control packet on EP0, this accepts pointer to USB_REQUEST_BLOCK initialized with
+ USB_PPI.
 
  @param This                        Pointer to USB_PPI instance.
- @param Request                     Pointer to USB_REQUEST structure.
+ @param Endpoint                    Endpoint to queue onto.
+ @param Urb                         Pointer to USB_REQUEST_BLOCK structure.
 
  @retval EFI_SUCCESS                Packet queued.
- @retval EFI_INVALID_PARAMETER      This or Request is NULL, or Request is not initialized.
+ @retval EFI_INVALID_PARAMETER      This or Urb is NULL, Urb not initialized, or endpoint not enabled.
+ @retval EFI_NOT_FOUND              No such endpoint.
 **/
 typedef
 EFI_STATUS
-(EFIAPI *USB_PPI_EP0_QUEUE)(
+(EFIAPI *USB_PPI_QUEUE)(
   IN USB_PPI *This,
-  IN USB_REQUEST *Request
+  IN UINT32 Endpoint,
+  IN USB_REQUEST_BLOCK *Urb
 );
 
 /**
@@ -198,16 +202,36 @@ EFI_STATUS
   IN UINT32 Endpoint
 );
 
+/**
+ Enables endpoint
+
+ @param This                        Pointer to USB_PPI instance.
+ @param Descriptor                  Pointer to USB_ENDPOINT_DESCRIPTOR
+
+ @retval EFI_SUCCESS                Endpoint enabled.
+ @retval EFI_INVALID_PARAMETER      This is NULL, Descriptor is NULL or invalid
+ @retval EFI_NOT_FOUND              No such Endpoint.
+ @retval EFI_DEVICE_ERROR           Unknown internal error.
+ @retval EFI_ALREADY_STARTED        Endpoint is already used.
+**/
+typedef
+EFI_STATUS
+(EFIAPI *USB_PPI_ENABLE_ENDPOINT)(
+  IN USB_PPI *This,
+  IN USB_ENDPOINT_DESCRIPTOR *Descriptor
+);
+
 struct _USB_PPI {
   USB_PPI_REGISTER_GADGET_DRIVER RegisterGadgetDriver;
   USB_PPI_UNREGISTER_GADGET_DRIVER UnregisterGadgetDriver;
   USB_PPI_HANDLE_INTERRUPTS HandleInterrupts;
   USB_PPI_GET_NUMBER_OF_ENDPOINTS GetNumberOfEndpoints;
   USB_PPI_GET_ENDPOINT_INFO GetEndpointInfo;
-  USB_PPI_ALLOCATE_REQUESTS AllocateRequests;
-  USB_PPI_INIT_REQUEST InitRequest;
-  USB_PPI_EP0_QUEUE Ep0Queue;
+  USB_PPI_ALLOCATE_URBS AllocateUrbs;
+  USB_PPI_INIT_URB InitUrb;
+  USB_PPI_QUEUE Queue;
   USB_PPI_HALT Halt;
+  USB_PPI_ENABLE_ENDPOINT EnableEndpoint;
 };
 
 extern EFI_GUID gUsbPpiGuid;

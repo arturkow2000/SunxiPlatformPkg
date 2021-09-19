@@ -1,6 +1,128 @@
 #include "Driver.h"
 
-STATIC VOID SetLineCoding(
+STATIC VOID CdcDataCallback(
+  USB_PPI *Usb,
+  UINT32 Endpoint,
+  VOID *Buffer,
+  UINT32 Length,
+  GADGET_DRIVER_INTERNAL *Internal,
+  EFI_STATUS Status
+  );
+
+STATIC VOID CdcTxCompleteCallback(
+  USB_PPI *Usb,
+  UINT32 Endpoint,
+  VOID *Buffer,
+  UINT32 Length,
+  GADGET_DRIVER_INTERNAL *Internal,
+  EFI_STATUS Status
+  )
+{
+  DEVICE_CONFIG *Config = (DEVICE_CONFIG*)Internal->ConfigDescriptor;
+
+  // Resume receiving data
+  UsbGadgetEpxInitAndQueue(
+    Internal,
+    Internal->CdcDataOutUrb,
+    &Config->CdcDataEpOut,
+    Internal->CdcBuffer,
+    CDC_DATA_MAX_PACKET,
+    0,
+    (USB_PPI_REQ_COMPLETE_CALLBACK)CdcDataCallback
+  );
+}
+
+STATIC VOID CdcDataCallback(
+  USB_PPI *Usb,
+  UINT32 Endpoint,
+  VOID *Buffer,
+  UINT32 Length,
+  GADGET_DRIVER_INTERNAL *Internal,
+  EFI_STATUS Status
+  )
+{
+  DEVICE_CONFIG *Config = (DEVICE_CONFIG*)Internal->ConfigDescriptor;
+  BOOLEAN Tx = FALSE;
+
+  if (!EFI_ERROR(Status)) {
+    // Echo packet
+    if (Length > 0) {
+      Status = UsbGadgetEpxInitAndQueue(
+        Internal,
+        Internal->CdcDataInUrb,
+        &Config->CdcDataEpIn,
+        Internal->CdcBuffer,
+        Length,
+        USB_PPI_FLAG_TX | USB_PPI_FLAG_ZLP,
+        (USB_PPI_REQ_COMPLETE_CALLBACK)CdcTxCompleteCallback
+      );
+      ASSERT_EFI_ERROR(Status);
+
+      Tx = TRUE;
+    }
+  }
+
+  if (!Tx) {
+    Status = UsbGadgetEpxInitAndQueue(
+      Internal,
+      Internal->CdcDataOutUrb,
+      &Config->CdcDataEpOut,
+      Internal->CdcBuffer,
+      CDC_DATA_MAX_PACKET,
+      0,
+      (USB_PPI_REQ_COMPLETE_CALLBACK)CdcDataCallback
+    );
+    ASSERT_EFI_ERROR(Status);
+  }
+}
+
+EFI_STATUS CdcEnable(GADGET_DRIVER_INTERNAL *Internal) {
+  EFI_STATUS Status;
+  DEVICE_CONFIG *Config = (DEVICE_CONFIG*)Internal->ConfigDescriptor;
+
+  Status = Internal->Usb->EnableEndpoint(Internal->Usb, &Config->CustomEpIn);
+  if (EFI_ERROR(Status)) {
+    DEBUG((EFI_D_ERROR, "Failed to enable custom data in endpoint\n"));
+    return Status;
+  }
+
+  Status = Internal->Usb->EnableEndpoint(Internal->Usb, &Config->CustomEpOut);
+  if (EFI_ERROR(Status)) {
+    DEBUG((EFI_D_ERROR, "Failed to enable custom data out endpoint\n"));
+    return Status;
+  }
+
+  Status = Internal->Usb->EnableEndpoint(Internal->Usb, &Config->CdcDataEpIn);
+  if (EFI_ERROR(Status)) {
+    DEBUG((EFI_D_ERROR, "Failed to enable CDC data in endpoint\n"));
+    return Status;
+  }
+
+  Status = Internal->Usb->EnableEndpoint(Internal->Usb, &Config->CdcDataEpOut);
+  if (EFI_ERROR(Status)) {
+    DEBUG((EFI_D_ERROR, "Failed to enable CDC data out endpoint\n"));
+    return Status;
+  }
+
+  Status = Internal->Usb->EnableEndpoint(Internal->Usb, &Config->CdcControlEp);
+  if (EFI_ERROR(Status)) {
+    DEBUG((EFI_D_ERROR, "Failed to enable CDC control endpoint\n"));
+    return Status;
+  }
+
+  // Start receiving data
+  return UsbGadgetEpxInitAndQueue(
+    Internal,
+    Internal->CdcDataOutUrb,
+    &Config->CdcDataEpOut,
+    Internal->CdcBuffer,
+    CDC_DATA_MAX_PACKET,
+    0,
+    (USB_PPI_REQ_COMPLETE_CALLBACK)CdcDataCallback
+  );
+}
+
+STATIC VOID CdcSetLineCoding(
   USB_PPI *Usb,
   UINT32 Endpoint,
   VOID *Buffer,
@@ -57,13 +179,13 @@ STATIC VOID SetLineCoding(
   DEBUG((EFI_D_INFO, "Data bits: %d\n", LineCoding->DataBits));
 }
 
-EFI_STATUS UsbGadgetHandleCdcRequest(GADGET_DRIVER_INTERNAL *Internal, USB_DEVICE_REQUEST *Request) {
+EFI_STATUS CdcHandleRequest(GADGET_DRIVER_INTERNAL *Internal, USB_DEVICE_REQUEST *Request) {
   // Match direction, target and request
   // Request type was already handled by caller
   switch (((Request->RequestType & (USB_ENDPOINT_DIR_IN | 3)) << 8) | Request->Request)
   {
   case (USB_TARGET_INTERFACE << 8) | USB_CDC_REQ_SET_LINE_CODING:
-    return UsbGadgetEp0Queue(Internal, &Internal->CdcState.LineCoding, sizeof(USB_CDC_LINE_CODING), (USB_PPI_REQ_COMPLETE_CALLBACK)SetLineCoding, 0);
+    return UsbGadgetEp0Queue(Internal, &Internal->CdcState.LineCoding, sizeof(USB_CDC_LINE_CODING), (USB_PPI_REQ_COMPLETE_CALLBACK)CdcSetLineCoding, 0);
 
   case ((USB_ENDPOINT_DIR_IN | USB_TARGET_INTERFACE) << 8) | USB_CDC_REQ_GET_LINE_CODING:
     return UsbGadgetEp0Respond(

@@ -4,34 +4,34 @@
 // Transfer data to host
 STATIC VOID UsbEp0TxState(USB_DRIVER *Driver) {
   LIST_ENTRY *Node;
-  USB_REQUEST *Request;
+  USB_REQUEST_BLOCK *Urb;
   UINT8 *Source;
   UINT32 Count;
   UINT16 Csr = MUSB_CSR0_TXPKTRDY;
 
   Node = GetFirstNode(&Driver->Ep0Queue);
   if (Node == &Driver->Ep0Queue)
-    Request = NULL;
+    Urb = NULL;
   else
-    Request = USB_REQUEST_FROM_LINK(Node);
+    Urb = USB_URB_FROM_LINK(Node);
 
-  if (!Request) {
+  if (!Urb) {
     DEBUG((EFI_D_ERROR, "Got txstate with empty queue, csr0 0x%04x\n", MmioRead16(Driver->Base + MUSB_CSR0)));
     ASSERT(0);
     return;
   }
 
   /* load the data */
-  Source = (UINT8*)Request->Buffer + Request->Actual;
-  Count = MIN(64, Request->Length - Request->Actual);
+  Source = (UINT8*)Urb->Buffer + Urb->Actual;
+  Count = MIN(64, Urb->Length - Urb->Actual);
   UsbWriteFifo(Driver, 0, Count, Source);
-  Request->Actual += Count;
+  Urb->Actual += Count;
 
   /* update the flags */
-  if (Count < 64 || (Request->Length == Request->Actual && !Request->Zero)) {
+  if (Count < 64 || (Urb->Length == Urb->Actual && !(Urb->Flags & USB_FLAG_ZLP))) {
     Driver->Ep0State = MUSB_EP0_STAGE_STATUSOUT;
     Csr |= MUSB_CSR0_P_DATAEND;
-  } else Request = NULL;
+  } else Urb = NULL;
 
   /* send it out, triggering a "txpktrdy cleared" irq */
   UsbSelectEndpoint(Driver, 0);
@@ -42,11 +42,11 @@ STATIC VOID UsbEp0TxState(USB_DRIVER *Driver) {
    * very precise fault reporting, needed by USB TMC; possible with
    * this hardware, but not usable from portable gadget drivers.)
    */
-  if (Request) {
+  if (Urb) {
     Driver->AckPending = Csr;
 
     // Complete request
-    UsbEp0CompleteRequest(Driver, Request, EFI_SUCCESS);
+    UsbEp0CompleteRequest(Driver, Urb, EFI_SUCCESS);
     if (!Driver->AckPending)
       return;
 
@@ -56,7 +56,7 @@ STATIC VOID UsbEp0TxState(USB_DRIVER *Driver) {
 
 STATIC VOID UsbEp0RxState(USB_DRIVER *Driver) {
   LIST_ENTRY *Node;
-  USB_REQUEST *Request;
+  USB_REQUEST_BLOCK *Urb;
   UINT16 Csr;
   UINT8 *Buffer;
   UINT32 Length;
@@ -65,16 +65,16 @@ STATIC VOID UsbEp0RxState(USB_DRIVER *Driver) {
 
   Node = GetFirstNode(&Driver->Ep0Queue);
   if (Node == &Driver->Ep0Queue)
-    Request = NULL;
+    Urb = NULL;
   else
-    Request = USB_REQUEST_FROM_LINK(Node);
+    Urb = USB_URB_FROM_LINK(Node);
 
   /* read packet and ack; or stall because of gadget driver bug:
    * should have provided the rx buffer before setup() returned.
    */
-  if (Request) {
-    Buffer = (UINT8*)Request->Buffer + Request->Actual;
-    Length = Request->Length - Request->Actual;
+  if (Urb) {
+    Buffer = (UINT8*)Urb->Buffer + Urb->Actual;
+    Length = Urb->Length - Urb->Actual;
     
     /* read the buffer */
     Count = MmioRead8(Driver->Base + MUSB_COUNT0);
@@ -83,22 +83,22 @@ STATIC VOID UsbEp0RxState(USB_DRIVER *Driver) {
       Count = Length;
     }
     UsbReadFifo(Driver, 0, Count, Buffer);
-    Request->Actual += Count;
+    Urb->Actual += Count;
 
     Csr = MUSB_CSR0_P_SVDRXPKTRDY;
-    if (Count < 64 || Request->Actual == Request->Length) {
+    if (Count < 64 || Urb->Actual == Urb->Length) {
       Driver->Ep0State = MUSB_EP0_STAGE_STATUSIN;
       Csr |= MUSB_CSR0_P_DATAEND;
-    } else Request = NULL;
+    } else Urb = NULL;
   } else
     Csr = MUSB_CSR0_P_SVDRXPKTRDY | MUSB_CSR0_P_SENDSTALL;
 
   /* Completion handler may choose to stall, e.g. because the
    * message just received holds invalid data.
    */
-  if (Request) {
+  if (Urb) {
     Driver->AckPending = Csr;
-    UsbEp0CompleteRequest(Driver, Request, Status);
+    UsbEp0CompleteRequest(Driver, Urb, Status);
     if (!Driver->AckPending)
       return;
     Driver->AckPending = 0;
@@ -109,7 +109,7 @@ STATIC VOID UsbEp0RxState(USB_DRIVER *Driver) {
 
 STATIC VOID UsbReadSetup(USB_DRIVER *Driver, USB_DEVICE_REQUEST *Setup) {
   LIST_ENTRY *Node;
-  USB_REQUEST *Request;
+  USB_REQUEST_BLOCK *Urb;
 
   UsbReadFifo(Driver, 0, sizeof *Setup, (UINT8*)Setup);
 
@@ -117,8 +117,8 @@ STATIC VOID UsbReadSetup(USB_DRIVER *Driver, USB_DEVICE_REQUEST *Setup) {
 
   /* clean up any leftover transfers */
   for (Node = GetFirstNode(&Driver->Ep0Queue); Node != &Driver->Ep0Queue; Node = GetNextNode(&Driver->Ep0Queue, Node)) {
-    Request = USB_REQUEST_FROM_LINK(Node);
-    UsbEp0CompleteRequest(Driver, Request, EFI_SUCCESS);
+    Urb = USB_URB_FROM_LINK(Node);
+    UsbEp0CompleteRequest(Driver, Urb, EFI_SUCCESS);
   }
 
   /* For zero-data requests we want to delay the STATUS stage to
@@ -214,7 +214,7 @@ STATIC INT8 UsbServiceZeroDataRequest(USB_DRIVER *Driver, USB_DEVICE_REQUEST *Se
   return Handled;
 }
 
-STATIC INT8 HandleGetStatusRequest(USB_DRIVER *Driver, USB_DEVICE_REQUEST *Request) {
+STATIC INT8 UsbHandleGetStatusRequest(USB_DRIVER *Driver, USB_DEVICE_REQUEST *Request) {
   INT8 Handled = 1;
   UINT8 Target = Request->RequestType & 0x1f;
   UINT8 Result[2];
@@ -228,7 +228,7 @@ STATIC INT8 HandleGetStatusRequest(USB_DRIVER *Driver, USB_DEVICE_REQUEST *Reque
   switch (Target)
   {
   case USB_TARGET_DEVICE:
-    // Currently always report af bus powered
+    // For now always report as bus powered
     Result[0] = 0;
     break;
 
@@ -257,7 +257,7 @@ STATIC INT8 HandleGetStatusRequest(USB_DRIVER *Driver, USB_DEVICE_REQUEST *Reque
       Temp = MmioRead16(Driver->Base + MUSB_TXCSR) & MUSB_TXCSR_P_SENDSTALL;
     else
       Temp = MmioRead16(Driver->Base + MUSB_RXCSR) & MUSB_RXCSR_P_SENDSTALL;
-    UsbSelectEndpoint(Driver, EndpointNumber);
+    UsbSelectEndpoint(Driver, 0);
 
     Result[0] = Temp ? 1 : 0;
   } break;
@@ -287,7 +287,7 @@ STATIC INT8 UsbServiceInRequest(USB_DRIVER *Driver, USB_DEVICE_REQUEST *Setup) {
   if ((Setup->RequestType & USB_TYPE_MASK) == USB_REQ_TYPE_STANDARD) {
     switch (Setup->Request) {
     case USB_REQ_GET_STATUS:
-      Handled = HandleGetStatusRequest(Driver, Setup);
+      Handled = UsbHandleGetStatusRequest(Driver, Setup);
       break;
 
     default:
@@ -385,12 +385,8 @@ VOID UsbEp0HandleIrq(USB_DRIVER *Driver) {
   case MUSB_EP0_STAGE_STATUSOUT:
     /* end of sequence #1: write to host (TX state) */
     Node = GetFirstNode(&Driver->Ep0Queue);
-    if (Node != &Driver->Ep0Queue) {
-      DEBUG((EFI_D_INFO, "%s completing request, node=%p\n",
-        (Driver->Ep0State == MUSB_EP0_STAGE_STATUSOUT) ? L"MUSB_EP0_STAGE_STATUSOUT" : L"MUSB_EP0_STAGE_STATUSIN",
-        GetFirstNode(&Driver->Ep0Queue)));
-      UsbEp0CompleteRequest(Driver, USB_REQUEST_FROM_LINK(Node), EFI_SUCCESS);
-    }
+    if (Node != &Driver->Ep0Queue)
+      UsbEp0CompleteRequest(Driver, USB_URB_FROM_LINK(Node), EFI_SUCCESS);
 
     /*
      * In case when several interrupts can get coalesced,
@@ -502,7 +498,7 @@ finish:
   }
 }
 
-EFI_STATUS UsbEp0QueuePacket(USB_DRIVER *Driver, USB_REQUEST *Request) {
+EFI_STATUS UsbEp0QueuePacket(USB_DRIVER *Driver, USB_REQUEST_BLOCK *Urb) {
   switch (Driver->Ep0State) {
   case MUSB_EP0_STAGE_RX:       /* control-OUT data */
   case MUSB_EP0_STAGE_TX:       /* control-IN data */
@@ -515,9 +511,9 @@ EFI_STATUS UsbEp0QueuePacket(USB_DRIVER *Driver, USB_REQUEST *Request) {
 
   /// TODO: ensure node is not inserted anywhere else
 
-  Request->Actual = 0;
+  Urb->Actual = 0;
 
-  InsertHeadList(&Driver->Ep0Queue, &Request->Node);
+  InsertHeadList(&Driver->Ep0Queue, &Urb->Node);
 
   UsbSelectEndpoint(Driver, 0);
 
@@ -526,13 +522,13 @@ EFI_STATUS UsbEp0QueuePacket(USB_DRIVER *Driver, USB_REQUEST *Request) {
     UsbEp0TxState(Driver);
   /* sequence #3, no-data ... issue IN status */
   else if (Driver->Ep0State == MUSB_EP0_STAGE_ACKWAIT) {
-    if (Request->Length > 0)
+    if (Urb->Length > 0)
       return EFI_DEVICE_ERROR;
     else {
       Driver->Ep0State = MUSB_EP0_STAGE_STATUSIN;
       MmioWrite16(Driver->Base + MUSB_CSR0, Driver->AckPending | MUSB_CSR0_P_DATAEND);
       Driver->AckPending = 0;
-      UsbEp0CompleteRequest(Driver, Request, EFI_SUCCESS);
+      UsbEp0CompleteRequest(Driver, Urb, EFI_SUCCESS);
     }
   }
   /* else for sequence #2 (OUT), caller provides a buffer
@@ -547,11 +543,11 @@ EFI_STATUS UsbEp0QueuePacket(USB_DRIVER *Driver, USB_REQUEST *Request) {
   return EFI_SUCCESS;
 }
 
-VOID UsbEp0CompleteRequest(USB_DRIVER *Driver, USB_REQUEST *Request, EFI_STATUS Status) {
-  RemoveEntryList(&Request->Node);
+VOID UsbEp0CompleteRequest(USB_DRIVER *Driver, USB_REQUEST_BLOCK *Urb, EFI_STATUS Status) {
+  RemoveEntryList(&Urb->Node);
 
   // Signal completion
-  UsbSignalCompletion(Driver, 0, Request, EFI_SUCCESS);
+  UsbSignalCompletion(Driver, 0, Urb, Status);
 }
 
 EFI_STATUS UsbEp0Halt(USB_DRIVER *Driver) {

@@ -1,8 +1,24 @@
 #include "Driver.h"
 #include "Hw.h"
 
+#include <Library/MemoryAllocationLib.h>
+
 EFI_STATUS UsbInit(USB_DRIVER *Driver) {
+  UINT32 i;
+
   InitializeListHead(&Driver->Ep0Queue);
+
+  Driver->Epx = AllocatePool(sizeof(USB_EPX) * (gSunxiSocConfig.NumEndpoints - 1));
+  if (!Driver->Epx)
+    return EFI_OUT_OF_RESOURCES;
+  
+  for (i = 0; i < gSunxiSocConfig.NumEndpoints - 1; i++) {
+    InitializeListHead(&Driver->Epx[i].TxQueue);
+    InitializeListHead(&Driver->Epx[i].RxQueue);
+    Driver->Epx[i].Busy = FALSE;
+    Driver->Epx[i].TxPacketSize = 0;
+    Driver->Epx[i].RxPacketSize = 0;
+  }
 
   // TODO: ungate clocks before doing anything
 
@@ -16,15 +32,6 @@ EFI_STATUS UsbInit(USB_DRIVER *Driver) {
 
   UsbDisable(Driver);
   UsbCoreInit(Driver);
-  /*UsbEnable(Driver);
-
-  // FIXME: remove this, in DXE when timer is available interrupt handler will be called periodically
-  // in PEI phase when no timer interrupts are available
-  // this will be called when printing data through emulated uart
-  DEBUG((EFI_D_INFO, "Waiting for interrupts\n"));
-  while (TRUE) {
-    UsbHandleInterrupt(Driver);
-  }*/
 
   return EFI_SUCCESS;
 }
@@ -50,10 +57,8 @@ VOID UsbEnable(USB_DRIVER *Driver) {
 
   MmioWrite8(Driver->Base + MUSB_DEVCTL, DevCtl & ~MUSB_DEVCTL_SESSION);
 
-  Driver->Ep0State = MUSB_EP0_STAGE_SETUP;
-  Driver->AckPending = 0;
-  Driver->SetAddress = FALSE;
-  Driver->Address = 0;
+  UsbReset(Driver);
+
   Driver->Enabled = TRUE;
 }
 
@@ -77,4 +82,20 @@ VOID UsbDisable(USB_DRIVER *Driver) {
   MmioRead8(Driver->Base + MUSB_INTRUSB);
   MmioRead16(Driver->Base + MUSB_INTRTX);
   MmioRead16(Driver->Base + MUSB_INTRRX);
+}
+
+VOID UsbReset(USB_DRIVER *Driver) {
+  UsbSelectEndpoint(Driver, 0);
+  MmioWrite8(Driver->Base + MUSB_FADDR, 0);
+
+  Driver->Ep0State = MUSB_EP0_STAGE_SETUP;
+  Driver->AckPending = 0;
+  Driver->SetAddress = FALSE;
+  Driver->Address = 0;
+
+  // Disable all endpoints, gadget driver has to re-enable these after reset
+  Driver->EndpointsUsedForTx = 0;
+  Driver->EndpointsUsedForRx = 0;
+
+  // TODO: abort all pending requests
 }

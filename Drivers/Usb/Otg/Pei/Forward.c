@@ -15,13 +15,13 @@ INT8 UsbForwardControlRequestToGadgetDriver(USB_DRIVER *Driver, USB_DEVICE_REQUE
   else return -1;
 }
 
-VOID UsbSignalCompletion(USB_DRIVER *Driver, UINT32 Endpoint, USB_REQUEST *Request, EFI_STATUS Status) {
+VOID UsbSignalCompletion(USB_DRIVER *Driver, UINT32 Endpoint, USB_REQUEST_BLOCK *Urb, EFI_STATUS Status) {
   USB_PEI_DRIVER *PeiDriver = USB_DRIVER_INTO_PEI_DRIVER(Driver);
   USB_PPI_REQ_COMPLETE_CALLBACK Callback;
 
-  if (Request->Callback) {
-    Callback = Request->Callback;
+  if (Urb->Callback) {
+    Callback = Urb->Callback;
 
-    Callback(&PeiDriver->Ppi, Endpoint, Request->Buffer, Request->Length, Request->UserData, Status);
+    Callback(&PeiDriver->Ppi, Endpoint, Urb->Buffer, Urb->Actual, Urb->UserData, Status);
   }
 }

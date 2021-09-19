@@ -20,6 +20,7 @@
   Common/Fifo.c
   Common/GadgetEp0.c
   Common/Debug.c
+  Common/GadgetEpx.c
 
   Soc/A13.c
 

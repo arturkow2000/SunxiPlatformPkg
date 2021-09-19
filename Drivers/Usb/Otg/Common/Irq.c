@@ -5,6 +5,8 @@ VOID UsbHandleInterrupt(USB_DRIVER *Driver) {
   UINT8 IntrUsb;
   UINT16 IntrTx;
   UINT16 IntrRx;
+  UINT16 Tmp;
+  UINT32 Endpoint;
 
   if (!Driver->Enabled)
     return;
@@ -23,12 +25,40 @@ VOID UsbHandleInterrupt(USB_DRIVER *Driver) {
   // after reconnecting device
   if (IntrUsb & MUSB_INTR_RESET) {
     DEBUG((EFI_D_INFO, "USB RESET\n\n\n"));
-    MmioWrite8(Driver->Base + MUSB_FADDR, 0);
+    UsbReset(Driver);
   }
 
   // Handle incoming data on EP0
   if (IntrTx & 1)
     UsbEp0HandleIrq(Driver);
+
+  // Handle RX on EP1 - EP15
+  if (IntrRx) {
+    Tmp = IntrRx >> 1;
+    Endpoint = 1;
+
+    while (Tmp) {
+      if (Tmp & 1)
+        UsbEpxHandleRxIrq(Driver, Endpoint);
+
+      Tmp >>= 1;
+      Endpoint++;
+    }
+  }
+
+  // Handle TX on EP1 - EP15
+  if (IntrTx) {
+    Tmp = IntrTx >> 1;
+    Endpoint = 1;
+
+    while (Tmp) {
+      if (Tmp & 1)
+        UsbEpxHandleTxIrq(Driver, Endpoint);
+
+      Tmp >>= 1;
+      Endpoint++;
+    }
+  }
 
   // Clear interrupt status
   if (IntrUsb)
