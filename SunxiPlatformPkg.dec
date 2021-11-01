@@ -59,6 +59,25 @@
   # TODO: replace this with dynamic memory allocation
   gSunxiTokenSpaceGuid.FramebufferReserved  | 0x00000000 | UINT32 | 0x81000000
 
+  # LCD setup
+  gSunxiTokenSpaceGuid.LcdFlags                | 0x00000000 | UINT32 | 0x81100000
+  gSunxiTokenSpaceGuid.LcdInterface            | 0x00000000 | UINT32 | 0x81100001
+  gSunxiTokenSpaceGuid.LcdBacklightEnablePin   | 0x00000000 | UINT32 | 0x81100002
+  gSunxiTokenSpaceGuid.LcdPowerPin             | 0x00000000 | UINT32 | 0x81100003
+  gSunxiTokenSpaceGuid.LcdHorizontalResolution | 0x00000000 | UINT32 | 0x81100004
+  gSunxiTokenSpaceGuid.LcdVerticalResolution   | 0x00000000 | UINT32 | 0x81100005
+  gSunxiTokenSpaceGuid.LcdRefreshRate          | 0x00000000 | UINT32 | 0x81100006
+  gSunxiTokenSpaceGuid.LcdPixclock             | 0x00000000 | UINT32 | 0x81100007
+  gSunxiTokenSpaceGuid.LcdPixclockKHz          | 0x00000000 | UINT32 | 0x81100008
+  gSunxiTokenSpaceGuid.LcdHBackPorch           | 0x00000000 | UINT32 | 0x81100009
+  gSunxiTokenSpaceGuid.LcdHFrontPorch          | 0x00000000 | UINT32 | 0x8110000a
+  gSunxiTokenSpaceGuid.LcdVBackPorch           | 0x00000000 | UINT32 | 0x8110000b
+  gSunxiTokenSpaceGuid.LcdVFrontPorch          | 0x00000000 | UINT32 | 0x8110000c
+  gSunxiTokenSpaceGuid.LcdHSync                | 0x00000000 | UINT32 | 0x8110000d
+  gSunxiTokenSpaceGuid.LcdVSync                | 0x00000000 | UINT32 | 0x8110000e
+  gSunxiTokenSpaceGuid.LcdModeFlags            | 0x00000000 | UINT32 | 0x8110000f
+  gSunxiTokenSpaceGuid.LcdDepth                | 0x00000000 | UINT32 | 0x81100010
+
 
 # SPL
 [Guids]

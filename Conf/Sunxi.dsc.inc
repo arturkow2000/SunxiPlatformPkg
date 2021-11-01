@@ -253,7 +253,7 @@
   #
 
   SunxiPlatformPkg/Drivers/InterruptDxe/InterruptDxe.inf
-  #SunxiPlatformPkg/Drivers/SunxiDisplayDxe/DisplayDxe.inf
+  SunxiPlatformPkg/Drivers/SunxiDisplayDxe/A13DisplayDxe.inf
   MdeModulePkg/Universal/WatchdogTimerDxe/WatchdogTimer.inf
   # TODO: support persistent variable storage
   SunxiPlatformPkg/Drivers/EmuRuntimeDxe/EmuVariableRuntimeDxe.inf

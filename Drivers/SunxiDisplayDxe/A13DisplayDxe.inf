@@ -1,0 +1,64 @@
+[Defines]
+  INF_VERSION                    = 0x00010006
+  BASE_NAME                      = DisplayDxe
+  FILE_GUID                      = 955d815f-3533-465b-9c92-a5ee6684ce41
+  MODULE_TYPE                    = DXE_DRIVER
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = DisplayDxeInitialize
+
+[Sources]
+  Sun4i/Gpio.c
+  Sun4i/Clock.c
+  DisplayDxe.c
+  Display.c
+  Backend.c
+  Lcd.c
+  Gop.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  SunxiPlatformPkg/SunxiPlatformPkg.dec
+  ArmPkg/ArmPkg.dec
+
+[LibraryClasses]
+  UefiDriverEntryPoint
+  MemoryAllocationLib
+  BaseLib
+  DebugLib
+  IoLib
+  SunxiGpioLib
+  UefiLib
+  PcdLib
+
+[Protocols]
+  gEfiGraphicsOutputProtocolGuid
+  gEfiDevicePathProtocolGuid
+  gPmicProtocolGuid
+  gSunxiCcmProtocolGuid
+  gPmicProtocolGuid
+
+[Pcd]
+  gSunxiTokenSpaceGuid.CcmBase
+  gArmTokenSpaceGuid.PcdSystemMemoryBase
+
+  gSunxiTokenSpaceGuid.FramebufferReserved
+  gSunxiTokenSpaceGuid.LcdFlags
+  gSunxiTokenSpaceGuid.LcdInterface
+  gSunxiTokenSpaceGuid.LcdBacklightEnablePin
+  gSunxiTokenSpaceGuid.LcdPowerPin
+  gSunxiTokenSpaceGuid.LcdHorizontalResolution
+  gSunxiTokenSpaceGuid.LcdVerticalResolution
+  gSunxiTokenSpaceGuid.LcdRefreshRate
+  gSunxiTokenSpaceGuid.LcdPixclock
+  gSunxiTokenSpaceGuid.LcdPixclockKHz
+  gSunxiTokenSpaceGuid.LcdHBackPorch
+  gSunxiTokenSpaceGuid.LcdHFrontPorch
+  gSunxiTokenSpaceGuid.LcdVBackPorch
+  gSunxiTokenSpaceGuid.LcdVFrontPorch
+  gSunxiTokenSpaceGuid.LcdHSync
+  gSunxiTokenSpaceGuid.LcdVSync
+  gSunxiTokenSpaceGuid.LcdModeFlags
+  gSunxiTokenSpaceGuid.LcdDepth
+
+[Depex]
+  gSunxiCcmProtocolGuid
