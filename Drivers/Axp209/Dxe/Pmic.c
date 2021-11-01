@@ -32,6 +32,27 @@ Poweroff(
   return EFI_DEVICE_ERROR;
 }
 
+STATIC EFI_STATUS EFIAPI GpioInput(
+  IN  PMIC_PROTOCOL     *This,
+  IN  UINT32 Pin
+  )
+{
+  AXP209_DXE_DRIVER *Driver = (AXP209_DXE_DRIVER*)This;
+  return AxpGpioInput(&Driver->Common, Pin);
+}
+
+STATIC EFI_STATUS EFIAPI GpioOutput(
+  IN  PMIC_PROTOCOL     *This,
+  IN  UINT32 Pin,
+  IN  UINT32 Value
+  )
+{
+  AXP209_DXE_DRIVER *Driver = (AXP209_DXE_DRIVER*)This;
+  return AxpGpioOutput(&Driver->Common, Pin, Value);
+}
+
 PMIC_PROTOCOL gPmicProtocol = {
-  Poweroff
+  Poweroff,
+  GpioInput,
+  GpioOutput,
 };

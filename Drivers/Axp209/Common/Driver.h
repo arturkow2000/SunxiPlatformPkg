@@ -64,3 +64,14 @@ EFI_STATUS AxpWrite8(
   IN UINT8 Reg,
   IN UINT8 Data
 );
+
+EFI_STATUS AxpGpioOutput(
+  IN AXP209_DRIVER *Driver,
+  IN UINT32 Pin,
+  IN UINT32 Value
+);
+
+EFI_STATUS AxpGpioInput(
+  IN AXP209_DRIVER *Driver,
+  IN UINT32 Pin
+);

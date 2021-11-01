@@ -23,6 +23,7 @@
   Common/Hw.h
   Common/Driver.h
   Common/Regulator.c
+  Common/Gpio.c
 
   Dxe/Driver.h
   Dxe/DriverBinding.c
