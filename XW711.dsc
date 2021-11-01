@@ -32,3 +32,23 @@
   gAxp209TokenSpaceGuid.Ldo2Voltage  | 3000
   gAxp209TokenSpaceGuid.Ldo3Voltage  | 0
   gAxp209TokenSpaceGuid.Ldo4Voltage  | 0
+
+  gSunxiTokenSpaceGuid.FramebufferReserved     | 1536000
+
+  gSunxiTokenSpaceGuid.LcdFlags                | 0x00000003
+  gSunxiTokenSpaceGuid.LcdInterface            | 0
+  gSunxiTokenSpaceGuid.LcdBacklightEnablePin   | 1
+  gSunxiTokenSpaceGuid.LcdPowerPin             | 0
+  gSunxiTokenSpaceGuid.LcdHorizontalResolution | 800
+  gSunxiTokenSpaceGuid.LcdVerticalResolution   | 480
+  gSunxiTokenSpaceGuid.LcdRefreshRate          | 60
+  gSunxiTokenSpaceGuid.LcdPixclock             | 39683
+  gSunxiTokenSpaceGuid.LcdPixclockKHz          | 33000
+  gSunxiTokenSpaceGuid.LcdHBackPorch           | 87
+  gSunxiTokenSpaceGuid.LcdHFrontPorch          | 40
+  gSunxiTokenSpaceGuid.LcdVBackPorch           | 31
+  gSunxiTokenSpaceGuid.LcdVFrontPorch          | 13
+  gSunxiTokenSpaceGuid.LcdHSync                | 1
+  gSunxiTokenSpaceGuid.LcdVSync                | 1
+  gSunxiTokenSpaceGuid.LcdFlags                | 3
+  gSunxiTokenSpaceGuid.LcdDepth                | 18
