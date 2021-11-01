@@ -40,9 +40,6 @@
   gPmicProtocolGuid          = { 0x9e61b85f, 0xdd43, 0x4d6b, { 0xaf, 0xc8, 0x70, 0xce, 0x41, 0x07, 0x4b, 0xf1 } }
 
 [PcdsFixedAtBuild]
-  gSunxiTokenSpaceGuid.PcdFrameBufferBase   | 0x00000000 | UINT64 | 0x00000210
-  gSunxiTokenSpaceGuid.PcdFrameBufferSize   | 0x00000000 | UINT64 | 0x00000211
-
   gSunxiTokenSpaceGuid.Mmc0Base             | 0x00000000 | UINT32 | 0x80000000
   gSunxiTokenSpaceGuid.Mmc1Base             | 0x00000000 | UINT32 | 0x80000001
   gSunxiTokenSpaceGuid.Mmc2Base             | 0x00000000 | UINT32 | 0x80000002
@@ -57,6 +54,10 @@
   gSunxiTokenSpaceGuid.I2c2Base             | 0x00000000 | UINT32 | 0x8000000B
   gSunxiTokenSpaceGuid.I2c3Base             | 0x00000000 | UINT32 | 0x8000000C
   gSunxiTokenSpaceGuid.I2c4Base             | 0x00000000 | UINT32 | 0x8000000D
+
+  # Bytes reserved for framebuffer, always reserved at start of RAM
+  # TODO: replace this with dynamic memory allocation
+  gSunxiTokenSpaceGuid.FramebufferReserved  | 0x00000000 | UINT32 | 0x81000000
 
 
 # SPL
