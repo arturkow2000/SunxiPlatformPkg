@@ -10,6 +10,12 @@
 
 VOID SplXW711InitGpio(VOID)
 {
+#if UART_BASE == 0x01c28000
+  SunxiGpioSetFunction(SUNXI_GPIO_PIN_PF(02), L"uart0");
+  SunxiGpioSetFunction(SUNXI_GPIO_PIN_PF(04), L"uart0");
+  SunxiGpioSetPullMode(SUNXI_GPIO_PIN_PF(02), SUNXI_GPIO_PULL_UP);
+  SunxiGpioSetPullMode(SUNXI_GPIO_PIN_PF(04), SUNXI_GPIO_PULL_UP);
+#elif UART_BASE == 0x01c28400
   // On XW711 PG03 and PG04 are used for TX and RX respectively
   // Disable PE10 and PE11 to avoid conflict
   SunxiGpioConfigureAsInput(SUNXI_GPIO_PIN_PE(10));
@@ -19,6 +25,7 @@ VOID SplXW711InitGpio(VOID)
   SunxiGpioSetPullMode(SUNXI_GPIO_PIN_PG(04), SUNXI_GPIO_PULL_UP);
   SunxiGpioSetFunction(SUNXI_GPIO_PIN_PG(03), L"uart1");
   SunxiGpioSetFunction(SUNXI_GPIO_PIN_PG(04), L"uart1");
+#endif
 }
 
 // TODO: should move this into SunxiUartLib
@@ -49,8 +56,18 @@ VOID SplXW711InitUart()
 
 VOID SplHWInitBoard(VOID)
 {
-  // Enable UART1 clock
+#if UART_BASE == 0x01c28000
+  // UART0, on XW711, Q8 and other probably too, this is accessible through
+  // MMC socket. If you have uSD breakout you can use to access UART without
+  // disassembling device.
+  MmioOr32(CCM_BASE + CCM_OFFSET_APB1_GATING, 1 << CCM_APB1_GATE_UART0);
+#elif UART_BASE == 0x01c28400
+  // UART1, accessible through pads on the back of the PCB
   MmioOr32(CCM_BASE + CCM_OFFSET_APB1_GATING, 1 << CCM_APB1_GATE_UART1);
+#else
+#error I need to know which clock should I enable for this UART
+#endif
+
   SplXW711InitGpio();
   SplXW711InitUart();
 }
