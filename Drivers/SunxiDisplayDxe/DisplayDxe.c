@@ -37,14 +37,46 @@ STATIC VOID EnableLcd(
     return;
   }
 
-  SunxiLcdBacklightControl(Driver, FALSE);
-  SunxiLcdPanelPowerControl(Driver, TRUE);
+  Status = SunxiLcdBacklightControl(Driver, FALSE);
+  if (EFI_ERROR(Status)) {
+    DEBUG((EFI_D_ERROR, "Failed to disable backlight: %r\n", Status));
+    return;
+  }
+  Status = SunxiLcdPanelPowerControl(Driver, TRUE);
+  if (EFI_ERROR(Status)) {
+    DEBUG((EFI_D_ERROR, "Failed to power on LCD: %r\n", Status));
+    return;
+  }
 
-  SunxiBackendSetMode(Driver, &mLcdMode, (UINT32)mFramebufferBase - (UINT32)FixedPcdGet64(PcdSystemMemoryBase));
-  SunxiLcdSetMode(Driver, &mLcdMode);
-  SunxiBackendEnable(Driver);
-  SunxiLcdEnable(Driver);
-  SunxiLcdBacklightControl(Driver, TRUE);
+  Status = SunxiBackendSetMode(Driver, &mLcdMode, (UINT32)mFramebufferBase - (UINT32)FixedPcdGet64(PcdSystemMemoryBase));
+  if (EFI_ERROR(Status)) {
+    DEBUG((EFI_D_ERROR, "Failed to set backend mode: %r\n", Status));
+    return;
+  }
+
+  Status = SunxiLcdSetMode(Driver, &mLcdMode);
+  if (EFI_ERROR(Status)) {
+    DEBUG((EFI_D_ERROR, "Failed to set LCD mode: %r\n", Status));
+    return;
+  }
+
+  Status = SunxiBackendEnable(Driver);
+  if (EFI_ERROR(Status)) {
+    DEBUG((EFI_D_ERROR, "Failed to enable backend: %r\n", Status));
+    return;
+  }
+
+  Status = SunxiLcdEnable(Driver);
+  if (EFI_ERROR(Status)) {
+    DEBUG((EFI_D_ERROR, "Failed to enable LCD: %r\n", Status));
+    return;
+  }
+
+  Status = SunxiLcdBacklightControl(Driver, TRUE);
+  if (EFI_ERROR(Status)) {
+    DEBUG((EFI_D_ERROR, "Failed to enable backlight: %r\n", Status));
+    return;
+  }
 }
 
 EFI_STATUS EFIAPI DisplayDxeInitialize(
