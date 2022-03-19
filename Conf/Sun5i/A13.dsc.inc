@@ -31,3 +31,6 @@
   # PEI
   #
   SunxiPlatformPkg/Sun4i/Drivers/Ccm/A13CcmPei.inf
+
+[LibraryClasses]
+  SunxiPwmLib|SunxiPlatformPkg/Library/SunxiPwmLib/PwmSun5i.inf

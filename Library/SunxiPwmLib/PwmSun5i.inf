@@ -1,0 +1,22 @@
+[Defines]
+  INF_VERSION                    = 0x00010006
+  BASE_NAME                      = SunxiPwmLib
+  FILE_GUID                      = f12bc80f-5df1-44d9-970f-7835d2f298e6
+  MODULE_TYPE                    = BASE
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = SunxiPwmLib
+
+[Sources]
+  Pwm.h
+  Hw.h
+  PwmSun5i.c
+  Freq.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  SunxiPlatformPkg/SunxiPlatformPkg.dec
+
+[LibraryClasses]
+  IoLib
+  DebugLib
+  SunxiGpioLib
