@@ -77,6 +77,10 @@
   gSunxiTokenSpaceGuid.LcdVSync                | 0x00000000 | UINT32 | 0x8110000e
   gSunxiTokenSpaceGuid.LcdModeFlags            | 0x00000000 | UINT32 | 0x8110000f
   gSunxiTokenSpaceGuid.LcdDepth                | 0x00000000 | UINT32 | 0x81100010
+  gSunxiTokenSpaceGuid.LcdPwmChannel           | 0x00000000 | UINT32 | 0x81100011
+  gSunxiTokenSpaceGuid.LcdPwmFreq              | 0x00000000 | UINT32 | 0x81100012
+  gSunxiTokenSpaceGuid.LcdPwmEntirePeriod      | 0x00000000 | UINT32 | 0x81100013
+  gSunxiTokenSpaceGuid.LcdPwmActivePeriod      | 0x00000000 | UINT32 | 0x81100014
 
 
 # SPL

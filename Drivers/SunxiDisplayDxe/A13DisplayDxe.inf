@@ -26,9 +26,9 @@
   BaseLib
   DebugLib
   IoLib
-  SunxiGpioLib
   UefiLib
   PcdLib
+  SunxiPwmLib
 
 [Protocols]
   gEfiGraphicsOutputProtocolGuid
@@ -59,6 +59,10 @@
   gSunxiTokenSpaceGuid.LcdVSync
   gSunxiTokenSpaceGuid.LcdModeFlags
   gSunxiTokenSpaceGuid.LcdDepth
+  gSunxiTokenSpaceGuid.LcdPwmChannel
+  gSunxiTokenSpaceGuid.LcdPwmFreq
+  gSunxiTokenSpaceGuid.LcdPwmEntirePeriod
+  gSunxiTokenSpaceGuid.LcdPwmActivePeriod
 
 [Depex]
   gSunxiCcmProtocolGuid

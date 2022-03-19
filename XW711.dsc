@@ -52,3 +52,7 @@
   gSunxiTokenSpaceGuid.LcdVSync                | 1
   gSunxiTokenSpaceGuid.LcdFlags                | 3
   gSunxiTokenSpaceGuid.LcdDepth                | 18
+  gSunxiTokenSpaceGuid.LcdPwmChannel           | 0
+  gSunxiTokenSpaceGuid.LcdPwmFreq              | 24000000
+  gSunxiTokenSpaceGuid.LcdPwmEntirePeriod      | 1200
+  gSunxiTokenSpaceGuid.LcdPwmActivePeriod      | 960

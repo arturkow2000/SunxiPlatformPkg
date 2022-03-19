@@ -11,7 +11,7 @@
 
 #include "Driver.h"
 #include "Lcd.h"
-#include <Library/SunxiGpioLib.h>
+#include <Library/SunxiPwmLib.h>
 
 EFI_STATUS SunxiLcdPanelPowerControl(SUNXI_DISPLAY_DRIVER *Driver, BOOLEAN PowerOn) {
   UINT32 Pin = FixedPcdGet32(LcdPowerPin);
@@ -28,11 +28,22 @@ EFI_STATUS SunxiLcdBacklightControl(SUNXI_DISPLAY_DRIVER *Driver, BOOLEAN PowerO
   if (EFI_ERROR(Status))
     return Status;
 
-  // FIXME: hardcoded PWM pin for sun5i
-  // TODO: should use PWM library for doing this
-  // TODO: implement an actual PWM
-  SunxiGpioSetLevel(SUNXI_GPIO_PIN_PB(2), !(FixedPcdGet32(LcdFlags) & LCD_PWM_POLARITY_LOW));
-  SunxiGpioConfigureAsOutput(SUNXI_GPIO_PIN_PB(2));
+  Status = SunxiPwmPrepareChannel(FixedPcdGet32(LcdPwmChannel));
+  ASSERT_EFI_ERROR(Status);
+  if (EFI_ERROR(Status))
+    return Status;
+
+  Status = SunxiPwmConfigureChannel(
+    FixedPcdGet32(LcdPwmChannel),
+    FixedPcdGet32(LcdPwmFreq),
+    FixedPcdGet32(LcdPwmEntirePeriod),
+    FixedPcdGet32(LcdPwmActivePeriod),
+    (FixedPcdGet32(LcdFlags) & LCD_PWM_POLARITY_LOW) ? SUNXI_PWM_ACTIVE_LOW : 0
+  );
+  ASSERT_EFI_ERROR(Status);
+  if (EFI_ERROR(Status))
+    return Status;
+
   return EFI_SUCCESS;
 }
 
