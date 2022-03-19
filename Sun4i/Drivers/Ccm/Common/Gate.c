@@ -59,7 +59,9 @@ CONST CCM_GATE_DESC gCcmGateList[] = {
   GATE(L"apb1-uart0", 0x06c, 16),
   GATE(L"apb1-uart1", 0x06c, 17),
   GATE(L"apb1-uart2", 0x06c, 18),
-  GATE(L"apb1-uart3", 0x06c, 19)
+  GATE(L"apb1-uart3", 0x06c, 19),
+  // DRAM
+  GATE(L"dram-be0", 0x100, 26)
 };
 
 CONST UINT32 gCcmGateListLength = ARRAY_SIZE(gCcmGateList);

@@ -55,7 +55,7 @@ READ_LOCK_STATUS   = TRUE
   # Platform drivers
   #
   INF SunxiPlatformPkg/Drivers/InterruptDxe/InterruptDxe.inf
-  #INF SunxiPlatformPkg/Drivers/SunxiDisplayDxe/DisplayDxe.inf
+  INF SunxiPlatformPkg/Drivers/SunxiDisplayDxe/A13DisplayDxe.inf
   INF MdeModulePkg/Universal/WatchdogTimerDxe/WatchdogTimer.inf
   INF SunxiPlatformPkg/Drivers/EmuRuntimeDxe/EmuVariableRuntimeDxe.inf
   #INF SunxiPlatformPkg/Drivers/UsbDxe/UsbDxe.inf

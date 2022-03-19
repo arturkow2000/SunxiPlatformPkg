@@ -14,8 +14,25 @@ EFI_STATUS
   IN  PMIC_PROTOCOL     *This
   );
 
+typedef
+EFI_STATUS
+(EFIAPI *PMIC_GPIO_INPUT)(
+  IN  PMIC_PROTOCOL     *This,
+  IN  UINT32 Pin
+  );
+
+typedef
+EFI_STATUS
+(EFIAPI *PMIC_GPIO_OUTPUT)(
+  IN  PMIC_PROTOCOL     *This,
+  IN  UINT32 Pin,
+  IN  UINT32 Value
+  );
+
 struct _PMIC_PROTOCOL {
   PMIC_POWEROFF Poweroff;
+  PMIC_GPIO_INPUT GpioInput;
+  PMIC_GPIO_OUTPUT GpioOutput;
 };
 
 extern EFI_GUID gPmicProtocolGuid;

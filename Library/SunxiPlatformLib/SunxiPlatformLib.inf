@@ -23,3 +23,5 @@
 
   gArmTokenSpaceGuid.PcdFdBaseAddress
   gArmTokenSpaceGuid.PcdFdSize
+
+  gSunxiTokenSpaceGuid.FramebufferReserved
