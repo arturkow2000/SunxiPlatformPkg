@@ -1,15 +1,15 @@
 [Defines]
   INF_VERSION     = 0x00010006
-  BASE_NAME       = OtgPei
+  BASE_NAME       = OtgDxe
   FILE_GUID       = 76522ca7-2d14-494d-9b70-2f15fbbd4698
-  MODULE_TYPE     = PEIM
+  MODULE_TYPE     = DXE_DRIVER
   VERSION_STRING  = 1.0
-  ENTRY_POINT     = OtgPeiInitialize
+  ENTRY_POINT     = OtgDxeInitialize
 
 [Sources]
-  Pei/Driver.h
-  Pei/Driver.c
-  Pei/Forward.c
+  Dxe/Driver.h
+  Dxe/Driver.c
+  Dxe/Forward.c
 
   Common/Hw.h
   Common/Driver.h
@@ -28,18 +28,19 @@
   SunxiPlatformPkg/SunxiPlatformPkg.dec
 
 [LibraryClasses]
-  PeimEntryPoint
-  PeiServicesLib
+  UefiDriverEntryPoint
+  UefiBootServicesTableLib
   BaseLib
   DebugLib
   IoLib
   TimerLib
+  UefiLib
   MemoryAllocationLib
-  SunxiUsbPhyLib
+  # SunxiUsbPhyLib
   SunxiCcmLib
 
-[Ppis]
-  gUsbPpiGuid
+[Protocols]
+  gUsbProtocolGuid
 
 [Depex]
   TRUE

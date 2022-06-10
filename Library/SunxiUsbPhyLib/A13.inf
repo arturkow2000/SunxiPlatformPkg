@@ -1,0 +1,27 @@
+[Defines]
+  INF_VERSION     = 0x00010006
+  BASE_NAME       = SunxiUsbPhyLib
+  FILE_GUID       = 09883254-f768-4408-9be3-be5030d3c8fe
+  MODULE_TYPE     = BASE
+  VERSION_STRING  = 1.0
+  LIBRARY_CLASS   = SunxiUsbPhyLib
+
+[Sources]
+  A13Config.c
+  Config.h
+  Hw.h
+  Gpio.c
+  Clock.c
+  Phy.h
+  Phy.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  SunxiPlatformPkg/SunxiPlatformPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  DebugLib
+  IoLib
+  SunxiGpioLib
+  SunxiCcmLib

@@ -1,0 +1,25 @@
+[Defines]
+  INF_VERSION                    = 0x00010006
+  BASE_NAME                      = SunxiCcmLib
+  FILE_GUID                      = 32c485c7-e2cd-45eb-ac40-4e63b3a54685
+  MODULE_TYPE                    = PEIM
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = SunxiCcmLib
+  CONSTRUCTOR                    = SunxiCcmLibConstructor
+
+[Sources]
+  Pei.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  SunxiPlatformPkg/SunxiPlatformPkg.dec
+
+[LibraryClasses]
+  PeiServicesLib
+  DebugLib
+
+[Ppis]
+  gSunxiCcmPpiGuid
+
+[Depex]
+  gSunxiCcmPpiGuid

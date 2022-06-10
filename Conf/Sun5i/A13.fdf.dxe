@@ -1,2 +1,3 @@
 INF SunxiPlatformPkg/Sun4i/Drivers/Ccm/A13CcmDxe.inf
 INF SunxiPlatformPkg/Sun4i/Drivers/TimerDxe/TimerDxe.inf
+INF SunxiPlatformPkg/Drivers/Usb/Otg/A13OtgDxe.inf

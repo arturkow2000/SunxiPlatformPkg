@@ -84,11 +84,15 @@ STATIC VOID UsbEpxTxState(USB_DRIVER *Driver, UINT32 Endpoint, USB_REQUEST_BLOCK
 
   FifoCount = MIN(Ep->TxPacketSize, Urb->Length - Urb->Actual);
 
-  if (Csr & MUSB_TXCSR_TXPKTRDY)
+  if (Csr & MUSB_TXCSR_TXPKTRDY) {
+    DEBUG((EFI_D_ERROR, "Old packet still not sent (EP%d)\n", Endpoint));
     return;
+  }
 
-  if (Csr & MUSB_TXCSR_P_SENDSTALL)
+  if (Csr & MUSB_TXCSR_P_SENDSTALL) {
+    DEBUG((EFI_D_INFO, "Stalling EP%d\n", Endpoint));
     return;
+  }
 
   UsbWriteFifo(Driver, Endpoint, FifoCount, (UINT8*)Urb->Buffer + Urb->Actual);
   Urb->Actual += FifoCount;
@@ -110,7 +114,7 @@ VOID UsbEpxHandleTxIrq(USB_DRIVER *Driver, UINT32 EndpointNumber) {
     return;
   }
 
-  if (!(Driver->EndpointsUsedForRx & (1u << EndpointNumber))) {
+  if (!(Driver->EndpointsUsedForTx & (1u << EndpointNumber))) {
     DEBUG((EFI_D_ERROR, "TX on disabled endpoint %d, ignoring\n", EndpointNumber));
     return;
   }
@@ -119,6 +123,13 @@ VOID UsbEpxHandleTxIrq(USB_DRIVER *Driver, UINT32 EndpointNumber) {
   MaxPacket = Ep->TxPacketSize;
 
   UsbSelectEndpoint(Driver, EndpointNumber);
+  Csr = MmioRead16(Driver->Base + MUSB_TXCSR);
+
+  /*
+   * FIXME: TX does not work without MUSB_TXCSR_MODE, but if we enable TX first
+   * and then RX this is cleared due to shared FIFOs.
+   */
+  ASSERT(Csr & MUSB_TXCSR_MODE);
 
   if (Csr & MUSB_TXCSR_P_SENTSTALL) {
     Csr |= MUSB_TXCSR_P_WZC_BITS;
@@ -149,14 +160,17 @@ VOID UsbEpxHandleTxIrq(USB_DRIVER *Driver, UINT32 EndpointNumber) {
 
   if (Urb->Length == Urb->Actual) {
     UsbEpxCompleteRequest(Driver, Urb, EFI_SUCCESS, EndpointNumber);
-
     UsbSelectEndpoint(Driver, EndpointNumber);
 
-    Node = GetFirstNode(&Driver->Epx[EndpointNumber - 1].TxQueue);
+    // FIXME: this is broken, for some reason TXPKTRDY is not cleared yet at
+    // this point
+
+    /*Node = GetFirstNode(&Driver->Epx[EndpointNumber - 1].TxQueue);
     if (Node == &Driver->Epx[EndpointNumber - 1].TxQueue)
       return;
 
-    Urb = USB_URB_FROM_LINK(Node);
+    Urb = USB_URB_FROM_LINK(Node);*/
+    return;
   }
 
   UsbEpxTxState(Driver, EndpointNumber, Urb);

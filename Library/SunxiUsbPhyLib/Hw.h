@@ -52,3 +52,27 @@
 #define SUNXI_EHCI_HS_FORCE       (1 << 20)
 #define SUNXI_HSIC_CONNECT_INT    (1 << 16)
 #define SUNXI_HSIC                (1 << 1)
+
+/* Interface Status and Control */
+#define PHY_ISCR_VBUS_VALID_FROM_DATA  30
+#define PHY_ISCR_VBUS_VALID_FROM_VBUS  29
+#define PHY_ISCR_EXT_ID_STATUS         28
+#define PHY_ISCR_EXT_DM_STATUS         27
+#define PHY_ISCR_EXT_DP_STATUS         26
+#define PHY_ISCR_MERGED_VBUS_STATUS    25
+#define PHY_ISCR_MERGED_ID_STATUS      24
+
+#define PHY_ISCR_ID_PULLUP_EN          17
+#define PHY_ISCR_DPDM_PULLUP_EN        16
+#define PHY_ISCR_FORCE_ID              14
+#define PHY_ISCR_FORCE_VBUS_VALID      12
+#define PHY_ISCR_VBUS_VALID_SRC        10
+
+#define PHY_ISCR_HOSC_EN               7
+#define PHY_ISCR_VBUS_CHANGE_DETECT    6
+#define PHY_ISCR_ID_CHANGE_DETECT      5
+#define PHY_ISCR_DPDM_CHANGE_DETECT    4
+#define PHY_ISCR_IRQ_ENABLE            3
+#define PHY_ISCR_VBUS_CHANGE_DETECT_EN 2
+#define PHY_ISCR_ID_CHANGE_DETECT_EN   1
+#define PHY_ISCR_DPDM_CHANGE_DETECT_EN 0

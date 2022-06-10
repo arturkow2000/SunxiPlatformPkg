@@ -68,6 +68,7 @@ READ_LOCK_STATUS   = TRUE
   INF SunxiPlatformPkg/Drivers/Axp209/Axp209Dxe.inf
   INF SunxiPlatformPkg/Drivers/Pcf8563Dxe/Pcf8563Dxe.inf
   INF SunxiPlatformPkg/Drivers/FdtPlatformDxe/FdtPlatformDxe.inf
+  INF SunxiPlatformPkg/Drivers/Usb/ExperimentalGadgetDriver/Driver.inf
 
   #
   # Status Code Routing

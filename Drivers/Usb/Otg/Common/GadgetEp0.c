@@ -33,10 +33,6 @@ STATIC VOID UsbEp0TxState(USB_DRIVER *Driver) {
     Csr |= MUSB_CSR0_P_DATAEND;
   } else Urb = NULL;
 
-  /* send it out, triggering a "txpktrdy cleared" irq */
-  UsbSelectEndpoint(Driver, 0);
-  MmioWrite16(Driver->Base + MUSB_CSR0, Csr);
-
   /* report completions as soon as the fifo's loaded; there's no
    * win in waiting till this last packet gets acked.  (other than
    * very precise fault reporting, needed by USB TMC; possible with
@@ -52,6 +48,10 @@ STATIC VOID UsbEp0TxState(USB_DRIVER *Driver) {
 
     Driver->AckPending = 0;
   }
+
+  /* send it out, triggering a "txpktrdy cleared" irq */
+  UsbSelectEndpoint(Driver, 0);
+  MmioWrite16(Driver->Base + MUSB_CSR0, Csr);
 }
 
 STATIC VOID UsbEp0RxState(USB_DRIVER *Driver) {
@@ -475,7 +475,7 @@ setup:
         if (Handled > 0)
           Driver->Ep0State = MUSB_EP0_STAGE_STATUSIN;
         break;
-    
+
       /* sequence #1 (IN to host), includes GET_STATUS
        * requests that we can't forward, GET_DESCRIPTOR
        * and others that we must
@@ -487,7 +487,7 @@ setup:
           Driver->Ep0State = MUSB_EP0_STAGE_STATUSOUT;
         }
         break;
-    
+
       /* sequence #2 (OUT from host), always forward */
       default:
         break;

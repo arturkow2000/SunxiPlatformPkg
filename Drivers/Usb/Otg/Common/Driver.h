@@ -5,6 +5,9 @@
 #include <Library/DebugLib.h>
 #include <Library/IoLib.h>
 #include <Library/TimerLib.h>
+#include <Library/SunxiUsbPhyLib.h>
+#include <Library/SunxiCcmLib.h>
+#include <Library/UsbGadgetLib.h>
 
 #include <IndustryStandard/UsbEx.h>
 
@@ -54,6 +57,7 @@ typedef struct _USB_EPX {
 
 typedef struct _USB_DRIVER {
   UINT32 Base;
+  UINT32 Phy;
   BOOLEAN Enabled;
   UINT8 Ep0State;
   UINT16 AckPending;
@@ -67,23 +71,6 @@ typedef struct _USB_DRIVER {
 
   USB_EPX *Epx;
 } USB_DRIVER;
-
-#define USB_URB_FROM_LINK(Record)        \
-  BASE_CR(Record, USB_REQUEST_BLOCK, Node)
-
-struct _USB_REQUEST_BLOCK {
-  LIST_ENTRY Node;
-
-  VOID *Buffer;
-  UINT32 Length;
-
-  // Number of bytes already transferred
-  UINT32 Actual;
-  UINT32 Flags;
-
-  VOID *Callback;
-  VOID *UserData;
-};
 
 EFI_STATUS UsbInit(USB_DRIVER *Driver);
 VOID UsbReset(USB_DRIVER *Driver, BOOLEAN FirstReset);
@@ -112,15 +99,6 @@ EFI_STATUS UsbEpxQueue(USB_DRIVER *Driver, UINT32 Endpoint, USB_REQUEST_BLOCK *U
 // FIFO access functions
 VOID UsbReadFifo(USB_DRIVER *Driver, UINT8 Endpoint, UINT16 Length, UINT8* OutData);
 VOID UsbWriteFifo(USB_DRIVER *Driver, UINT8 Endpoint, UINT16 Length, CONST UINT8 *Data);
-
-/// FIXME: move PHY stuff into PHY driver
-VOID USBC_EnableIdPullUp(USB_DRIVER *Driver);
-VOID USBC_EnableDpDmPullUp(USB_DRIVER *Driver);
-VOID USBC_ForceIdToLow(USB_DRIVER *Driver);
-VOID USBC_ForceIdToHigh(USB_DRIVER *Driver);
-VOID USBC_ForceVbusValidToLow(USB_DRIVER *Driver);
-VOID USBC_ForceVbusValidToHigh(USB_DRIVER *Driver);
-VOID USBC_ConfigFIFO_Base(VOID);
 
 // Debugging
 VOID UsbDumpSetupPacket(USB_DEVICE_REQUEST *Setup);

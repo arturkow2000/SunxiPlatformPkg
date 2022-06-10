@@ -12,8 +12,8 @@
 
 **/
 
-#include "../../Common/Config.h"
-#include "../../Common/Hw.h"
+#include "Phy.h"
+#include "Hw.h"
 
 STATIC CONST UINT32 PmuList[] = {
   0,

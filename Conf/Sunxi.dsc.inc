@@ -157,6 +157,7 @@
   SecurityManagementLib|MdeModulePkg/Library/DxeSecurityManagementLib/DxeSecurityManagementLib.inf
   PerformanceLib|MdeModulePkg/Library/DxePerformanceLib/DxePerformanceLib.inf
   SunxiGpioLib|SunxiPlatformPkg/Library/SunxiGpioLib/SunxiGpioLibDxe.inf
+  UsbGadgetLib|SunxiPlatformPkg/Library/UsbGadgetLib/UsbGadgetLibDxe.inf
 
 [LibraryClasses.common.DXE_RUNTIME_DRIVER]
   SecurityManagementLib|MdeModulePkg/Library/DxeSecurityManagementLib/DxeSecurityManagementLib.inf

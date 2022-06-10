@@ -1,0 +1,28 @@
+[Defines]
+  INF_VERSION     = 0x00010006
+  BASE_NAME       = UsbGadgetLib
+  FILE_GUID       = 223e4667-a382-4284-903a-aab02db8b22e
+  MODULE_TYPE     = DXE_DRIVER
+  VERSION_STRING  = 1.0
+  LIBRARY_CLASS   = UsbGadgetLib
+  CONSTRUCTOR     = UsbGadgetLibConstructor
+
+[Sources]
+  Gadget.c
+  Control.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  SunxiPlatformPkg/SunxiPlatformPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  DebugLib
+  UefiBootServicesTableLib
+  MemoryAllocationLib
+
+[Protocols]
+  gUsbProtocolGuid
+
+[Depex]
+  gUsbProtocolGuid

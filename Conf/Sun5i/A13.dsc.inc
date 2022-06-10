@@ -25,8 +25,7 @@
 [Components.common]
   SunxiPlatformPkg/Sun4i/Drivers/Ccm/A13CcmDxe.inf
   SunxiPlatformPkg/Sun4i/Drivers/TimerDxe/TimerDxe.inf
-  SunxiPlatformPkg/Drivers/Usb/Phy/A13PhyPei.inf
-  SunxiPlatformPkg/Drivers/Usb/Otg/A13OtgPei.inf
+  SunxiPlatformPkg/Drivers/Usb/Otg/A13OtgDxe.inf
 
   SunxiPlatformPkg/Drivers/Usb/ExperimentalGadgetDriver/Driver.inf
 
@@ -38,3 +37,16 @@
 
 [LibraryClasses]
   SunxiPwmLib|SunxiPlatformPkg/Library/SunxiPwmLib/PwmSun5i.inf
+  SunxiUsbPhyLib|SunxiPlatformPkg/Library/SunxiUsbPhyLib/A13.inf
+
+[LibraryClasses.common.PEIM]
+  SunxiCcmLib|SunxiPlatformPkg/Library/SunxiCcmLib/SunxiCcmLibPei.inf
+
+[LibraryClasses.common.DXE_DRIVER]
+  SunxiCcmLib|SunxiPlatformPkg/Library/SunxiCcmLib/SunxiCcmLibDxe.inf
+
+[LibraryClasses.common.DXE_RUNTIME_DRIVER]
+  SunxiCcmLib|SunxiPlatformPkg/Library/SunxiCcmLib/SunxiCcmLibDxe.inf
+
+[LibraryClasses.common.UEFI_DRIVER]
+  SunxiCcmLib|SunxiPlatformPkg/Library/SunxiCcmLib/SunxiCcmLibDxe.inf

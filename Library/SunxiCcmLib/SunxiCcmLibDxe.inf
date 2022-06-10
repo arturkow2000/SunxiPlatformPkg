@@ -1,0 +1,25 @@
+[Defines]
+  INF_VERSION                    = 0x00010006
+  BASE_NAME                      = SunxiCcmLib
+  FILE_GUID                      = 71b97e61-6ed7-449e-9a93-0a74b0161e29
+  MODULE_TYPE                    = DXE_DRIVER
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = SunxiCcmLib
+  CONSTRUCTOR                    = SunxiCcmLibConstructor
+
+[Sources]
+  Dxe.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  SunxiPlatformPkg/SunxiPlatformPkg.dec
+
+[LibraryClasses]
+  UefiBootServicesTableLib
+  DebugLib
+
+[Protocols]
+  gSunxiCcmProtocolGuid         ## CONSUMES
+
+[Depex]
+  gSunxiCcmProtocolGuid

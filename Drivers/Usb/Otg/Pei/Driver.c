@@ -236,13 +236,17 @@ OtgPeiInitialize(
   EFI_STATUS Status;
   USB_PEI_DRIVER *Driver;
 
+  Status = SunxiUsbPhyInit();
+  ASSERT_EFI_ERROR(Status);
+  if (EFI_ERROR(Status))
+    return Status;
+
   Status = PeiServicesAllocatePool(sizeof(USB_PEI_DRIVER), (VOID**)&Driver);
   ASSERT_EFI_ERROR(Status);
   if (EFI_ERROR(Status))
     return Status;
 
   ZeroMem(&Driver->Common, sizeof(USB_DRIVER));
-  Driver->Common.Base = 0x01c13000;
   Driver->GadgetDriver = NULL;
   Driver->GadgetDriverData = NULL;
 

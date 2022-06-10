@@ -1,12 +1,12 @@
 #pragma once
 
-#include <PiPei.h>
+#include <PiDxe.h>
 
 #include <Library/BaseLib.h>
 #include <Library/DebugLib.h>
-#include <Library/PeiServicesLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/MemoryAllocationLib.h>
+#include <Library/UefiBootServicesTableLib.h>
 
 #include <Library/UsbGadgetLib.h>
 #include <Ppi/UsbPpi.h>
@@ -20,18 +20,17 @@
 
 #define CDC_DATA_MAX_PACKET 512
 
-#define GADGET_DRIVER_GET_INTERNAL(Record)        \
-  BASE_CR(Record, GADGET_DRIVER_INTERNAL, Public)
+#define GADGET_TO_DRIVER(Record)        \
+  BASE_CR(Record, GADGET_DRIVER, Gadget)
 
 typedef struct {
+  USB_CDC_LINE_CODING PendingLineCoding;
   USB_CDC_LINE_CODING LineCoding;
 } CDC_STATE;
 
-typedef struct _GADGET_DRIVER_INTERNAL {
-  USB_GADGET_DRIVER Public;
-  USB_PPI *Usb;
+typedef struct _GADGET_DRIVER {
+  USB_GADGET Gadget;
 
-  USB_REQUEST_BLOCK *ControlRequest;
   USB_REQUEST_BLOCK *CdcDataInUrb;
   USB_REQUEST_BLOCK *CdcDataOutUrb;
 
@@ -39,7 +38,7 @@ typedef struct _GADGET_DRIVER_INTERNAL {
 
   CDC_STATE CdcState;
   USB_CONFIG_DESCRIPTOR *ConfigDescriptor;
-} GADGET_DRIVER_INTERNAL;
+} GADGET_DRIVER;
 
 typedef struct _DEVICE_CONFIG {
   USB_CONFIG_DESCRIPTOR Config;
@@ -66,12 +65,17 @@ typedef struct _DEVICE_CONFIG {
 
 extern DEVICE_CONFIG gConfigDescriptorTemplate;
 
-EFI_STATUS UsbGadgetHandleControlRequest(
-  USB_GADGET_DRIVER *This,
-  USB_DRIVER *Driver,
-  USB_DEVICE_REQUEST *Request
-  );
+USB_DEVICE_DESCRIPTOR *UsbGadgetGetDeviceDescriptor(USB_GADGET *Gadget);
+USB_CONFIG_DESCRIPTOR *UsbGadgetGetConfigDescriptor(USB_GADGET *Gadget);
+UINT8 *UsbGadgetGetStringDescriptor(USB_GADGET *Gadget, UINT8 Id);
+EFI_STATUS UsbGadgetHandleClassRequest(USB_GADGET *This, USB_DEVICE_REQUEST *Request);
+EFI_STATUS UsbGadgetHandleVendorRequest(USB_GADGET *This, USB_DEVICE_REQUEST *Request);
+EFI_STATUS UsbGadgetHandleSetConfig(USB_GADGET *This, UINT8 Config);
 
+EFI_STATUS CdcHandleRequest(USB_GADGET *This, USB_DEVICE_REQUEST *Request);
+EFI_STATUS CdcEnable(USB_GADGET *This);
+
+#if 0
 /**
  Responds to USB IN request
 **/
@@ -93,3 +97,4 @@ EFI_STATUS UsbGadgetEpxInitAndQueue(
 
 EFI_STATUS CdcEnable(GADGET_DRIVER_INTERNAL *Internal);
 EFI_STATUS CdcHandleRequest(GADGET_DRIVER_INTERNAL *Internal, USB_DEVICE_REQUEST *Request);
+#endif

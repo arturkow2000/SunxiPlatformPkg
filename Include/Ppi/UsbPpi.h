@@ -6,8 +6,6 @@
   }
 
 typedef struct _USB_PPI USB_PPI;
-typedef struct _USB_GADGET_DRIVER USB_GADGET_DRIVER;
-typedef struct _USB_REQUEST_BLOCK USB_REQUEST_BLOCK;
 
 typedef
 VOID
@@ -37,7 +35,7 @@ typedef
 EFI_STATUS
 (EFIAPI *USB_PPI_REGISTER_GADGET_DRIVER)(
   IN USB_PPI *This,
-  IN USB_GADGET_DRIVER *Gadget,
+  IN USB_GADGET *Gadget,
   IN VOID *UserData
 );
 
@@ -55,7 +53,7 @@ typedef
 EFI_STATUS
 (EFIAPI *USB_PPI_UNREGISTER_GADGET_DRIVER)(
   IN USB_PPI *This,
-  IN USB_GADGET_DRIVER *Gadget
+  IN USB_GADGET *Gadget
 );
 
 /**
@@ -109,59 +107,6 @@ EFI_STATUS
   IN UINT32 Endpoint,
   OUT UINT32 *OutMaxPacketSizeTx,
   OUT UINT32 *OutMaxPacketSizeRx
-);
-
-/**
- Allocates driver's internal structures for keeping track of queued transfers.
- These are initialized using USB_PPI_INIT_URB and then passed to
- USB_PPI_QUEUE
-
- @param This                        Pointer to USB_PPI instance
- @param NumUrbs                     Number of URB structures to allocate
- @param OutUrbs                     Variable to receive pointer to structure array
-
- @retval EFI_SUCCESS                Allocation successful.
- @retval EFI_INVALID_PARAMETER      This == NULL or OutUrbs == NULL or NumUrbs == 0
- @retval EFI_OUT_OF_RESOURCES       Out of memory.
-**/
-typedef
-EFI_STATUS
-(EFIAPI *USB_PPI_ALLOCATE_URBS)(
-  IN USB_PPI *This,
-  IN UINT32 NumUrbs,
-  OUT USB_REQUEST_BLOCK **OutUrbs
-);
-
-#define USB_PPI_FLAG_ZLP (1 << 0)
-#define USB_PPI_FLAG_TX (1 << 1)
-
-/**
- Initializes URB previously allocated with USB_PPI_ALLOCATE_URBS.
-
- @param This                        Pointer to USB_PPI instance
- @param Urb                         Pointer to USB_REQUEST_BLOCK structure allocated with USB_PPI_ALLOCATE_URBS
- @param Buffer                      Pointer to packet data buffer
- @param Length                      Length of data in buffer
- @param Flags                       Reserved, should be 0
- @param Callback                    Callback function called upon completion
- @param UserData                    Optional data passed to callback
-
- @retval EFI_SUCCESS                Pointer to USB_PPI instance.
- @retval EFI_INVALID_PARAMETER      At least one of parameters is invalid:
-                                     - This or Urb is NULL 
-                                     - Buffer is NULL or Length == 0, currently zero length packets are not supported
-                                     - Invalid flag passed
-**/
-typedef
-EFI_STATUS
-(EFIAPI *USB_PPI_INIT_URB)(
-  IN USB_PPI *This,
-  OUT USB_REQUEST_BLOCK *Urb,
-  IN VOID *Buffer,
-  IN UINT32 Length,
-  IN UINT32 Flags,
-  IN USB_PPI_REQ_COMPLETE_CALLBACK Callback OPTIONAL,
-  IN VOID *UserData OPTIONAL
 );
 
 /**
@@ -227,8 +172,6 @@ struct _USB_PPI {
   USB_PPI_HANDLE_INTERRUPTS HandleInterrupts;
   USB_PPI_GET_NUMBER_OF_ENDPOINTS GetNumberOfEndpoints;
   USB_PPI_GET_ENDPOINT_INFO GetEndpointInfo;
-  USB_PPI_ALLOCATE_URBS AllocateUrbs;
-  USB_PPI_INIT_URB InitUrb;
   USB_PPI_QUEUE Queue;
   USB_PPI_HALT Halt;
   USB_PPI_ENABLE_ENDPOINT EnableEndpoint;

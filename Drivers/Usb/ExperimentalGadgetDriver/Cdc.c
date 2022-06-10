@@ -1,143 +1,12 @@
 #include "Driver.h"
 
-STATIC VOID CdcDataCallback(
-  USB_PPI *Usb,
-  UINT32 Endpoint,
-  VOID *Buffer,
-  UINT32 Length,
-  GADGET_DRIVER_INTERNAL *Internal,
-  EFI_STATUS Status
-  );
+STATIC VOID CdcHandleLineCoding(USB_GADGET *This, USB_REQUEST_BLOCK *Urb) {
+  GADGET_DRIVER *Driver = GADGET_TO_DRIVER(This);
+  USB_CDC_LINE_CODING *LineCoding = &Driver->CdcState.PendingLineCoding;
 
-STATIC VOID CdcTxCompleteCallback(
-  USB_PPI *Usb,
-  UINT32 Endpoint,
-  VOID *Buffer,
-  UINT32 Length,
-  GADGET_DRIVER_INTERNAL *Internal,
-  EFI_STATUS Status
-  )
-{
-  DEVICE_CONFIG *Config = (DEVICE_CONFIG*)Internal->ConfigDescriptor;
-
-  // Resume receiving data
-  UsbGadgetEpxInitAndQueue(
-    Internal,
-    Internal->CdcDataOutUrb,
-    &Config->CdcDataEpOut,
-    Internal->CdcBuffer,
-    CDC_DATA_MAX_PACKET,
-    0,
-    (USB_PPI_REQ_COMPLETE_CALLBACK)CdcDataCallback
-  );
-}
-
-STATIC VOID CdcDataCallback(
-  USB_PPI *Usb,
-  UINT32 Endpoint,
-  VOID *Buffer,
-  UINT32 Length,
-  GADGET_DRIVER_INTERNAL *Internal,
-  EFI_STATUS Status
-  )
-{
-  DEVICE_CONFIG *Config = (DEVICE_CONFIG*)Internal->ConfigDescriptor;
-  BOOLEAN Tx = FALSE;
-
-  if (!EFI_ERROR(Status)) {
-    // Echo packet
-    if (Length > 0) {
-      Status = UsbGadgetEpxInitAndQueue(
-        Internal,
-        Internal->CdcDataInUrb,
-        &Config->CdcDataEpIn,
-        Internal->CdcBuffer,
-        Length,
-        USB_PPI_FLAG_TX | USB_PPI_FLAG_ZLP,
-        (USB_PPI_REQ_COMPLETE_CALLBACK)CdcTxCompleteCallback
-      );
-      ASSERT_EFI_ERROR(Status);
-
-      Tx = TRUE;
-    }
-  }
-
-  if (!Tx) {
-    Status = UsbGadgetEpxInitAndQueue(
-      Internal,
-      Internal->CdcDataOutUrb,
-      &Config->CdcDataEpOut,
-      Internal->CdcBuffer,
-      CDC_DATA_MAX_PACKET,
-      0,
-      (USB_PPI_REQ_COMPLETE_CALLBACK)CdcDataCallback
-    );
-    ASSERT_EFI_ERROR(Status);
-  }
-}
-
-EFI_STATUS CdcEnable(GADGET_DRIVER_INTERNAL *Internal) {
-  EFI_STATUS Status;
-  DEVICE_CONFIG *Config = (DEVICE_CONFIG*)Internal->ConfigDescriptor;
-
-  Status = Internal->Usb->EnableEndpoint(Internal->Usb, &Config->CustomEpIn);
-  if (EFI_ERROR(Status)) {
-    DEBUG((EFI_D_ERROR, "Failed to enable custom data in endpoint\n"));
-    return Status;
-  }
-
-  Status = Internal->Usb->EnableEndpoint(Internal->Usb, &Config->CustomEpOut);
-  if (EFI_ERROR(Status)) {
-    DEBUG((EFI_D_ERROR, "Failed to enable custom data out endpoint\n"));
-    return Status;
-  }
-
-  Status = Internal->Usb->EnableEndpoint(Internal->Usb, &Config->CdcDataEpIn);
-  if (EFI_ERROR(Status)) {
-    DEBUG((EFI_D_ERROR, "Failed to enable CDC data in endpoint\n"));
-    return Status;
-  }
-
-  Status = Internal->Usb->EnableEndpoint(Internal->Usb, &Config->CdcDataEpOut);
-  if (EFI_ERROR(Status)) {
-    DEBUG((EFI_D_ERROR, "Failed to enable CDC data out endpoint\n"));
-    return Status;
-  }
-
-  Status = Internal->Usb->EnableEndpoint(Internal->Usb, &Config->CdcControlEp);
-  if (EFI_ERROR(Status)) {
-    DEBUG((EFI_D_ERROR, "Failed to enable CDC control endpoint\n"));
-    return Status;
-  }
-
-  // Start receiving data
-  return UsbGadgetEpxInitAndQueue(
-    Internal,
-    Internal->CdcDataOutUrb,
-    &Config->CdcDataEpOut,
-    Internal->CdcBuffer,
-    CDC_DATA_MAX_PACKET,
-    0,
-    (USB_PPI_REQ_COMPLETE_CALLBACK)CdcDataCallback
-  );
-}
-
-STATIC VOID CdcSetLineCoding(
-  USB_PPI *Usb,
-  UINT32 Endpoint,
-  VOID *Buffer,
-  UINT32 Length,
-  GADGET_DRIVER_INTERNAL *Internal,
-  EFI_STATUS Status
-  )
-{
-  USB_CDC_LINE_CODING *LineCoding = Buffer;
-
-  if (EFI_ERROR(Status))
-    return;
-
-  if (Length != sizeof(USB_CDC_LINE_CODING)) {
-    Internal->Usb->Halt(Internal->Usb, 0);
+  if (Urb->Length != sizeof(USB_CDC_LINE_CODING)) {
+    DEBUG((EFI_D_ERROR, "Invalid CDC set line coding request: expected len=%d, got %d\n", Urb->Length, sizeof(USB_CDC_LINE_CODING)));
+    UsbGadgetHaltEndpoint(This, 0);
     return;
   }
 
@@ -177,29 +46,130 @@ STATIC VOID CdcSetLineCoding(
     break;
   }
   DEBUG((EFI_D_INFO, "Data bits: %d\n", LineCoding->DataBits));
+
+  CopyMem(&Driver->CdcState.LineCoding, &Driver->CdcState.PendingLineCoding, sizeof(USB_CDC_LINE_CODING));
 }
 
-EFI_STATUS CdcHandleRequest(GADGET_DRIVER_INTERNAL *Internal, USB_DEVICE_REQUEST *Request) {
-  // Match direction, target and request
-  // Request type was already handled by caller
-  switch (((Request->RequestType & (USB_ENDPOINT_DIR_IN | 3)) << 8) | Request->Request)
-  {
-  case (USB_TARGET_INTERFACE << 8) | USB_CDC_REQ_SET_LINE_CODING:
-    return UsbGadgetEp0Queue(Internal, &Internal->CdcState.LineCoding, sizeof(USB_CDC_LINE_CODING), (USB_PPI_REQ_COMPLETE_CALLBACK)CdcSetLineCoding, 0);
+STATIC VOID CdcHandleData(USB_GADGET *This, USB_REQUEST_BLOCK *Urb);
+STATIC VOID CdcTxComplete(
+  USB_GADGET *This,
+  USB_REQUEST_BLOCK *Urb
+) {
+  GADGET_DRIVER *Driver = GADGET_TO_DRIVER(This);
+  DEVICE_CONFIG *Config = (DEVICE_CONFIG*)Driver->ConfigDescriptor;
+  EFI_STATUS Status;
 
-  case ((USB_ENDPOINT_DIR_IN | USB_TARGET_INTERFACE) << 8) | USB_CDC_REQ_GET_LINE_CODING:
-    return UsbGadgetEp0Respond(
-      Internal,
-      Request,
-      &Internal->CdcState.LineCoding,
-      sizeof Internal->CdcState.LineCoding
+  if (EFI_ERROR(Urb->Status))
+    DEBUG((EFI_D_ERROR, "CDC TX failed: %r\n", Urb->Status));
+
+  Status = UsbGadgetQueue(
+    This,
+    Config->CdcDataEpOut.EndpointAddress,
+    Driver->CdcDataOutUrb,
+    Driver->CdcBuffer,
+    CDC_DATA_MAX_PACKET,
+    0,
+    CdcHandleData
+  );
+  if (EFI_ERROR(Status)) {
+    DEBUG((EFI_D_ERROR, "Failed to queue CDC RX transfer: %r\n", Status));
+  }
+}
+
+STATIC VOID CdcHandleData(
+  USB_GADGET *This,
+  USB_REQUEST_BLOCK *Urb
+) {
+  GADGET_DRIVER *Driver = GADGET_TO_DRIVER(This);
+  DEVICE_CONFIG *Config = (DEVICE_CONFIG*)Driver->ConfigDescriptor;
+  EFI_STATUS Status;
+
+  if (Urb->Actual > 0 && Urb->Status == EFI_SUCCESS) {
+    Status = UsbGadgetQueue(
+      This,
+      Config->CdcDataEpIn.EndpointAddress & ~USB_ENDPOINT_DIR_IN,
+      Driver->CdcDataInUrb,
+      Driver->CdcBuffer,
+      Urb->Actual,
+      USB_FLAG_TX | USB_FLAG_ZLP,
+      CdcTxComplete
     );
+    if (EFI_ERROR(Status)) {
+      DEBUG((EFI_D_ERROR, "Failed to queue CDC TX transfer: %r\n", Status));
+    }
+  } else {
+    Status = UsbGadgetQueue(This,
+      Config->CdcDataEpOut.EndpointAddress,
+      Driver->CdcDataOutUrb,
+      Driver->CdcBuffer,
+      CDC_DATA_MAX_PACKET,
+      0,
+      CdcHandleData
+    );
+    if (EFI_ERROR(Status)) {
+      DEBUG((EFI_D_ERROR, "Failed to queue CDC RX transfer: %r\n", Status));
+    }
+  }
+}
 
-  case (USB_TARGET_INTERFACE << 8) | USB_CDC_REQ_SET_CONTROL_LINE_STATE:
-    return UsbGadgetEp0Queue(Internal, NULL, 0, NULL, 0);
+EFI_STATUS CdcHandleRequest(USB_GADGET *This, USB_DEVICE_REQUEST *Request) {
+  GADGET_DRIVER *Driver = GADGET_TO_DRIVER(This);
+
+  switch (Request->Request)
+  {
+  case USB_CDC_REQ_SET_LINE_CODING:
+    if (Request->RequestType & USB_ENDPOINT_DIR_IN)
+      return EFI_DEVICE_ERROR;
+
+    return UsbGadgetInitUrb(This, This->ControlUrb, &Driver->CdcState.PendingLineCoding, sizeof(USB_CDC_LINE_CODING), 0, CdcHandleLineCoding);
+  
+  case USB_CDC_REQ_GET_LINE_CODING:
+    if (!(Request->RequestType & USB_ENDPOINT_DIR_IN))
+      return EFI_DEVICE_ERROR;
+
+    return UsbGadgetInitUrb(This, This->ControlUrb, &Driver->CdcState.LineCoding, sizeof(USB_CDC_LINE_CODING), 0, NULL);
   
   default:
-    DEBUG((EFI_D_ERROR, "Unknown CDC request %d dir %s\n", Request->Request, (Request->RequestType & USB_ENDPOINT_DIR_IN) ? L"IN" : L"OUT"));
-    return EFI_UNSUPPORTED;
+    DEBUG((EFI_D_ERROR, "Unknown CDC request 0x%d\n", Request->Request));
+    return EFI_DEVICE_ERROR;
   }
+}
+
+EFI_STATUS CdcEnable(USB_GADGET *This) {
+  GADGET_DRIVER *Driver = GADGET_TO_DRIVER(This);
+  DEVICE_CONFIG *Config = (DEVICE_CONFIG*)Driver->ConfigDescriptor;
+  EFI_STATUS Status;
+
+  Status = UsbGadgetEnableEndpoint(This, &Config->CdcControlEp);
+  if (EFI_ERROR(Status)) {
+    DEBUG((EFI_D_ERROR, "Failed to enable CDC control endpoint\n"));
+    return Status;
+  }
+
+  Status = UsbGadgetEnableEndpoint(This, &Config->CdcDataEpOut);
+  if (EFI_ERROR(Status)) {
+    DEBUG((EFI_D_ERROR, "Failed to enable CDC data out endpoint\n"));
+    return Status;
+  }
+
+  Status = UsbGadgetEnableEndpoint(This, &Config->CdcDataEpIn);
+  if (EFI_ERROR(Status)) {
+    DEBUG((EFI_D_ERROR, "Failed to enable CDC data in endpoint\n"));
+    return Status;
+  }
+
+  Status = UsbGadgetQueue(This,
+    Config->CdcDataEpOut.EndpointAddress,
+    Driver->CdcDataOutUrb,
+    Driver->CdcBuffer,
+    CDC_DATA_MAX_PACKET,
+    0,
+    CdcHandleData
+  );
+  if (EFI_ERROR(Status)) {
+    DEBUG((EFI_D_ERROR, "Failed to initialize CDC data transfer\n"));
+    return Status;
+  }
+
+  return EFI_SUCCESS;
 }
