@@ -186,7 +186,7 @@ EFI_STATUS EFIAPI OtgDxeInitialize(
   USB_DXE_DRIVER *Driver;
   EFI_HANDLE Handle = NULL;
 
-#if 0
+#if FixedPcdGet32(UsbPhySupport)
   Status = SunxiUsbPhyInit();
   ASSERT_EFI_ERROR(Status);
   if (EFI_ERROR(Status))
