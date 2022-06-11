@@ -6,8 +6,6 @@
 // FIXME: SUNXI_SRAMC_BASE valid only for sun4i
 #define SUNXI_SRAMC_BASE          0x01c00000
 
-// #define USB_PHY_DRIVER
-
 EFI_STATUS UsbInit(USB_DRIVER *Driver) {
   EFI_STATUS Status;
   UINT32 GateId;
@@ -51,7 +49,7 @@ EFI_STATUS UsbInit(USB_DRIVER *Driver) {
     1
   );
 
-#ifdef USB_PHY_DRIVER
+#if FixedPcdGet32(UsbPhySupport)
   Status = SunxiUsbPhyEnableDmDpPullup(Driver->Phy);
   ASSERT_EFI_ERROR(Status);
   if (EFI_ERROR(Status))
@@ -86,9 +84,11 @@ VOID UsbEnable(USB_DRIVER *Driver) {
 
   MmioWrite8(Driver->Base + MUSB_TESTMODE, 0);
 
-  /* put into basic highspeed mode and start session */
-  // MmioWrite8(Driver->Base + MUSB_POWER, MUSB_POWER_ISOUPDATE | MUSB_POWER_HSENAB | MUSB_POWER_SOFTCONN);
+#if FixedPcdGet32(Usb20Support)
+  MmioWrite8(Driver->Base + MUSB_POWER, MUSB_POWER_ISOUPDATE | MUSB_POWER_HSENAB | MUSB_POWER_SOFTCONN);
+#else
   MmioWrite8(Driver->Base + MUSB_POWER, MUSB_POWER_ISOUPDATE | MUSB_POWER_SOFTCONN);
+#endif
 
   DevCtl = MmioRead8(Driver->Base + MUSB_DEVCTL);
   DEBUG((EFI_D_INFO, "MUSB_DEVCTL : 0x%x VBUS : %u\n", DevCtl, (DevCtl & MUSB_DEVCTL_VBUS) >> MUSB_DEVCTL_VBUS_SHIFT));
@@ -96,7 +96,7 @@ VOID UsbEnable(USB_DRIVER *Driver) {
   /* select PIO mode */
   MmioWrite8(Driver->Base + USBC_REG_o_VEND0, 0);
 
-#ifdef USB_PHY_DRIVER
+#if FixedPcdGet32(UsbPhySupport)
   SunxiUsbPhyForceVbusValidToHigh(Driver->Phy);
 #endif
 
@@ -108,10 +108,8 @@ VOID UsbEnable(USB_DRIVER *Driver) {
 VOID UsbDisable(USB_DRIVER *Driver) {
   Driver->Enabled = FALSE;
 
-#ifdef USB_PHY_DRIVER
+#if FixedPcdGet32(UsbPhySupport)
   SunxiUsbPhyForceVbusValidToLow(Driver->Phy);
-  // Wait for the current session to timeout
-  MicroSecondDelay(200000);
 #endif
   MmioWrite8(Driver->Base + MUSB_DEVCTL, 0);
   MmioWrite8(Driver->Base + MUSB_POWER, 0);

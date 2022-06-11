@@ -36,11 +36,15 @@
   TimerLib
   UefiLib
   MemoryAllocationLib
-  # SunxiUsbPhyLib
+  SunxiUsbPhyLib
   SunxiCcmLib
 
 [Protocols]
   gUsbProtocolGuid
+
+[FixedPcd]
+  gSunxiTokenSpaceGuid.Usb20Support
+  gSunxiTokenSpaceGuid.UsbPhySupport
 
 [Depex]
   TRUE

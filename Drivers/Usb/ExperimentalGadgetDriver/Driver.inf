@@ -26,5 +26,8 @@
   MemoryAllocationLib
   UsbGadgetLib
 
+[FixedPcd]
+  gSunxiTokenSpaceGuid.Usb20Support
+
 [Depex]
   TRUE

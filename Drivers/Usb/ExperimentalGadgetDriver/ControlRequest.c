@@ -46,7 +46,11 @@ STATIC MICROSOFT_FEATURE_DESCRIPTOR mMicrosoftFeatureDescriptor = {
 STATIC USB_DEVICE_DESCRIPTOR mDeviceDescriptor = {
   .Length = sizeof(USB_DEVICE_DESCRIPTOR),
   .DescriptorType = USB_DESC_TYPE_DEVICE,
+#if FixedPcdGet32(Usb20Support)
+  .BcdUSB = 0x200,
+#else
   .BcdUSB = 0x110,
+#endif
   .IdVendor = 0x1F3A,
   .IdProduct = 0x8E10,
   .NumConfigurations = 1,
@@ -88,13 +92,13 @@ DEVICE_CONFIG gConfigDescriptorTemplate = {
     .Length = sizeof(USB_ENDPOINT_DESCRIPTOR),
     .DescriptorType = USB_DESC_TYPE_ENDPOINT,
     .Attributes = USB_ENDPOINT_BULK,
-    .MaxPacketSize = 64,
+    .MaxPacketSize = CDC_DATA_MAX_PACKET,
   },
   .CustomEpOut = {
     .Length = sizeof(USB_ENDPOINT_DESCRIPTOR),
     .DescriptorType = USB_DESC_TYPE_ENDPOINT,
     .Attributes = USB_ENDPOINT_BULK,
-    .MaxPacketSize = 64,
+    .MaxPacketSize = CDC_DATA_MAX_PACKET,
   },
   .Iad0 = {
     .Length = sizeof(USB_INTERFACE_ASSOCIATION_DESCRIPTOR),
@@ -144,7 +148,7 @@ DEVICE_CONFIG gConfigDescriptorTemplate = {
     .Length = sizeof(USB_ENDPOINT_DESCRIPTOR),
     .DescriptorType = USB_DESC_TYPE_ENDPOINT,
     .Attributes = USB_ENDPOINT_INTERRUPT,
-    .MaxPacketSize = 64,
+    .MaxPacketSize = CDC_DATA_MAX_PACKET,
     .Interval = 9,
   },
   .CdcData = {
@@ -160,13 +164,13 @@ DEVICE_CONFIG gConfigDescriptorTemplate = {
     .Length = sizeof(USB_ENDPOINT_DESCRIPTOR),
     .DescriptorType = USB_DESC_TYPE_ENDPOINT,
     .Attributes = USB_ENDPOINT_BULK,
-    .MaxPacketSize = 64,
+    .MaxPacketSize = CDC_DATA_MAX_PACKET,
   },
   .CdcDataEpOut = {
     .Length = sizeof(USB_ENDPOINT_DESCRIPTOR),
     .DescriptorType = USB_DT_ENDPOINT,
     .Attributes = USB_ENDPOINT_BULK,
-    .MaxPacketSize = 64,
+    .MaxPacketSize = CDC_DATA_MAX_PACKET,
   },
 };
 

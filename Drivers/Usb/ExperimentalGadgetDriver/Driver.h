@@ -4,6 +4,7 @@
 
 #include <Library/BaseLib.h>
 #include <Library/DebugLib.h>
+#include <Library/PcdLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/MemoryAllocationLib.h>
 #include <Library/UefiBootServicesTableLib.h>
@@ -18,7 +19,11 @@
 #define CDC_CONTROL_INTERFACE 1
 #define CDC_DATA_INTEFACE 2
 
+#if FixedPcdGet32(Usb20Support)
 #define CDC_DATA_MAX_PACKET 512
+#else
+#define CDC_DATA_MAX_PACKET 64
+#endif
 
 #define GADGET_TO_DRIVER(Record)        \
   BASE_CR(Record, GADGET_DRIVER, Gadget)

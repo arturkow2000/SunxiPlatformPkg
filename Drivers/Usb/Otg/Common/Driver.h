@@ -8,6 +8,7 @@
 #include <Library/SunxiUsbPhyLib.h>
 #include <Library/SunxiCcmLib.h>
 #include <Library/UsbGadgetLib.h>
+#include <Library/PcdLib.h>
 
 #include <IndustryStandard/UsbEx.h>
 
