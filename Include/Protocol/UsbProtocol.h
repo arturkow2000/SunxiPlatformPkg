@@ -106,9 +106,10 @@ EFI_STATUS
  Halts endpoint
 
  @param This                        Pointer to USB_PROTOCOL instance.
- @param Endpoint                    Number of endpoint to halt.
+ @param Endpoint                    Number of endpoint to halt/unhalt.
+ @param Halt                        Whether to halt or to unhalt endpoint.
 
- @retval EFI_SUCCESS                Endpoint halted.
+ @retval EFI_SUCCESS                Endpoint halted/unhalted.
  @retval EFI_INVALID_PARAMETER      This is NULL.
  @retval EFI_NOT_FOUND              Endpoint not found.
  @retval EFI_DEVICE_ERROR           Unknown internal device or driver error.
@@ -117,7 +118,8 @@ typedef
 EFI_STATUS
 (EFIAPI *USB_HALT)(
   IN USB_PROTOCOL *This,
-  IN UINT32 Endpoint
+  IN UINT32 Endpoint,
+  IN BOOLEAN Halt
 );
 
 /**

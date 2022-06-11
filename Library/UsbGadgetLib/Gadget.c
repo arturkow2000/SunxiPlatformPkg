@@ -164,5 +164,12 @@ EFI_STATUS UsbGadgetHaltEndpoint(USB_GADGET *Gadget, UINT32 Endpoint) {
   if (!Gadget)
     return EFI_INVALID_PARAMETER;
 
-  return mUsb->Halt(mUsb, Endpoint);
+  return mUsb->Halt(mUsb, Endpoint, TRUE);
+}
+
+EFI_STATUS UsbGadgetUnHaltEndpoint(USB_GADGET *Gadget, UINT32 Endpoint) {
+  if (!Gadget)
+    return EFI_INVALID_PARAMETER;
+
+  return mUsb->Halt(mUsb, Endpoint, FALSE);
 }

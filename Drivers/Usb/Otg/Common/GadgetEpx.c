@@ -339,3 +339,66 @@ VOID UsbEpxCompleteRequest(USB_DRIVER *Driver, USB_REQUEST_BLOCK *Urb, EFI_STATU
   RemoveEntryList(&Urb->Node);
   UsbSignalCompletion(Driver, Endpoint, Urb, Status);
 }
+
+EFI_STATUS UsbEpxHalt(USB_DRIVER *Driver, UINT32 Endpoint, BOOLEAN Halt) {
+  LIST_ENTRY *Head;
+  LIST_ENTRY *Node;
+  BOOLEAN IsIn;
+  UINT16 Csr;
+  USB_EPX *Ep;
+  USB_REQUEST_BLOCK *Urb;
+
+  IsIn = !!(Endpoint & USB_ENDPOINT_DIR_IN);
+  Endpoint &= ~USB_ENDPOINT_DIR_IN;
+
+  if (Endpoint == 0)
+    return EFI_INVALID_PARAMETER;
+
+  if (Endpoint >= gSunxiSocConfig.NumEndpoints)
+    return EFI_NOT_FOUND;
+
+  if (IsIn)
+    Head = &Driver->Epx[Endpoint - 1].TxQueue;
+  else
+    Head = &Driver->Epx[Endpoint - 1].RxQueue;
+
+  Node = GetFirstNode(Head);
+  if (Node != Head) {
+    DEBUG((EFI_D_ERROR, "request in progress, cannot halt EP%d\n", Endpoint));
+    return EFI_NOT_READY;
+  }
+
+  UsbSelectEndpoint(Driver, Endpoint);
+  if (IsIn) {
+    Csr = MmioRead16(Driver->Base + MUSB_TXCSR);
+    if (Csr & MUSB_TXCSR_FIFONOTEMPTY) {
+      DEBUG((EFI_D_ERROR, "FIFO busy, cannot halt EP%d\n", Endpoint));
+      return EFI_NOT_READY;
+    }
+
+    Csr |= MUSB_TXCSR_P_WZC_BITS | MUSB_TXCSR_CLRDATATOG;
+    if (Halt)
+      Csr |= MUSB_TXCSR_P_SENDSTALL;
+    else
+      Csr &= ~(MUSB_TXCSR_P_SENDSTALL | MUSB_TXCSR_P_SENTSTALL);
+
+    Csr &= ~MUSB_TXCSR_TXPKTRDY;
+    MmioWrite32(Driver->Base + MUSB_TXCSR, Csr);
+  } else {
+    Csr = MmioRead16(Driver->Base + MUSB_RXCSR);
+    Csr |= MUSB_RXCSR_P_WZC_BITS | MUSB_RXCSR_FLUSHFIFO | MUSB_RXCSR_CLRDATATOG;
+    if (Halt)
+      Csr |= MUSB_RXCSR_P_SENDSTALL;
+    else
+      Csr &= ~(MUSB_RXCSR_P_SENDSTALL | MUSB_RXCSR_P_SENTSTALL);
+    MmioWrite16(Driver->Base + MUSB_RXCSR, Csr);
+  }
+
+  Ep = &Driver->Epx[Endpoint - 1];
+  if (!Ep->Busy && !Halt && Node) {
+    Urb = USB_URB_FROM_LINK(Node);
+    UsbEpxRestart(Driver, Endpoint, Urb);
+  }
+
+  return EFI_SUCCESS;
+}

@@ -124,3 +124,4 @@ EFI_STATUS UsbGadgetEnableEndpoint(
   USB_ENDPOINT_DESCRIPTOR *Endpoint
 );
 EFI_STATUS UsbGadgetHaltEndpoint(USB_GADGET *Gadget, UINT32 Endpoint);
+EFI_STATUS UsbGadgetUnHaltEndpoint(USB_GADGET *Gadget, UINT32 Endpoint);

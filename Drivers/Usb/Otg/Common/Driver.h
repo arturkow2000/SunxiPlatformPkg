@@ -96,6 +96,7 @@ EFI_STATUS UsbEp0QueuePacket(USB_DRIVER *Driver, USB_REQUEST_BLOCK *Urb);
 EFI_STATUS UsbEp0Halt(USB_DRIVER *Driver);
 EFI_STATUS UsbEnableEndpoint(USB_DRIVER *Driver, USB_ENDPOINT_DESCRIPTOR *Descriptor);
 EFI_STATUS UsbEpxQueue(USB_DRIVER *Driver, UINT32 Endpoint, USB_REQUEST_BLOCK *Urb);
+EFI_STATUS UsbEpxHalt(USB_DRIVER *Driver, UINT32 Endpoint, BOOLEAN Halt);
 
 // FIFO access functions
 VOID UsbReadFifo(USB_DRIVER *Driver, UINT8 Endpoint, UINT16 Length, UINT8* OutData);

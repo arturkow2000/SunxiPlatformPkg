@@ -123,10 +123,10 @@ STATIC EFI_STATUS Queue(
 
 STATIC EFI_STATUS Halt(
   IN USB_PROTOCOL *This,
-  IN UINT32 Endpoint
+  IN UINT32 Endpoint,
+  IN BOOLEAN Halt
 ) {
   USB_DXE_DRIVER *Driver;
-  EFI_STATUS Status;
 
   if (!This)
     return EFI_INVALID_PARAMETER;
@@ -134,13 +134,14 @@ STATIC EFI_STATUS Halt(
   Driver = GET_DXE_DRIVER(This);
 
   if (Endpoint == 0) {
-    Status = UsbEp0Halt(&Driver->Common);
+    if (!Halt) {
+      DEBUG((EFI_D_ERROR, "Cannot unhalt EP0\n"));
+      return EFI_INVALID_PARAMETER;
+    }
 
-    return Status;
+    return UsbEp0Halt(&Driver->Common);
   } else {
-    // TODO: support other endpoints
-    ASSERT(0);
-    return EFI_NOT_FOUND;
+    return UsbEpxHalt(&Driver->Common, Endpoint, Halt);
   }
 }
 
