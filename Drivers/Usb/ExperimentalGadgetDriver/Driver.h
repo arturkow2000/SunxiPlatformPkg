@@ -16,6 +16,8 @@
 #include <IndustryStandard/CdcAcm.h>
 #include <Protocol/SerialIo.h>
 
+#include "Buffer.h"
+
 #define CUSTOM_INTERFACE 0
 #define CDC_CONTROL_INTERFACE 1
 #define CDC_DATA_INTEFACE 2
@@ -52,10 +54,12 @@ typedef struct _GADGET_DRIVER {
   UINT8 *CdcRxBuffer;
   UINT32 CdcRxBufferLength;
   UINT32 CdcRxBufferDataOffset;
-  UINT8 *CdcTxBuffer;
-  UINT32 CdcTxBufferLength;
+  //UINT8 *CdcTxBuffer;
+  //volatile UINT32 CdcTxBufferLength;
   BOOLEAN CdcReady;
-  EFI_EVENT CdcTxCompleteEvent;
+  volatile BOOLEAN CdcTxPending;
+  SIMPLE_BUFFER CdcTxBuffer;
+
   EFI_HANDLE SerialHandle;
 
   EFI_SERIAL_IO_PROTOCOL SerialProtocol;

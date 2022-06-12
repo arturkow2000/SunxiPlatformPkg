@@ -26,6 +26,8 @@ STATIC VOID UsbGadgetInitializeEndpoints(
 }
 
 STATIC EFI_STATUS UsbGadgetInitialize(GADGET_DRIVER *Driver) {
+  EFI_STATUS Status;
+
   Driver->CdcDataInUrb = UsbGadgetAllocateUrb();
   if (!Driver->CdcDataInUrb)
     return EFI_OUT_OF_RESOURCES;
@@ -38,13 +40,12 @@ STATIC EFI_STATUS UsbGadgetInitialize(GADGET_DRIVER *Driver) {
   if (!Driver->CdcRxBuffer)
     return EFI_OUT_OF_RESOURCES;
 
-  Driver->CdcTxBuffer = AllocatePool(CDC_DATA_MAX_PACKET);
-  if (!Driver->CdcTxBuffer)
-    return EFI_OUT_OF_RESOURCES;
+  Status = SimpleBufferInit(&Driver->CdcTxBuffer, CDC_DATA_MAX_PACKET);
+  if (EFI_ERROR(Status))
+    return Status;
 
   Driver->CdcRxBufferLength = 0;
   Driver->CdcRxBufferDataOffset = 0;
-  Driver->CdcTxBufferLength = 0;
   Driver->SerialHandle = NULL;
 
   Driver->ConfigDescriptor = AllocateCopyPool(sizeof gConfigDescriptorTemplate, &gConfigDescriptorTemplate);

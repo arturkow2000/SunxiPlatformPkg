@@ -12,6 +12,7 @@
   ControlRequest.c
   Cdc.c
   Serial.c
+  Buffer.c
 
 [Packages]
   MdePkg/MdePkg.dec

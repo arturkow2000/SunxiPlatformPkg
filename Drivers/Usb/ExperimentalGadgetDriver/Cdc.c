@@ -146,9 +146,9 @@ STATIC VOID CdcTxComplete(
 
   if (EFI_ERROR(Urb->Status))
     DEBUG((EFI_D_INFO, "CDC TX error: %r\n", Urb->Status));
-  
-  if (Driver->CdcTxCompleteEvent)
-    gBS->SignalEvent(Driver->CdcTxCompleteEvent);
+
+  Driver->CdcTxPending = FALSE;
+  SimpleBufferDiscard(&Driver->CdcTxBuffer, Urb->Length);
 }
 
 EFI_STATUS CdcQueueRead(USB_GADGET *This) {
@@ -156,8 +156,6 @@ EFI_STATUS CdcQueueRead(USB_GADGET *This) {
   DEVICE_CONFIG *Config = (DEVICE_CONFIG*)Driver->ConfigDescriptor;
   EFI_STATUS Status;
   EFI_TPL OldTpl;
-
-  DEBUG((EFI_D_INFO, "QUEUE READ\n"));
 
   // Queue may be accessed from interrupt handler.
   OldTpl = gBS->RaiseTPL(TPL_NOTIFY);
@@ -184,86 +182,56 @@ EFI_STATUS CdcFlush(USB_GADGET *This) {
   DEVICE_CONFIG *Config = (DEVICE_CONFIG*)Driver->ConfigDescriptor;
   EFI_STATUS Status;
   EFI_TPL OldTpl;
+  UINT8 *Data;
+  UINTN Length;
 
   // Queue may be accessed from interrupt handler.
   OldTpl = gBS->RaiseTPL(TPL_NOTIFY);
+  // FIXME: For now we peek only the first part as driver does not support split buffer.
+  SimpleBufferPeek(&Driver->CdcTxBuffer, &Data, &Length, NULL, NULL);
+  if (Length == 0) {
+    gBS->RestoreTPL(OldTpl);
+    return EFI_SUCCESS;
+  }
+
   Status = UsbGadgetQueue(
     This,
     Config->CdcDataEpIn.EndpointAddress & ~USB_ENDPOINT_DIR_IN,
     Driver->CdcDataInUrb,
-    Driver->CdcTxBuffer,
-    Driver->CdcTxBufferLength,
+    Data,
+    Length,
     USB_FLAG_TX | USB_FLAG_ZLP,
     CdcTxComplete
   );
-  gBS->RestoreTPL(OldTpl);
   if (EFI_ERROR(Status)) {
     DEBUG((EFI_D_ERROR, "Flush: failed to queue CDC TX transfer: %r\n", Status));
+    gBS->RestoreTPL(OldTpl);
     return Status;
   }
+  Driver->CdcTxPending = TRUE;
+  gBS->RestoreTPL(OldTpl);
 
   return EFI_SUCCESS;
 }
 
-STATIC EFIAPI VOID NullEventHandler(
-  IN  EFI_EVENT                Event,
-  IN  VOID                     *Context) {}
-
 EFI_STATUS CdcWrite(USB_GADGET *This, IN VOID *Buffer, IN OUT UINTN *BufferSize) {
   GADGET_DRIVER *Driver = GADGET_TO_DRIVER(This);
-  EFI_STATUS Status;
-  //UINTN Index;
+  UINTN TotalSize = *BufferSize;
 
   if (!Test) {
-    // DEBUG((EFI_D_ERROR, "CDC NOT READY\n"));
     return EFI_SUCCESS;
   }
 
-  UINTN n = MIN(*BufferSize, Driver->CdcTxBufferLength - CDC_DATA_MAX_PACKET);
-  if (n == 0) {
-    *BufferSize = n;
-    ASSERT(0);
-    return EFI_TIMEOUT;
-  }
-  UINT8 *Dest = &Driver->CdcTxBuffer[Driver->CdcTxBufferLength];
-  CopyMem(Dest, Buffer, n);
-  Driver->CdcTxBufferLength += n;
+  if (TotalSize == 0)
+    return EFI_SUCCESS;
 
-  if (Driver->CdcTxBufferLength >= CDC_DATA_MAX_PACKET / 2) {
-    Status = gBS->CreateEvent(
-      EVT_NOTIFY_WAIT,
-      TPL_CALLBACK,
-      NullEventHandler,
-      NULL,
-      &Driver->CdcTxCompleteEvent
-    );
-    if (EFI_ERROR(Status)) {
-      DEBUG((EFI_D_ERROR, "Failed to create TX completion event: %r\n", Status));
-      ASSERT(0);
-      return EFI_DEVICE_ERROR;
-    }
-
-    DEBUG((EFI_D_INFO, "\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ Flushing ...\n"));
+  SimpleBufferWrite(&Driver->CdcTxBuffer, Buffer, BufferSize);
+  if (SimpleBufferLength(&Driver->CdcTxBuffer) >= CDC_DATA_MAX_PACKET / 2) {
     CdcFlush(This);
-  
-    while (TRUE) {
-      Status = gBS->CheckEvent(Driver->CdcTxCompleteEvent);
-      if (Status != EFI_NOT_READY)
-        break;
-    }
-
-    DEBUG((EFI_D_INFO, "\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ Flush complete\n"));
-    gBS->CloseEvent(&Driver->CdcTxCompleteEvent);
-    if (EFI_ERROR(Status)) {
-      DEBUG((EFI_D_ERROR, "WaitForEvent failed: %r\n", Status));
-      ASSERT(0);
-      return EFI_DEVICE_ERROR;
-    }
-
-    Driver->CdcTxBufferLength = 0;
+    while (Driver->CdcTxPending) {}
   }
 
-  return EFI_SUCCESS;
+  return TotalSize == *BufferSize ? EFI_SUCCESS : EFI_TIMEOUT;
 }
 
 EFI_STATUS CdcRead(USB_GADGET *This, IN VOID *Buffer, IN OUT UINTN *BufferSize) {
