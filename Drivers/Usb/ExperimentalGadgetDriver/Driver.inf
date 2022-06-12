@@ -11,9 +11,11 @@
   Driver.c
   ControlRequest.c
   Cdc.c
+  Serial.c
 
 [Packages]
   MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
   SunxiPlatformPkg/SunxiPlatformPkg.dec
 
 [LibraryClasses]
@@ -25,6 +27,10 @@
   TimerLib
   MemoryAllocationLib
   UsbGadgetLib
+
+[Protocols]
+  gEfiSerialIoProtocolGuid      ## PRODUCES
+  gEfiDevicePathProtocolGuid    ## PRODUCES
 
 [FixedPcd]
   gSunxiTokenSpaceGuid.Usb20Support

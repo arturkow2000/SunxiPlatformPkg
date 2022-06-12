@@ -14,6 +14,7 @@
 
 #include <IndustryStandard/UsbEx.h>
 #include <IndustryStandard/CdcAcm.h>
+#include <Protocol/SerialIo.h>
 
 #define CUSTOM_INTERFACE 0
 #define CDC_CONTROL_INTERFACE 1
@@ -28,10 +29,19 @@
 #define GADGET_TO_DRIVER(Record)        \
   BASE_CR(Record, GADGET_DRIVER, Gadget)
 
+#define SERIAL_TO_DRIVER(Record)        \
+  BASE_CR(Record, GADGET_DRIVER, SerialProtocol)
+
 typedef struct {
   USB_CDC_LINE_CODING PendingLineCoding;
   USB_CDC_LINE_CODING LineCoding;
 } CDC_STATE;
+
+typedef struct {
+  VENDOR_DEVICE_PATH        Guid;
+  UART_DEVICE_PATH          Uart;
+  EFI_DEVICE_PATH_PROTOCOL  End;
+} SERIAL_DEVICE_PATH;
 
 typedef struct _GADGET_DRIVER {
   USB_GADGET Gadget;
@@ -39,7 +49,17 @@ typedef struct _GADGET_DRIVER {
   USB_REQUEST_BLOCK *CdcDataInUrb;
   USB_REQUEST_BLOCK *CdcDataOutUrb;
 
-  UINT8 *CdcBuffer;
+  UINT8 *CdcRxBuffer;
+  UINT32 CdcRxBufferLength;
+  UINT32 CdcRxBufferDataOffset;
+  UINT8 *CdcTxBuffer;
+  UINT32 CdcTxBufferLength;
+  BOOLEAN CdcReady;
+  EFI_EVENT CdcTxCompleteEvent;
+  EFI_HANDLE SerialHandle;
+
+  EFI_SERIAL_IO_PROTOCOL SerialProtocol;
+  SERIAL_DEVICE_PATH SerialDevicePath;
 
   CDC_STATE CdcState;
   USB_CONFIG_DESCRIPTOR *ConfigDescriptor;
@@ -79,6 +99,13 @@ EFI_STATUS UsbGadgetHandleSetConfig(USB_GADGET *This, UINT8 Config);
 
 EFI_STATUS CdcHandleRequest(USB_GADGET *This, USB_DEVICE_REQUEST *Request);
 EFI_STATUS CdcEnable(USB_GADGET *This);
+EFI_STATUS CdcQueueRead(USB_GADGET *This);
+EFI_STATUS CdcRead(USB_GADGET *This, IN VOID *Buffer, IN OUT UINTN *BufferSize);
+EFI_STATUS CdcWrite(USB_GADGET *This, IN VOID *Buffer, IN OUT UINTN *BufferSize);
+EFI_STATUS CdcFlush(USB_GADGET *This);
+
+EFI_STATUS UsbSerialInit(USB_GADGET *This);
+EFI_STATUS UsbSerialDestroy(USB_GADGET *This);
 
 #if 0
 /**

@@ -221,6 +221,14 @@ EFI_STATUS UsbEpxQueue(USB_DRIVER *Driver, UINT32 Endpoint, USB_REQUEST_BLOCK *U
 
   if (IsTx) {
     ListEmpty = IsListEmpty(&Ep->TxQueue);
+    if (!ListEmpty) {
+      LIST_ENTRY *Node = GetFirstNode(&Ep->TxQueue);
+      ASSERT(Node != &Ep->TxQueue);
+      for (; Node != &Ep->TxQueue; Node = GetNextNode(&Ep->TxQueue, Node)) {
+        USB_REQUEST_BLOCK *Urb = USB_URB_FROM_LINK(Node);
+        DEBUG((EFI_D_INFO, "DUMP URB: %p len=%d actual=%d flags=0x%x\n", Urb->Length, Urb->Actual, Urb->Flags));
+      }
+    }
     InsertTailList(&Ep->TxQueue, &Urb->Node);
   }
   else {
@@ -228,6 +236,7 @@ EFI_STATUS UsbEpxQueue(USB_DRIVER *Driver, UINT32 Endpoint, USB_REQUEST_BLOCK *U
     InsertTailList(&Ep->RxQueue, &Urb->Node);
   }
 
+  DEBUG((EFI_D_INFO, "QUEUE ep%d busy=%d empty=%d\n", Endpoint, Ep->Busy, ListEmpty));
   if (!Ep->Busy && ListEmpty) {
     UsbEpxRestart(Driver, Endpoint, Urb);
   }

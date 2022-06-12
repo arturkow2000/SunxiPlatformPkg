@@ -9,6 +9,7 @@
 EFI_STATUS UsbInit(USB_DRIVER *Driver) {
   EFI_STATUS Status;
   UINT32 GateId;
+  UINT32 i;
 
   InitializeListHead(&Driver->Ep0Queue);
 
@@ -18,6 +19,11 @@ EFI_STATUS UsbInit(USB_DRIVER *Driver) {
   Driver->Epx = AllocatePool(sizeof(USB_EPX) * (gSunxiSocConfig.NumEndpoints - 1));
   if (!Driver->Epx)
     return EFI_OUT_OF_RESOURCES;
+
+  for (i = 0; i < gSunxiSocConfig.NumEndpoints - 1; i++) {
+    InitializeListHead(&Driver->Epx[i].TxQueue);
+    InitializeListHead(&Driver->Epx[i].RxQueue);
+  }
 
   // TODO: ungate clocks before doing anything
   Status = SunxiCcmGetGate(L"ahb0-otg", &GateId);
@@ -126,6 +132,7 @@ VOID UsbDisable(USB_DRIVER *Driver) {
 VOID UsbReset(USB_DRIVER *Driver, BOOLEAN FirstReset) {
   UINT32 i;
   LIST_ENTRY *Node;
+  USB_REQUEST_BLOCK *Urb;
 
   if (!FirstReset) {
     // TODO: abort all transfers
@@ -134,15 +141,29 @@ VOID UsbReset(USB_DRIVER *Driver, BOOLEAN FirstReset) {
   for (Node = GetFirstNode(&Driver->Ep0Queue);
       !IsNull(&Driver->Ep0Queue, Node);
       Node = GetNextNode(&Driver->Ep0Queue, Node)) {
-    USB_REQUEST_BLOCK *Urb = USB_URB_FROM_LINK(Node);
-    DEBUG((EFI_D_INFO, "Abort URB %p len %d\n", Urb->Buffer, Urb->Length));
+    Urb = USB_URB_FROM_LINK(Node);
+    DEBUG((EFI_D_INFO, "Abort URB %p len %d ep0\n", Urb->Buffer, Urb->Length));
     UsbEp0CompleteRequest(Driver, Urb, EFI_ABORTED);
   }
 
   // TODO: abort all pending requests (on other endpoints too)
   for (i = 0; i < gSunxiSocConfig.NumEndpoints - 1; i++) {
-    InitializeListHead(&Driver->Epx[i].TxQueue);
-    InitializeListHead(&Driver->Epx[i].RxQueue);
+    for (Node = GetFirstNode(&Driver->Epx[i].TxQueue);
+        !IsNull(&Driver->Epx[i].TxQueue, Node);
+        Node = GetNextNode(&Driver->Epx[i].TxQueue, Node)) {
+      Urb = USB_URB_FROM_LINK(Node);
+      DEBUG((EFI_D_INFO, "Abort URB (TX) %p len %d ep%d\n", Urb->Buffer, Urb->Length, i));
+      UsbEpxCompleteRequest(Driver, Urb, EFI_ABORTED, i);
+    }
+
+    for (Node = GetFirstNode(&Driver->Epx[i].RxQueue);
+        !IsNull(&Driver->Epx[i].RxQueue, Node);
+        Node = GetNextNode(&Driver->Epx[i].RxQueue, Node)) {
+      Urb = USB_URB_FROM_LINK(Node);
+      DEBUG((EFI_D_INFO, "Abort URB (RX) %p len %d ep%d\n", Urb->Buffer, Urb->Length, i));
+      UsbEpxCompleteRequest(Driver, Urb, EFI_ABORTED, i);
+    }
+
     Driver->Epx[i].Busy = FALSE;
     Driver->Epx[i].TxPacketSize = 0;
     Driver->Epx[i].RxPacketSize = 0;
