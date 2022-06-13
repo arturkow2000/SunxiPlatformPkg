@@ -71,7 +71,8 @@ EFI_STATUS CdcHandleRequest(USB_GADGET *This, USB_DEVICE_REQUEST *Request) {
     if (!(Request->RequestType & USB_ENDPOINT_DIR_IN))
       return EFI_DEVICE_ERROR;
 
-    DEBUG((EFI_D_INFO, "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ DTR=%d RTS=%d\n", !!(Request->Value & 1), !!(Request->Value & 2)));
+    // Not implemented, CDC works fine without this.
+    DEBUG((EFI_D_INFO, "DTR=%d RTS=%d\n", !!(Request->Value & 1), !!(Request->Value & 2)));
     return EFI_SUCCESS;
   
   default:
@@ -109,6 +110,16 @@ EFI_STATUS CdcEnable(USB_GADGET *This) {
   if (EFI_ERROR(Status)) {
     DEBUG((EFI_D_ERROR, "Failed to initialize CDC data transfer\n"));
     return Status;
+  }
+
+  if (!Driver->CdcTimerRunning) {
+    Status = gBS->SetTimer(Driver->CdcTimer, TimerPeriodic, EFI_TIMER_PERIOD_MILLISECONDS(1));
+    if (EFI_ERROR(Status)) {
+      DEBUG((EFI_D_ERROR, "Failed to start CDC timer: %r\n", Status));
+      return Status;
+    }
+
+    Driver->CdcTimerRunning = TRUE;
   }
 
   return UsbSerialInit(This);
@@ -180,19 +191,15 @@ EFI_STATUS CdcFlush(USB_GADGET *This) {
   GADGET_DRIVER *Driver = GADGET_TO_DRIVER(This);
   DEVICE_CONFIG *Config = (DEVICE_CONFIG*)Driver->ConfigDescriptor;
   EFI_STATUS Status;
-  EFI_TPL OldTpl;
   UINT8 *Data;
   UINTN Length;
 
   if (Driver->CdcTxPending)
     return EFI_NOT_READY;
 
-  // Queue may be accessed from interrupt handler.
-  OldTpl = gBS->RaiseTPL(TPL_NOTIFY);
   // FIXME: For now we peek only the first part as driver does not support split buffer.
   SimpleBufferPeek(&Driver->CdcTxBuffer, &Data, &Length, NULL, NULL);
   if (Length == 0) {
-    gBS->RestoreTPL(OldTpl);
     return EFI_SUCCESS;
   }
 
@@ -207,13 +214,16 @@ EFI_STATUS CdcFlush(USB_GADGET *This) {
   );
   if (EFI_ERROR(Status)) {
     DEBUG((EFI_D_ERROR, "Flush: failed to queue CDC TX transfer: %r\n", Status));
-    gBS->RestoreTPL(OldTpl);
     return Status;
   }
   Driver->CdcTxPending = TRUE;
-  gBS->RestoreTPL(OldTpl);
 
   return EFI_SUCCESS;
+}
+
+VOID CdcTimerHandler(EFI_EVENT Event, VOID *Gadget) {
+  // Already running at TPL_NOTIFY, no need to raise
+  CdcFlush((USB_GADGET*)Gadget);
 }
 
 EFI_STATUS CdcWrite(USB_GADGET *This, IN VOID *Buffer, IN OUT UINTN *BufferSize) {

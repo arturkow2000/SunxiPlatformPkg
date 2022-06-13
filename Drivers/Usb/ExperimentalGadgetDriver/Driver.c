@@ -49,6 +49,16 @@ STATIC EFI_STATUS UsbGadgetInitialize(GADGET_DRIVER *Driver) {
     return Status;
 
   Driver->SerialHandle = NULL;
+  Driver->CdcTimerRunning = FALSE;
+  Status = gBS->CreateEvent(
+    EVT_TIMER | EVT_NOTIFY_SIGNAL,
+    TPL_NOTIFY,
+    CdcTimerHandler,
+    &Driver->Gadget,
+    &Driver->CdcTimer
+  );
+  if (EFI_ERROR(Status))
+    return Status;
 
   Driver->ConfigDescriptor = AllocateCopyPool(sizeof gConfigDescriptorTemplate, &gConfigDescriptorTemplate);
   if (!Driver->ConfigDescriptor)

@@ -1,7 +1,8 @@
 #pragma once
 
-#include <PiDxe.h>
+#include <Uefi.h>
 
+#include <Library/UefiLib.h>
 #include <Library/BaseLib.h>
 #include <Library/DebugLib.h>
 #include <Library/PcdLib.h>
@@ -55,6 +56,8 @@ typedef struct _GADGET_DRIVER {
   SIMPLE_BUFFER CdcTxBuffer;
   SIMPLE_BUFFER CdcRxBuffer;
   UINT8 *CdcRxBufferTemp;
+  EFI_EVENT CdcTimer;
+  BOOLEAN CdcTimerRunning;
 
   EFI_HANDLE SerialHandle;
 
@@ -103,6 +106,7 @@ EFI_STATUS CdcQueueRead(USB_GADGET *This);
 EFI_STATUS CdcRead(USB_GADGET *This, IN VOID *Buffer, IN OUT UINTN *BufferSize);
 EFI_STATUS CdcWrite(USB_GADGET *This, IN VOID *Buffer, IN OUT UINTN *BufferSize);
 EFI_STATUS CdcFlush(USB_GADGET *This);
+VOID CdcTimerHandler(EFI_EVENT Event, VOID *Gadget);
 
 EFI_STATUS UsbSerialInit(USB_GADGET *This);
 EFI_STATUS UsbSerialDestroy(USB_GADGET *This);
