@@ -51,14 +51,11 @@ typedef struct _GADGET_DRIVER {
   USB_REQUEST_BLOCK *CdcDataInUrb;
   USB_REQUEST_BLOCK *CdcDataOutUrb;
 
-  UINT8 *CdcRxBuffer;
-  UINT32 CdcRxBufferLength;
-  UINT32 CdcRxBufferDataOffset;
-  //UINT8 *CdcTxBuffer;
-  //volatile UINT32 CdcTxBufferLength;
   BOOLEAN CdcReady;
   volatile BOOLEAN CdcTxPending;
   SIMPLE_BUFFER CdcTxBuffer;
+  SIMPLE_BUFFER CdcRxBuffer;
+  UINT8 *CdcRxBufferTemp;
 
   EFI_HANDLE SerialHandle;
 

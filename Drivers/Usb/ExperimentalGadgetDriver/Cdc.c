@@ -122,19 +122,17 @@ STATIC VOID CdcHandleData(
 ) {
   GADGET_DRIVER *Driver = GADGET_TO_DRIVER(This);
   EFI_STATUS Status;
-
-  // Transfer should not be queued until buffer is empty.
-  ASSERT(Driver->CdcRxBufferDataOffset == 0);
+  UINTN Length;
 
   if (Urb->Actual > 0 && Urb->Status == EFI_SUCCESS) {
-    Driver->CdcRxBufferLength = Urb->Actual;
+    Length = Urb->Actual;
+    SimpleBufferWrite(&Driver->CdcRxBuffer, Driver->CdcRxBufferTemp, &Length);
     Test = TRUE;
-    // Don't queue transfer yet, will be queued after data is read from buffer.
-  } else {
-    Status = CdcQueueRead(This);
-    if (EFI_ERROR(Status)) {
-      DEBUG((EFI_D_ERROR, "Failed to queue CDC RX transfer: %r\n", Status));
-    }
+  }
+
+  Status = CdcQueueRead(This);
+  if (EFI_ERROR(Status)) {
+    DEBUG((EFI_D_ERROR, "Failed to queue CDC RX transfer: %r\n", Status));
   }
 }
 
@@ -163,7 +161,7 @@ EFI_STATUS CdcQueueRead(USB_GADGET *This) {
     This,
     Config->CdcDataEpOut.EndpointAddress,
     Driver->CdcDataOutUrb,
-    Driver->CdcRxBuffer,
+    Driver->CdcRxBufferTemp,
     CDC_DATA_MAX_PACKET,
     0,
     CdcHandleData
@@ -236,31 +234,15 @@ EFI_STATUS CdcWrite(USB_GADGET *This, IN VOID *Buffer, IN OUT UINTN *BufferSize)
 
 EFI_STATUS CdcRead(USB_GADGET *This, IN VOID *Buffer, IN OUT UINTN *BufferSize) {
   GADGET_DRIVER *Driver = GADGET_TO_DRIVER(This);
-  UINTN n;
-  EFI_STATUS Status;
+  EFI_TPL OldTpl;
+  UINTN Total;
 
-  if (Driver->CdcRxBufferLength == 0) {
-    *BufferSize = 0;
-    return EFI_TIMEOUT;
-  }
+  if (*BufferSize == 0)
+    return EFI_SUCCESS;
 
-  // At this point transfer is not queued so buffer accesses are safe.
-  n = MIN(*BufferSize, Driver->CdcRxBufferLength);
-  CopyMem(Buffer, &Driver->CdcRxBuffer[Driver->CdcRxBufferDataOffset], Driver->CdcRxBufferLength);
-  Driver->CdcRxBufferLength -= n;
-  if (Driver->CdcRxBufferLength != 0) {
-    Driver->CdcRxBufferDataOffset += n;
-  } else {
-    Driver->CdcRxBufferDataOffset = 0;
-    CdcQueueRead(This);
-  }
+  OldTpl = gBS->RaiseTPL(TPL_NOTIFY);
+  Total = SimpleBufferRead(&Driver->CdcRxBuffer, Buffer, *BufferSize);
+  gBS->RestoreTPL(OldTpl);
 
-  if (n == *BufferSize)
-    Status = EFI_SUCCESS;
-  else {
-    Status = EFI_TIMEOUT;
-    *BufferSize = n;
-  }
-
-  return Status;
+  return Total != 0 ? EFI_SUCCESS : EFI_TIMEOUT;
 }

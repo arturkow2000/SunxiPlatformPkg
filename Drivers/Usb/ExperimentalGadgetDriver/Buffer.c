@@ -32,13 +32,28 @@ VOID SimpleBufferClear(SIMPLE_BUFFER *Buffer) {
 UINTN SimpleBufferLength(SIMPLE_BUFFER *Buffer) {
   ASSERT(Buffer);
 
-  if (Buffer->Full)
+  if (Buffer->Full) {
+    ASSERT(Buffer->Head == Buffer->Tail);
     return Buffer->Capacity;
+  }
 
-  if (Buffer->Head < Buffer->Tail)
+  if (Buffer->Head == Buffer->Tail)
+    return 0;
+  else if (Buffer->Head < Buffer->Tail)
     return Buffer->Tail - Buffer->Head;
   else
     return Buffer->Capacity - Buffer->Head + Buffer->Tail;
+}
+
+BOOLEAN SimpleBufferIsEmpty(SIMPLE_BUFFER *Buffer) {
+  ASSERT(Buffer);
+
+  if (Buffer->Full) {
+    ASSERT(Buffer->Head == Buffer->Tail);
+    return FALSE;
+  }
+
+  return Buffer->Tail == Buffer->Head;
 }
 
 VOID SimpleBufferWrite(SIMPLE_BUFFER *Buffer, UINT8 *Data, UINTN* Length) {
@@ -52,6 +67,7 @@ VOID SimpleBufferWrite(SIMPLE_BUFFER *Buffer, UINT8 *Data, UINTN* Length) {
   ASSERT(*Length);
 
   if (Buffer->Full) {
+    ASSERT(Buffer->Head == Buffer->Tail);
     *Length = 0;
     return;
   }
@@ -102,21 +118,6 @@ tail_lower_than_head:
   }
 }
 
-UINTN SimpleBufferReadAvailable(SIMPLE_BUFFER *Buffer) {
-  ASSERT(Buffer);
-
-  if (Buffer->Full)
-    return 0;
-
-  if (Buffer->Head == Buffer->Tail)
-    return Buffer->Capacity;
-
-  if (Buffer->Head < Buffer->Tail)
-    return Buffer->Capacity - Buffer->Tail + Buffer->Head;
-  else
-    return Buffer->Capacity - Buffer->Head + Buffer->Tail;
-}
-
 VOID SimpleBufferDiscard(SIMPLE_BUFFER *Buffer, UINTN Count) {
   UINTN Length;
 
@@ -125,7 +126,7 @@ VOID SimpleBufferDiscard(SIMPLE_BUFFER *Buffer, UINTN Count) {
   if (Count == 0)
     return;
 
-  Length = SimpleBufferReadAvailable(Buffer);
+  Length = SimpleBufferLength(Buffer);
   if (Length == 0)
     return;
 
@@ -135,6 +136,8 @@ VOID SimpleBufferDiscard(SIMPLE_BUFFER *Buffer, UINTN Count) {
   Buffer->Head += Count;
   if (Buffer->Head >= Buffer->Capacity)
     Buffer->Head = Buffer->Head - Buffer->Capacity;
+
+  Buffer->Full = FALSE;
 }
 
 UINTN SimpleBufferPeek(
@@ -178,4 +181,33 @@ UINTN SimpleBufferPeek(
   }
 
   return Total;
+}
+
+UINTN SimpleBufferRead(SIMPLE_BUFFER *Buffer, UINT8* Destination, UINTN Length) {
+  UINT8* Part1, *Part2;
+  UINTN Part1Length, Part2Length;
+  UINTN n;
+  UINTN o;
+
+  ASSERT(Buffer);
+  ASSERT(Destination);
+  ASSERT(Length);
+
+  SimpleBufferPeek(Buffer, &Part1, &Part1Length, &Part2, &Part2Length);
+
+  o = 0;
+  n = MIN(Part1Length, Length);
+  CopyMem(Destination, Part1, n);
+
+  o += n;
+  if (n != Length) {
+    n += n;
+    Length -= n;
+    n = MIN(Part2Length, Length);
+    CopyMem(&Destination[o], Part2, n);
+    o += n;
+  }
+
+  SimpleBufferDiscard(Buffer, o);
+  return o;
 }
