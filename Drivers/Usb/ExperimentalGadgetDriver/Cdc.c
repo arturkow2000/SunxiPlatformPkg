@@ -1,7 +1,5 @@
 #include "Driver.h"
 
-STATIC BOOLEAN Test = FALSE;
-
 STATIC VOID CdcHandleLineCoding(USB_GADGET *This, USB_REQUEST_BLOCK *Urb) {
   GADGET_DRIVER *Driver = GADGET_TO_DRIVER(This);
   USB_CDC_LINE_CODING *LineCoding = &Driver->CdcState.PendingLineCoding;
@@ -87,7 +85,7 @@ EFI_STATUS CdcEnable(USB_GADGET *This) {
   DEVICE_CONFIG *Config = (DEVICE_CONFIG*)Driver->ConfigDescriptor;
   EFI_STATUS Status;
 
-  Driver->CdcReady = FALSE;
+  Driver->CdcTxPending = FALSE;
 
   Status = UsbGadgetEnableEndpoint(This, &Config->CdcControlEp);
   if (EFI_ERROR(Status)) {
@@ -127,7 +125,10 @@ STATIC VOID CdcHandleData(
   if (Urb->Actual > 0 && Urb->Status == EFI_SUCCESS) {
     Length = Urb->Actual;
     SimpleBufferWrite(&Driver->CdcRxBuffer, Driver->CdcRxBufferTemp, &Length);
-    Test = TRUE;
+    if (Length != Urb->Actual) {
+      SimpleBufferDiscard(&Driver->CdcRxBuffer, Urb->Actual - Length);
+      SimpleBufferWrite(&Driver->CdcRxBuffer, &Driver->CdcRxBufferTemp[Length], &Length);
+    }
   }
 
   Status = CdcQueueRead(This);
@@ -183,6 +184,9 @@ EFI_STATUS CdcFlush(USB_GADGET *This) {
   UINT8 *Data;
   UINTN Length;
 
+  if (Driver->CdcTxPending)
+    return EFI_NOT_READY;
+
   // Queue may be accessed from interrupt handler.
   OldTpl = gBS->RaiseTPL(TPL_NOTIFY);
   // FIXME: For now we peek only the first part as driver does not support split buffer.
@@ -215,18 +219,30 @@ EFI_STATUS CdcFlush(USB_GADGET *This) {
 EFI_STATUS CdcWrite(USB_GADGET *This, IN VOID *Buffer, IN OUT UINTN *BufferSize) {
   GADGET_DRIVER *Driver = GADGET_TO_DRIVER(This);
   UINTN TotalSize = *BufferSize;
-
-  if (!Test) {
-    return EFI_SUCCESS;
-  }
+  UINTN Length = TotalSize;
+  UINTN Offset;
+  EFI_TPL OldTpl;
 
   if (TotalSize == 0)
     return EFI_SUCCESS;
 
-  SimpleBufferWrite(&Driver->CdcTxBuffer, Buffer, BufferSize);
+  // Buffer may be accessed from interrupt handler. We don't care about
+  // overriding the data inside, but metadata could possibly be corrupted.
+  OldTpl = gBS->RaiseTPL(TPL_NOTIFY);
+  SimpleBufferWrite(&Driver->CdcTxBuffer, Buffer, &Length);
+  if (Length != TotalSize) {
+    Offset = Length;
+    Length = TotalSize - Length;
+    SimpleBufferDiscard(&Driver->CdcTxBuffer, Length);
+    // We cannot reliably determine whether there is someone listening on the
+    // other side. If there isn't anyone transfers may be halted forever so if
+    // nobody read our data discard it now.
+    SimpleBufferWrite(&Driver->CdcTxBuffer, &((UINT8*)Buffer)[Offset], &Length);
+  }
+  gBS->RestoreTPL(OldTpl);
+
   if (SimpleBufferLength(&Driver->CdcTxBuffer) >= CDC_DATA_MAX_PACKET / 2) {
     CdcFlush(This);
-    while (Driver->CdcTxPending) {}
   }
 
   return TotalSize == *BufferSize ? EFI_SUCCESS : EFI_TIMEOUT;

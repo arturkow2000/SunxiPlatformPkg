@@ -51,7 +51,6 @@ typedef struct _GADGET_DRIVER {
   USB_REQUEST_BLOCK *CdcDataInUrb;
   USB_REQUEST_BLOCK *CdcDataOutUrb;
 
-  BOOLEAN CdcReady;
   volatile BOOLEAN CdcTxPending;
   SIMPLE_BUFFER CdcTxBuffer;
   SIMPLE_BUFFER CdcRxBuffer;

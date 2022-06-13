@@ -40,11 +40,11 @@ STATIC EFI_STATUS UsbGadgetInitialize(GADGET_DRIVER *Driver) {
   if (!Driver->CdcRxBufferTemp)
     return EFI_OUT_OF_RESOURCES;
 
-  Status = SimpleBufferInit(&Driver->CdcRxBuffer, CDC_DATA_MAX_PACKET);
+  Status = SimpleBufferInit(&Driver->CdcRxBuffer, CDC_DATA_MAX_PACKET * 8);
   if (EFI_ERROR(Status))
     return Status;
 
-  Status = SimpleBufferInit(&Driver->CdcTxBuffer, CDC_DATA_MAX_PACKET);
+  Status = SimpleBufferInit(&Driver->CdcTxBuffer, CDC_DATA_MAX_PACKET * 8);
   if (EFI_ERROR(Status))
     return Status;
 
