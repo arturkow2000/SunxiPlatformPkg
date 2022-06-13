@@ -59,12 +59,15 @@ BOOLEAN SimpleBufferIsEmpty(SIMPLE_BUFFER *Buffer) {
 VOID SimpleBufferWrite(SIMPLE_BUFFER *Buffer, UINT8 *Data, UINTN* Length) {
   UINTN n;
   UINTN t;
-  UINTN u = 0;
+  UINTN u;
 
   ASSERT(Buffer);
   ASSERT(Data);
   ASSERT(Length);
   ASSERT(*Length);
+
+  ASSERT(Buffer->Head < Buffer->Capacity);
+  ASSERT(Buffer->Tail < Buffer->Capacity);
 
   if (Buffer->Full) {
     ASSERT(Buffer->Head == Buffer->Tail);
@@ -74,54 +77,37 @@ VOID SimpleBufferWrite(SIMPLE_BUFFER *Buffer, UINT8 *Data, UINTN* Length) {
 
   t = *Length;
 
-  if (Buffer->Head == Buffer->Tail) {
-    n = MIN(t, Buffer->Capacity);
-    CopyMem(Buffer->Data, Data, n);
-    if (n == Buffer->Capacity)
-      Buffer->Full = TRUE;
-    *Length = n;
-    Buffer->Tail += n;
-    if (Buffer->Tail >= Buffer->Capacity)
-      Buffer->Tail = Buffer->Capacity - Buffer->Tail;
-  } else if (Buffer->Head > Buffer->Tail) {
-tail_lower_than_head:
+  if (Buffer->Tail < Buffer->Head) {
     n = MIN(t, Buffer->Head - Buffer->Tail);
     CopyMem(&Buffer->Data[Buffer->Tail], Data, n);
     Buffer->Tail += n;
-    if (Buffer->Tail >= Buffer->Capacity)
-      Buffer->Tail = Buffer->Capacity - Buffer->Tail;
-
-    if (Buffer->Tail == Buffer->Head) {
-      ASSERT(Buffer->Tail != Buffer->Capacity);
-      Buffer->Full = TRUE;
-    }
-    *Length = n + u;
-  } else if (Buffer->Head < Buffer->Tail) {
-    n = MIN(t, Buffer->Capacity - Buffer->Head);
+  } else if (Buffer->Tail >= Buffer->Head) {
+    n = MIN(t, Buffer->Capacity - Buffer->Tail);
     CopyMem(&Buffer->Data[Buffer->Tail], Data, n);
-    if (Buffer->Tail + n == Buffer->Capacity) {
+    Buffer->Tail += n;
+    if (Buffer->Tail == Buffer->Capacity) {
       Buffer->Tail = 0;
-      if (Buffer->Head != 0) {
-        if (n != t) {
-          u = t;
-          goto tail_lower_than_head;
-        }
-      } else {
-        Buffer->Full = TRUE;
+      if (Buffer->Head != 0 && n != t) {
+        u = MIN(t - n, Buffer->Head - Buffer->Tail);
+        CopyMem(Buffer->Data, &Data[n], u);
+        n += u;
+        Buffer->Tail += u;
       }
-      *Length = n;
     }
-    else
-      Buffer->Tail += n;
-  } else {
-    ASSERT(0);
   }
+
+  if (Buffer->Tail == Buffer->Head)
+    Buffer->Full = TRUE;
+
+  *Length = n;
 }
 
 VOID SimpleBufferDiscard(SIMPLE_BUFFER *Buffer, UINTN Count) {
   UINTN Length;
 
   ASSERT(Buffer);
+  ASSERT(Buffer->Head < Buffer->Capacity);
+  ASSERT(Buffer->Tail < Buffer->Capacity);
   
   if (Count == 0)
     return;
