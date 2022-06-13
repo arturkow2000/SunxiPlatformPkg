@@ -371,7 +371,6 @@ EFI_STATUS UsbGadgetHandleSetConfig(USB_GADGET *This, UINT8 Config) {
     Status = CdcEnable(This);
     if (EFI_ERROR(Status)) {
       DEBUG((EFI_D_ERROR, "CDC enable failed: %r\n", Status));
-      ASSERT(0);
       return Status;
     }
     return EFI_SUCCESS;

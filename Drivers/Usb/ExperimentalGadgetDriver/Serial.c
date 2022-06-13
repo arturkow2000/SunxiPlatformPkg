@@ -142,7 +142,9 @@ EFI_STATUS UsbSerialInit(USB_GADGET *This) {
   );
   if (EFI_ERROR(Status)) {
     DEBUG((EFI_D_ERROR, "Failed to install USB serial\n"));
-    ASSERT_EFI_ERROR(Status);
+    // May fail if SerialDxe is already installed so don't assert.
+    // TODO: should add better feature control to make it possible to disable CDC
+    // completely
     return Status;
   }
 

@@ -245,7 +245,16 @@
   MdeModulePkg/Universal/Console/ConSplitterDxe/ConSplitterDxe.inf
   MdeModulePkg/Universal/Console/GraphicsConsoleDxe/GraphicsConsoleDxe.inf
   MdeModulePkg/Universal/Console/TerminalDxe/TerminalDxe.inf
+!if !$(UART_OVER_USB)
+  # Need to disable SerialDxe or CDC won't work. UEFI selects only device as
+  # serial output and SerialDxe takes precedence. Possibly multiple UARTs could
+  # be multiplexed in a similar way to how primary UART and graphics console are
+  # multiplexed, this may be implemented someday ...
+  #
+  # Debug logs are still written to UART, but output from UEFI applications is
+  # redirected to USB.
   MdeModulePkg/Universal/SerialDxe/SerialDxe.inf
+!endif
 
   MdeModulePkg/Universal/HiiDatabaseDxe/HiiDatabaseDxe.inf
 
