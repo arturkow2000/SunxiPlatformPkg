@@ -122,7 +122,7 @@ EFI_STATUS CdcEnable(USB_GADGET *This) {
     Driver->CdcTimerRunning = TRUE;
   }
 
-  return UsbSerialInit(This);
+  return EFI_SUCCESS;
 }
 
 STATIC VOID CdcHandleData(
