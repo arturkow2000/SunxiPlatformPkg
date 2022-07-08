@@ -208,8 +208,24 @@ UINT8 *UsbGadgetGetStringDescriptor(USB_GADGET *Gadget, UINT8 Id) {
 }
 
 EFI_STATUS UsbGadgetHandleClassRequest(USB_GADGET *This, USB_DEVICE_REQUEST *Request) {
-  // TODO: check target endpoint/interface
-  return CdcHandleRequest(This, Request);
+  switch (Request->RequestType & USB_RECIP_MASK) {
+  case USB_RECIP_INTERFACE:
+    if (Request->Index == CDC_CONTROL_INTERFACE || Request->Index == CDC_DATA_INTEFACE)
+      return CdcHandleRequest(This, Request);
+
+    DEBUG((EFI_D_INFO, "Unhandled interface specific class request\n"));
+    return EFI_DEVICE_ERROR;
+
+  case USB_RECIP_ENDPOINT:
+    // TODO: should we should support endpoint recipients for CDC?
+    DEBUG((EFI_D_INFO, "Endpoint recipients are not supported\n"));
+    return EFI_DEVICE_ERROR;
+
+  default:
+    // We don't expect any class specific device level request.
+    DEBUG((EFI_D_INFO, "Unknown device level class request\n"));
+    return EFI_DEVICE_ERROR;
+  }
 }
 
 EFI_STATUS UsbGadgetHandleVendorRequest(USB_GADGET *This, USB_DEVICE_REQUEST *Request) {
