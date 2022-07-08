@@ -25,6 +25,18 @@ STATIC UINT8 *GetStringDescriptorNull(
   return NULL;
 }
 
+STATIC USB_DEVICE_QUALIFIER_DESCRIPTOR *GetDeviceQualifierDescriptorNull(
+  USB_GADGET *This
+) {
+  return NULL;
+}
+
+STATIC USB_BOS_DESCRIPTOR *GetBosDescriptorNull(
+  USB_GADGET *This
+) {
+  return NULL;
+}
+
 STATIC EFI_STATUS HandleClassRequestNull(
   USB_GADGET *This,
   USB_DEVICE_REQUEST *Request
@@ -66,6 +78,8 @@ EFI_STATUS UsbGadgetInitializeInterface(USB_GADGET *Gadget) {
   Gadget->GetDeviceDescriptor = GetDeviceDescriptorNull;
   Gadget->GetConfigDescriptor = GetConfigDescriptorNull;
   Gadget->GetStringDescriptor = GetStringDescriptorNull;
+  Gadget->GetDeviceQualifierDescriptor = GetDeviceQualifierDescriptorNull;
+  Gadget->GetBosDescriptor = GetBosDescriptorNull;
   Gadget->HandleClassRequest = HandleClassRequestNull;
   Gadget->HandleVendorRequest = HandleVendorRequestNull;
   Gadget->HandleSetConfig = HandleSetConfigNull;

@@ -16,6 +16,12 @@
 #define USB_DT_ENDPOINT       0x05
 #define USB_DT_INTERFACE_ASSOCIATION    0x0b
 
+#define USB_DESC_TYPE_DEVICE_QUALIFIER 0x06
+#define USB_DESC_TYPE_DEVICE_CAPABILITY 0x10
+#define USB_DESC_TYPE_BOS 0x0f
+
+#define USB_CAP_TYPE_EXT 0x02
+
 #define USB_CLASS_PER_INTERFACE  0
 #define USB_CLASS_AUDIO          1
 #define USB_CLASS_COMM           2
@@ -29,6 +35,20 @@
 // Request type used by Windows for querying Microsoft OS Descriptors
 #define USB_REQ_GET_OS_FEATURE_DESCRIPTOR 0x20
 
+#pragma pack(1)
+
+typedef struct {
+  UINT8 Length;
+  UINT8 DescriptorType;
+  UINT16 BcdUSB;
+  UINT8 DeviceClass;
+  UINT8 DeviceSubClass;
+  UINT8 DeviceProtocol;
+  UINT8 MaxPacketSize0;
+  UINT8 NumConfigurations;
+  UINT8 Reserved;
+} PACKED USB_DEVICE_QUALIFIER_DESCRIPTOR;
+
 typedef struct {
   UINT8 Length;
   UINT8 DescriptorType;
@@ -38,7 +58,21 @@ typedef struct {
   UINT8 FunctionSubClass;
   UINT8 FunctionProtocol;
   UINT8 Function;
-} USB_INTERFACE_ASSOCIATION_DESCRIPTOR;
+} PACKED USB_INTERFACE_ASSOCIATION_DESCRIPTOR;
+
+typedef struct {
+  UINT8 Length;
+  UINT8 DescriptorType;
+  UINT16 TotalLength;
+  UINT8 NumDeviceCaps;
+} PACKED USB_BOS_DESCRIPTOR;
+
+typedef struct {
+  UINT8 Length;
+  UINT8 DescriptorType;
+  UINT8 CapabilityType;
+  UINT32 Attributes;
+} PACKED USB_EXTENSION_DESCRIPTOR;
 
 #define MICROSOFT_FEATURE_DESCRIPTOR_VERSION 0x0100
 typedef struct {
@@ -47,9 +81,15 @@ typedef struct {
   UINT16 CompatibilityId;
   UINT8 NumberOfSections;
   UINT8 Reserved0[7];
+} PACKED MICROSOFT_COMPAT_ID_DESCRIPTOR;
+
+typedef struct
+{
   UINT8 InterfaceNumber;
   UINT8 One;
   UINT8 CompatibleId[8];
   UINT8 SubCompatibleId[8];
   UINT8 Reserved1[6];
-} MICROSOFT_FEATURE_DESCRIPTOR;
+} PACKED MICROSOFT_FUNCTION_DESCRIPTOR;
+
+#pragma pack()

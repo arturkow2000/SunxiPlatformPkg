@@ -5,6 +5,7 @@ STATIC EFI_STATUS HandleStandardRequest(
   USB_DEVICE_REQUEST *Request
 ) {
   EFI_STATUS Status;
+  UINT32 TotalLength;
 
   if (Request->Request == USB_REQ_GET_DESCRIPTOR) {
     if (Request->RequestType != USB_ENDPOINT_DIR_IN)
@@ -19,17 +20,17 @@ STATIC EFI_STATUS HandleStandardRequest(
 
       ASSERT(DeviceDescriptor->DescriptorType == USB_DESC_TYPE_DEVICE);
 
+      TotalLength = MIN(DeviceDescriptor->Length, Request->Length);
       return UsbGadgetInitUrb(
         Gadget,
         Gadget->ControlUrb,
         DeviceDescriptor,
-        DeviceDescriptor->Length,
-        DeviceDescriptor->Length % 64 == 0 ? USB_FLAG_ZLP : 0 | USB_FLAG_TX,
+        TotalLength,
+        TotalLength % 64 == 0 ? USB_FLAG_ZLP : 0 | USB_FLAG_TX,
         NULL
       );
     case USB_DESC_TYPE_CONFIG:
       ASSERT(Gadget->GetConfigDescriptor);
-      UINT32 TotalLength;
       USB_CONFIG_DESCRIPTOR *ConfigDescriptor = Gadget->GetConfigDescriptor(Gadget);
       if (!ConfigDescriptor)
         return EFI_DEVICE_ERROR;
@@ -54,12 +55,47 @@ STATIC EFI_STATUS HandleStandardRequest(
 
       ASSERT(StringDescriptor[1] == USB_DESC_TYPE_STRING);
 
+      TotalLength = MIN(StringDescriptor[0], Request->Length);
       return UsbGadgetInitUrb(
         Gadget,
         Gadget->ControlUrb,
         StringDescriptor,
-        StringDescriptor[0],
-        StringDescriptor[0] % 64 == 0 ? USB_FLAG_ZLP : 0 | USB_FLAG_TX,
+        TotalLength,
+        TotalLength % 64 == 0 ? USB_FLAG_ZLP : 0 | USB_FLAG_TX,
+        NULL
+      );
+    case USB_DESC_TYPE_DEVICE_QUALIFIER:
+      ASSERT(Gadget->GetDeviceQualifierDescriptor);
+      USB_DEVICE_QUALIFIER_DESCRIPTOR *DeviceQualifier = Gadget->GetDeviceQualifierDescriptor(Gadget);
+      if (!DeviceQualifier)
+        return EFI_DEVICE_ERROR;
+
+      ASSERT(DeviceQualifier->DescriptorType == USB_DESC_TYPE_DEVICE_QUALIFIER);
+
+      TotalLength = MIN(DeviceQualifier->Length, Request->Length);
+      return UsbGadgetInitUrb(
+        Gadget,
+        Gadget->ControlUrb,
+        DeviceQualifier,
+        TotalLength,
+        TotalLength % 64 == 0 ? USB_FLAG_ZLP : 0 | USB_FLAG_TX,
+        NULL
+      );
+    case USB_DESC_TYPE_BOS:
+      ASSERT(Gadget->GetBosDescriptor);
+      USB_BOS_DESCRIPTOR *BosDescriptor = Gadget->GetBosDescriptor(Gadget);
+      if (!BosDescriptor)
+        return EFI_DEVICE_ERROR;
+
+      ASSERT(BosDescriptor->DescriptorType == USB_DESC_TYPE_BOS);
+
+      TotalLength = MIN(BosDescriptor->TotalLength, Request->Length);
+      return UsbGadgetInitUrb(
+        Gadget,
+        Gadget->ControlUrb,
+        BosDescriptor,
+        TotalLength,
+        TotalLength % 64 == 0 ? USB_FLAG_ZLP : 0 | USB_FLAG_TX,
         NULL
       );
     default:
