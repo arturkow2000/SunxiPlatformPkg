@@ -239,6 +239,7 @@ STATIC INT8 UsbServiceZeroDataRequest(USB_DRIVER *Driver, USB_DEVICE_REQUEST *Se
     break;
   case USB_REQ_SET_FEATURE:
     DEBUG((EFI_D_INFO, "USB_REQ_SET_FEATURE\n"));
+    ASSERT(0);
     break;
   default:
     /* delegate SET_CONFIGURATION, etc */
@@ -337,7 +338,7 @@ VOID UsbEp0HandleIrq(USB_DRIVER *Driver) {
   UINT16 Csr0;
   UINT16 Len;
   USB_DEVICE_REQUEST Setup;
-  INT8 Handled;
+  INT8 Handled = 0;
   LIST_ENTRY *Node;
 
   UsbSelectEndpoint(Driver, 0);
@@ -544,7 +545,8 @@ EFI_STATUS UsbEp0QueuePacket(USB_DRIVER *Driver, USB_REQUEST_BLOCK *Urb) {
     return EFI_DEVICE_ERROR;
   }
 
-  /// TODO: ensure node is not inserted anywhere else
+  // Ensure node is not inserted anywhere else
+  ASSERT(Urb->Node.BackLink == NULL && Urb->Node.ForwardLink == NULL);
 
   Urb->Actual = 0;
 
@@ -580,6 +582,10 @@ EFI_STATUS UsbEp0QueuePacket(USB_DRIVER *Driver, USB_REQUEST_BLOCK *Urb) {
 
 VOID UsbEp0CompleteRequest(USB_DRIVER *Driver, USB_REQUEST_BLOCK *Urb, EFI_STATUS Status) {
   RemoveEntryList(&Urb->Node);
+  // Zero links so later on we can detect when the same URB is inserted multiple
+  // times at once.
+  Urb->Node.BackLink = NULL;
+  Urb->Node.ForwardLink = NULL;
 
   // Signal completion
   UsbSignalCompletion(Driver, 0, Urb, Status);
