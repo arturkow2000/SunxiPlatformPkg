@@ -1,10 +1,27 @@
 #include "Driver.h"
 
+STATIC VOID UsbDumpRecipient(USB_DEVICE_REQUEST *Setup) {
+  switch (Setup->RequestType & USB_RECIP_MASK) {
+  case USB_RECIP_DEVICE:
+    DEBUG((EFI_D_INFO, "(DEVICE) "));
+    break;
+  case USB_RECIP_INTERFACE:
+    DEBUG((EFI_D_INFO, "(INTERFACE=%d) ", Setup->Index));
+    break;
+  case USB_RECIP_ENDPOINT:
+    DEBUG((EFI_D_INFO, "(ENDPOINT=%d) ", Setup->Index));
+    break;
+  default:
+    DEBUG((EFI_D_INFO, "(UNK:0x%x) ", Setup->RequestType & USB_RECIP_MASK));
+    break;
+  }
+}
+
 VOID UsbDumpSetupPacket(USB_DEVICE_REQUEST *Setup) {
   switch (Setup->RequestType & USB_TYPE_MASK) {
-  case USB_REQ_TYPE_STANDARD: DEBUG((EFI_D_INFO, "SETUP STD ")); break;
-  case USB_REQ_TYPE_CLASS: DEBUG((EFI_D_INFO, "SETUP CLASS ")); break;
-  case USB_REQ_TYPE_VENDOR: DEBUG((EFI_D_INFO, "SETUP VENDOR ")); break;
+  case USB_REQ_TYPE_STANDARD: DEBUG((EFI_D_INFO, "SETUP STD")); UsbDumpRecipient(Setup); break;
+  case USB_REQ_TYPE_CLASS: DEBUG((EFI_D_INFO, "SETUP CLASS")); UsbDumpRecipient(Setup); break;
+  case USB_REQ_TYPE_VENDOR: DEBUG((EFI_D_INFO, "SETUP VENDOR")); UsbDumpRecipient(Setup); break;
   default: DEBUG((EFI_D_INFO, "SETUP type 0x%x ", Setup->RequestType &USB_TYPE_MASK)); break;
   }
 

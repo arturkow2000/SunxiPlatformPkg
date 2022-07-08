@@ -4,6 +4,7 @@
 
 #define USB_TYPE_MASK         (3 << 5)
 
+#define USB_RECIP_MASK        0x1f
 #define USB_RECIP_DEVICE      0x00
 #define USB_RECIP_INTERFACE   0x01
 #define USB_RECIP_ENDPOINT    0x02
