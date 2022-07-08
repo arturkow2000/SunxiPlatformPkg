@@ -11,13 +11,13 @@
     UINT8 __DescriptorType;                               \
     CHAR16 __String[sizeof(Text)];                        \
   } Name = {                                              \
-    .__Length = 2 + sizeof(Text) - 1,                     \
+    .__Length = sizeof(Text),                             \
     .__DescriptorType = USB_DESC_TYPE_STRING,             \
     .__String = Text,                                     \
   };
 
 MAKE_STRING_DESCRIPTOR(mManufacturerString, L"Allwinner");
-MAKE_STRING_DESCRIPTOR(mProductString, L"Sunxi device in PEI mode");
+MAKE_STRING_DESCRIPTOR(mProductString, L"Sunxi device in UEFI mode");
 
 #if 0
 STATIC struct {
@@ -174,153 +174,6 @@ DEVICE_CONFIG gConfigDescriptorTemplate = {
   },
 };
 
-#if 0
-EFI_STATUS UsbGadgetSendStringDescriptor(
-  GADGET_DRIVER_INTERNAL *Internal,
-  USB_DEVICE_REQUEST *Request,
-  UINT8 Id,
-  UINT16 Language
-) {
-  STATIC UINT8 Buffer[4];
-
-  if (Id == 0) {
-    Buffer[0] = sizeof Buffer;
-    Buffer[1] = USB_DT_STRING;
-    // English
-    Buffer[4] = 9;
-    Buffer[5] = 4;
-
-    return UsbGadgetEp0Respond(Internal, Request, Buffer, sizeof Buffer);
-  }
-
-  switch (Id)
-  {
-  case 0xEE:
-    return UsbGadgetEp0Respond(Internal, Request, &mMsftString, sizeof mMsftString);
-
-  case USB_STR_MANUFACTURER:
-    return UsbGadgetEp0Respond(Internal, Request, &mManufacturerString, sizeof mManufacturerString);
-
-  case USB_STR_PRODUCT:
-    return UsbGadgetEp0Respond(Internal, Request, &mProductString, sizeof mProductString);
-  
-  default:
-    DEBUG((EFI_D_ERROR, "Unknown string descriptor #%d lang=0x%04x\n", Id, Language));
-
-    // Stall
-    return EFI_NOT_FOUND;
-  }
-}
-
-EFI_STATUS UsbGadgetHandleStandardControlRequest(
-  GADGET_DRIVER_INTERNAL *Internal,
-  USB_DEVICE_REQUEST *Request
-  )
-{
-  EFI_STATUS Status;
-  UINT8 DescriptorIndex;
-
-  if (Request->Request == USB_REQ_GET_DESCRIPTOR) {
-    if (Request->RequestType != USB_ENDPOINT_DIR_IN)
-      return EFI_DEVICE_ERROR;
-
-    switch(Request->Value >> 8) {
-    case USB_DT_DEVICE:
-      return UsbGadgetEp0Respond(Internal, Request, &mDeviceDescriptor, sizeof mDeviceDescriptor);
-
-    case USB_DT_CONFIG:
-      DescriptorIndex = Request->Value;
-
-      if (DescriptorIndex == 0)
-        Status = UsbGadgetEp0Respond(Internal, Request, Internal->ConfigDescriptor, sizeof gConfigDescriptorTemplate);
-      else {
-        DEBUG((EFI_D_ERROR, "Unknown config descriptor index %d\n", DescriptorIndex));
-        Status = EFI_DEVICE_ERROR;
-      }
-
-      return Status;
-
-    case USB_DT_STRING:
-      return UsbGadgetSendStringDescriptor(Internal, Request, Request->Value, 0x0000);
-
-    default:
-      DEBUG((EFI_D_ERROR, "Unknown descriptor type %d\n", Request->Value >> 8));
-      break;
-    }
-
-    return EFI_DEVICE_ERROR;
-  } else if (Request->Request == USB_REQ_SET_CONFIG) {
-    if (Request->RequestType != 0)
-      return EFI_DEVICE_ERROR;
-
-    if (Request->Value != 1) {
-      DEBUG((EFI_D_ERROR, "Invalid configuration requested (%d)\n", Request->Value));
-      return EFI_DEVICE_ERROR;
-    }
-
-    Status = CdcEnable(Internal);
-    if (EFI_ERROR(Status)) {
-      DEBUG((EFI_D_ERROR, "Failed to enable CDC: %r\n", Status));
-      ASSERT_EFI_ERROR(Status);
-      // Stall
-      return EFI_DEVICE_ERROR;
-    }
-
-    // Signal configuration was set successfully
-    return UsbGadgetEp0Queue(Internal, NULL, 0, NULL, 0);
-  }
-
-  return EFI_UNSUPPORTED;
-}
-
-STATIC EFI_STATUS HandleMosRequest(
-  GADGET_DRIVER_INTERNAL *Internal,
-  USB_DEVICE_REQUEST *Request
-  )
-{
-  UINT8 Target = Request->RequestType & 0x1f;
-
-  if (Request->Index == 0x04) {
-    if (Target != USB_TARGET_DEVICE || !(Request->RequestType & USB_ENDPOINT_DIR_IN))
-      return EFI_UNSUPPORTED;
-
-    return UsbGadgetEp0Respond(Internal, Request, &mMicrosoftFeatureDescriptor, sizeof mMicrosoftFeatureDescriptor);
-  } else if (Request->Index == 0x05) {
-    
-  }
-
-  return EFI_UNSUPPORTED;
-}
-
-EFI_STATUS UsbGadgetHandleControlRequest(
-  USB_GADGET *This,
-  USB_DEVICE_REQUEST *Request
-  )
-{
-  EFI_STATUS Status;
-  GADGET_DRIVER_INTERNAL *Internal = GADGET_DRIVER_GET_INTERNAL(This);
-
-  switch (Request->RequestType & USB_TYPE_MASK) {
-  case USB_REQ_TYPE_STANDARD:
-    Status = UsbGadgetHandleStandardControlRequest(Internal, Request);
-    break;
-  //case USB_REQ_TYPE_CLASS:
-  //  Status = CdcHandleRequest(Internal, Request);
-  //  break;
-  case USB_REQ_TYPE_VENDOR:
-    if (Request->Request == MOS_VENDOR_CODE)
-      return HandleMosRequest(Internal, Request);
-    /* fallthrough */
-  default:
-    Status = EFI_UNSUPPORTED;
-    break;
-  }
-
-  return Status;
-}
-
-#endif
-
 USB_DEVICE_DESCRIPTOR *UsbGadgetGetDeviceDescriptor(USB_GADGET *Gadget) {
   return &mDeviceDescriptor;
 }
@@ -375,6 +228,7 @@ EFI_STATUS UsbGadgetHandleSetConfig(USB_GADGET *This, UINT8 Config) {
     }
     return EFI_SUCCESS;
   } else {
+    // TODO: need to properly handle set config=0
     DEBUG((EFI_D_ERROR, "Unsupported config (%d) requested\n", Status));
     return EFI_UNSUPPORTED;
   }
