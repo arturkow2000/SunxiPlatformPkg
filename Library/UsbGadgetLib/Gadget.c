@@ -188,6 +188,16 @@ EFI_STATUS UsbGadgetEnableEndpoint(
   return mUsb->EnableEndpoint(mUsb, Endpoint);
 }
 
+EFI_STATUS UsbGadgetDisableEndpoint(
+  USB_GADGET *Gadget,
+  USB_ENDPOINT_DESCRIPTOR *Endpoint
+) {
+  if (!Gadget || !Endpoint)
+    return EFI_INVALID_PARAMETER;
+
+  return mUsb->DisableEndpoint(mUsb, Endpoint);
+}
+
 EFI_STATUS UsbGadgetHaltEndpoint(USB_GADGET *Gadget, UINT32 Endpoint) {
   if (!Gadget)
     return EFI_INVALID_PARAMETER;

@@ -159,6 +159,20 @@ STATIC EFI_STATUS EnableEndpoint(
   return UsbEnableEndpoint(&Driver->Common, Descriptor);
 }
 
+STATIC EFI_STATUS EFIAPI DisableEndpoint(
+  IN USB_PROTOCOL *This,
+  IN USB_ENDPOINT_DESCRIPTOR *Descriptor
+) {
+  USB_DXE_DRIVER *Driver;
+
+  if (!This)
+    return EFI_INVALID_PARAMETER;
+
+  Driver = GET_DXE_DRIVER(This);
+
+  return UsbDisableEndpoint(&Driver->Common, Descriptor);
+}
+
 STATIC USB_PROTOCOL mUsbProto = {
   RegisterGadgetDriver,
   UnregisterGadgetDriver,
@@ -167,6 +181,7 @@ STATIC USB_PROTOCOL mUsbProto = {
   Queue,
   Halt,
   EnableEndpoint,
+  DisableEndpoint,
 };
 
 STATIC VOID TimerHandler (

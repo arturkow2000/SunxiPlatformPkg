@@ -141,6 +141,25 @@ EFI_STATUS
   IN USB_ENDPOINT_DESCRIPTOR *Descriptor
 );
 
+/**
+ Disables endpoint and aborts all pending transfers on that endpoint.
+
+ @param This                        Pointer to USB_PROTOCOL instance.
+ @param Descriptor                  Pointer to USB_ENDPOINT_DESCRIPTOR
+
+ @retval EFI_SUCCESS                Endpoint enabled.
+ @retval EFI_INVALID_PARAMETER      This is NULL, Descriptor is NULL or invalid
+ @retval EFI_NOT_FOUND              No such Endpoint.
+ @retval EFI_DEVICE_ERROR           Unknown internal error.
+ @retval EFI_NOT_STARTED            Endpoint is already disabled.
+**/
+typedef
+EFI_STATUS
+(EFIAPI *USB_DISABLE_ENDPOINT)(
+  IN USB_PROTOCOL *This,
+  IN USB_ENDPOINT_DESCRIPTOR *Descriptor
+);
+
 struct _USB_PROTOCOL {
   USB_REGISTER_GADGET_DRIVER RegisterGadgetDriver;
   USB_UNREGISTER_GADGET_DRIVER UnregisterGadgetDriver;
@@ -149,6 +168,7 @@ struct _USB_PROTOCOL {
   USB_QUEUE Queue;
   USB_HALT Halt;
   USB_ENABLE_ENDPOINT EnableEndpoint;
+  USB_DISABLE_ENDPOINT DisableEndpoint;
 };
 
 extern EFI_GUID gUsbProtocolGuid;

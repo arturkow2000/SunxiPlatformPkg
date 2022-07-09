@@ -268,14 +268,18 @@ EFI_STATUS UsbEnableEndpoint(USB_DRIVER *Driver, USB_ENDPOINT_DESCRIPTOR *Descri
   MaxPacketSize = Descriptor->MaxPacketSize & 0x7ff;
 
   if (IsIn) {
-    if (Driver->EndpointsUsedForTx & (1u << (UINT32)Endpoint))
+    if (Driver->EndpointsUsedForTx & (1u << (UINT32)Endpoint)) {
+      DEBUG((EFI_D_ERROR, "Endpoint %d already enabled (TX, mask 0x%x)\n", Endpoint, Driver->EndpointsUsedForTx));
       return EFI_ALREADY_STARTED;
+    }
 
     HardwareFifoSize = 1u << (UINT16)gSunxiSocConfig.EpFifoConfig[Endpoint].TxMaxPacketSizeLog2;
   }
   else {
-    if (Driver->EndpointsUsedForRx & (1u << (UINT32)Endpoint))
+    if (Driver->EndpointsUsedForRx & (1u << (UINT32)Endpoint)) {
+      DEBUG((EFI_D_ERROR, "Endpoint %d already enabled (RX, mask 0x%x)\n", Endpoint, Driver->EndpointsUsedForRx));
       return EFI_ALREADY_STARTED;
+    }
 
     HardwareFifoSize = 1u << (UINT16)gSunxiSocConfig.EpFifoConfig[Endpoint].RxMaxPacketSizeLog2;
   }
@@ -331,6 +335,68 @@ EFI_STATUS UsbEnableEndpoint(USB_DRIVER *Driver, USB_ENDPOINT_DESCRIPTOR *Descri
     Driver->EndpointsUsedForRx |= 1u << (UINT32)Endpoint;
     Driver->Epx[Endpoint - 1].RxPacketSize = MaxPacketSize;
   }
+
+  return EFI_SUCCESS;
+}
+
+EFI_STATUS UsbDisableEndpoint(USB_DRIVER *Driver, USB_ENDPOINT_DESCRIPTOR *Descriptor) {
+  UINT8 Endpoint;
+  BOOLEAN IsIn;
+  UINT32 *UsageMask;
+  LIST_ENTRY *List;
+  LIST_ENTRY *Node;
+  USB_REQUEST_BLOCK *Urb;
+
+  if (!Descriptor)
+    return EFI_INVALID_PARAMETER;
+
+  if (Descriptor->DescriptorType != USB_DESC_TYPE_ENDPOINT)
+    return EFI_INVALID_PARAMETER;
+
+  Endpoint = Descriptor->EndpointAddress & ~USB_ENDPOINT_DIR_IN;
+  if (Endpoint == 0)
+    return EFI_INVALID_PARAMETER;
+
+  if (Endpoint >= gSunxiSocConfig.NumEndpoints)
+    return EFI_NOT_FOUND;
+
+  IsIn = !!(Descriptor->EndpointAddress & USB_ENDPOINT_DIR_IN);
+
+  if (IsIn) {
+    UsageMask = &Driver->EndpointsUsedForTx;
+    List = &Driver->Epx[Endpoint - 1].TxQueue;
+  }
+  else {
+    UsageMask = &Driver->EndpointsUsedForRx;
+    List = &Driver->Epx[Endpoint - 1].RxQueue;
+  }
+
+  if (!(*UsageMask & (1u << (UINT32)Endpoint))) {
+    DEBUG((
+      EFI_D_INFO,
+      "Attempt to disable an already disabled endpoint %d (%s) mask=0x%x\n",
+      Endpoint,
+      IsIn ? L"TX" : L"RX", *UsageMask
+    ));
+    return EFI_NOT_STARTED;
+  }
+
+  *UsageMask &= ~(1u << (UINT32)Endpoint);
+  for (Node = GetFirstNode(List); !IsNull(List, Node); Node = GetNextNode(List, Node)) {
+    Urb = USB_URB_FROM_LINK(Node);
+    DEBUG((
+      EFI_D_INFO,
+      "Abort URB (%s) %p len %d ep%d (disabling endpoint)\n",
+      IsIn ? L"TX" : L"RX",
+      Urb->Buffer,
+      Urb->Length,
+      Endpoint
+    ));
+    UsbEpxCompleteRequest(Driver, Urb, EFI_ABORTED, Endpoint);
+  }
+  InitializeListHead(List);
+
+  Driver->Epx[Endpoint].Busy = FALSE;
 
   return EFI_SUCCESS;
 }
