@@ -23,7 +23,7 @@
 #define CDC_CONTROL_INTERFACE 1
 #define CDC_DATA_INTEFACE 2
 
-#if FixedPcdGet32(Usb20Support)
+#if FixedPcdGet32(UsbHighSpeedSupport)
 #define CDC_DATA_MAX_PACKET 512
 #else
 #define CDC_DATA_MAX_PACKET 64

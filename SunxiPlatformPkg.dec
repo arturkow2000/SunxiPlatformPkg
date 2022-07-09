@@ -85,7 +85,7 @@
   gSunxiTokenSpaceGuid.LcdPwmActivePeriod      | 0x00000000 | UINT32 | 0x81100014
   # USB
   # FIXME: hi-speed is currently broken - randomly fails enumeration.
-  gSunxiTokenSpaceGuid.Usb20Support            | FALSE      | BOOLEAN | 0x81100015
+  gSunxiTokenSpaceGuid.UsbHighSpeedSupport     | FALSE      | BOOLEAN | 0x81100015
   gSunxiTokenSpaceGuid.UsbPhySupport           | TRUE       | BOOLEAN | 0x81100016
 
 # SPL

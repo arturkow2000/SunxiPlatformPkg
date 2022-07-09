@@ -90,7 +90,7 @@ VOID UsbEnable(USB_DRIVER *Driver) {
 
   MmioWrite8(Driver->Base + MUSB_TESTMODE, 0);
 
-#if FixedPcdGet32(Usb20Support)
+#if FixedPcdGet32(UsbHighSpeedSupport)
   MmioWrite8(Driver->Base + MUSB_POWER, MUSB_POWER_ISOUPDATE | MUSB_POWER_HSENAB | MUSB_POWER_SOFTCONN);
 #else
   MmioWrite8(Driver->Base + MUSB_POWER, MUSB_POWER_ISOUPDATE | MUSB_POWER_SOFTCONN);

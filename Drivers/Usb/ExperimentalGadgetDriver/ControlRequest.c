@@ -53,11 +53,7 @@ MICROSOFT_DESCRIPTOR mMicrosoftFeatureDescriptor = {
 STATIC USB_DEVICE_DESCRIPTOR mDeviceDescriptor = {
   .Length = sizeof(USB_DEVICE_DESCRIPTOR),
   .DescriptorType = USB_DESC_TYPE_DEVICE,
-#if FixedPcdGet32(Usb20Support)
   .BcdUSB = 0x200,
-#else
-  .BcdUSB = 0x110,
-#endif
   .IdVendor = 0x1F3A,
   .IdProduct = 0x8E10,
   .NumConfigurations = 1,

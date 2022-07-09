@@ -34,7 +34,7 @@
   gEfiDevicePathProtocolGuid    ## PRODUCES
 
 [FixedPcd]
-  gSunxiTokenSpaceGuid.Usb20Support
+  gSunxiTokenSpaceGuid.UsbHighSpeedSupport
 
 [Depex]
   TRUE

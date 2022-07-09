@@ -43,7 +43,7 @@
   gUsbProtocolGuid
 
 [FixedPcd]
-  gSunxiTokenSpaceGuid.Usb20Support
+  gSunxiTokenSpaceGuid.UsbHighSpeedSupport
   gSunxiTokenSpaceGuid.UsbPhySupport
 
 [Depex]
