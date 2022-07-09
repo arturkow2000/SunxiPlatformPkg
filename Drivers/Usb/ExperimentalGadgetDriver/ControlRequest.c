@@ -19,7 +19,6 @@
 MAKE_STRING_DESCRIPTOR(mManufacturerString, L"Allwinner");
 MAKE_STRING_DESCRIPTOR(mProductString, L"Sunxi device in UEFI mode");
 
-#if 0
 STATIC struct {
   UINT8 __Length;
   UINT8 __DescriptorType;
@@ -29,19 +28,27 @@ STATIC struct {
   { 'M', 0, 'S', 0, 'F', 0, 'T', 0, '1', 0, '0', 0, '0', 0, MOS_VENDOR_CODE, 0x00 }
 };
 
-STATIC MICROSOFT_FEATURE_DESCRIPTOR mMicrosoftFeatureDescriptor = {
-  .Length = sizeof(MICROSOFT_FEATURE_DESCRIPTOR),
-  .Version = MICROSOFT_FEATURE_DESCRIPTOR_VERSION,
-  .CompatibilityId = 4,
-  .NumberOfSections = 1,
-  .Reserved0 = { 0, 0, 0, 0, 0, 0, 0 },
-  .InterfaceNumber = CUSTOM_INTERFACE,
-  .One = 1,
-  .CompatibleId = { 'W', 'I', 'N', 'U', 'S', 'B', 0, 0 },
-  .SubCompatibleId = { 0, 0, 0, 0, 0, 0, 0, 0 },
-  .Reserved1 = { 0, 0, 0, 0, 0, 0 },
+typedef struct {
+  MICROSOFT_COMPAT_ID_DESCRIPTOR CompatId;
+  MICROSOFT_FUNCTION_DESCRIPTOR Custom;
+} MICROSOFT_DESCRIPTOR;
+
+MICROSOFT_DESCRIPTOR mMicrosoftFeatureDescriptor = {
+  .CompatId = {
+    .Length = sizeof mMicrosoftFeatureDescriptor,
+    .Version = MICROSOFT_FEATURE_DESCRIPTOR_VERSION,
+    .CompatibilityId = 4,
+    .NumberOfSections = 1,
+    .Reserved0 = { 0, 0, 0, 0, 0, 0, 0 },
+  },
+  .Custom = {
+    .InterfaceNumber = CUSTOM_INTERFACE,
+    .One = 1,
+    .CompatibleId = { 'W', 'I', 'N', 'U', 'S', 'B', 0, 0 },
+    .SubCompatibleId = { 0, 0, 0, 0, 0, 0, 0, 0 },
+    .Reserved1 = { 0, 0, 0, 0, 0, 0 },
+  }
 };
-#endif
 
 STATIC USB_DEVICE_DESCRIPTOR mDeviceDescriptor = {
   .Length = sizeof(USB_DEVICE_DESCRIPTOR),
@@ -195,8 +202,7 @@ UINT8 *UsbGadgetGetStringDescriptor(USB_GADGET *Gadget, UINT8 Id) {
   case 0:
     return mLangListStringDescriptor;
   case 0xEE:
-    ASSERT(0);
-    return NULL;
+    return (UINT8*)&mMsftString;
   case USB_STR_MANUFACTURER:
     return (UINT8*)&mManufacturerString;
   case USB_STR_PRODUCT:
@@ -229,7 +235,36 @@ EFI_STATUS UsbGadgetHandleClassRequest(USB_GADGET *This, USB_DEVICE_REQUEST *Req
 }
 
 EFI_STATUS UsbGadgetHandleVendorRequest(USB_GADGET *This, USB_DEVICE_REQUEST *Request) {
-  DEBUG((EFI_D_ERROR, "UNHANDLED VENDOR REQUEST\n"));
+  UINT8 Target = Request->RequestType & 0x1f;
+  UINT8 PageNumber = Request->Value & 0xff;
+  UINT8 InterfaceNumber = Request->Value >> 8;
+
+  // We don't care about the interface number, from Microsoft MOS spec:
+  // Because a device can have only one extended compat ID descriptor, it
+  // should ignore InterfaceNumber, regardless of the value, and simply return
+  // the descriptor.
+  (VOID)InterfaceNumber;
+
+  DEBUG((EFI_D_INFO, "MOS request, index=%d page=%d interface=%d\n", Request->Index, PageNumber, InterfaceNumber));
+  if (PageNumber != 0) {
+    DEBUG((EFI_D_ERROR, "MOS page is not 0, page=%d\n", PageNumber));
+    return EFI_UNSUPPORTED;
+  }
+
+  if (Request->Index == 0x04) {
+    if (Target != USB_TARGET_DEVICE || !(Request->RequestType & USB_ENDPOINT_DIR_IN))
+      return EFI_UNSUPPORTED;
+
+    return UsbGadgetInitUrb(
+      This,
+      This->ControlUrb,
+      &mMicrosoftFeatureDescriptor,
+      MIN(mMicrosoftFeatureDescriptor.CompatId.Length, Request->Length),
+      USB_FLAG_TX | USB_FLAG_ZLP,
+      NULL
+    );
+  }
+
   return EFI_UNSUPPORTED;
 }
 
