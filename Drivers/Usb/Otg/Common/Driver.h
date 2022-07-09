@@ -88,6 +88,7 @@ VOID UsbEpxRestart(USB_DRIVER *Driver, UINT32 Endpoint, USB_REQUEST_BLOCK *Urb);
 // Internal APIs used for forwarding data to gadget driver
 INT8 UsbForwardControlRequestToGadgetDriver(USB_DRIVER *Driver, USB_DEVICE_REQUEST *Request);
 VOID UsbSignalCompletion(USB_DRIVER *Driver, UINT32 Endpoint, USB_REQUEST_BLOCK *Urb, EFI_STATUS Status);
+VOID UsbSignalReset(USB_DRIVER *Driver);
 
 // Internal APIs
 VOID UsbEp0CompleteRequest(USB_DRIVER *Driver, USB_REQUEST_BLOCK *Urb, EFI_STATUS Status);

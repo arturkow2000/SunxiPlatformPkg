@@ -134,17 +134,17 @@ VOID UsbReset(USB_DRIVER *Driver, BOOLEAN FirstReset) {
   LIST_ENTRY *Node;
   USB_REQUEST_BLOCK *Urb;
 
-  if (!FirstReset) {
-    // TODO: abort all transfers
-  }
+  if (!FirstReset)
+    UsbSignalReset(Driver);
 
   for (Node = GetFirstNode(&Driver->Ep0Queue);
       !IsNull(&Driver->Ep0Queue, Node);
       Node = GetNextNode(&Driver->Ep0Queue, Node)) {
     Urb = USB_URB_FROM_LINK(Node);
-    DEBUG((EFI_D_INFO, "Abort URB %p len %d ep0\n", Urb->Buffer, Urb->Length));
+    DEBUG((EFI_D_INFO, "Abort URB %p len %d ep0 (USB reset)\n", Urb->Buffer, Urb->Length));
     UsbEp0CompleteRequest(Driver, Urb, EFI_ABORTED);
   }
+  InitializeListHead(&Driver->Ep0Queue);
 
   // TODO: abort all pending requests (on other endpoints too)
   for (i = 0; i < gSunxiSocConfig.NumEndpoints - 1; i++) {
@@ -152,7 +152,7 @@ VOID UsbReset(USB_DRIVER *Driver, BOOLEAN FirstReset) {
         !IsNull(&Driver->Epx[i].TxQueue, Node);
         Node = GetNextNode(&Driver->Epx[i].TxQueue, Node)) {
       Urb = USB_URB_FROM_LINK(Node);
-      DEBUG((EFI_D_INFO, "Abort URB (TX) %p len %d ep%d\n", Urb->Buffer, Urb->Length, i));
+      DEBUG((EFI_D_INFO, "Abort URB (TX) %p len %d ep%d (USB reset)\n", Urb->Buffer, Urb->Length, i));
       UsbEpxCompleteRequest(Driver, Urb, EFI_ABORTED, i);
     }
 
@@ -160,13 +160,15 @@ VOID UsbReset(USB_DRIVER *Driver, BOOLEAN FirstReset) {
         !IsNull(&Driver->Epx[i].RxQueue, Node);
         Node = GetNextNode(&Driver->Epx[i].RxQueue, Node)) {
       Urb = USB_URB_FROM_LINK(Node);
-      DEBUG((EFI_D_INFO, "Abort URB (RX) %p len %d ep%d\n", Urb->Buffer, Urb->Length, i));
+      DEBUG((EFI_D_INFO, "Abort URB (RX) %p len %d ep%d (USB reset)\n", Urb->Buffer, Urb->Length, i));
       UsbEpxCompleteRequest(Driver, Urb, EFI_ABORTED, i);
     }
 
     Driver->Epx[i].Busy = FALSE;
     Driver->Epx[i].TxPacketSize = 0;
     Driver->Epx[i].RxPacketSize = 0;
+    InitializeListHead(&Driver->Epx[i].TxQueue);
+    InitializeListHead(&Driver->Epx[i].RxQueue);
   }
 
   UsbSelectEndpoint(Driver, 0);

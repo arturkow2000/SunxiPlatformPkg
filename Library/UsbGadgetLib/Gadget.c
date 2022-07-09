@@ -60,6 +60,19 @@ STATIC EFI_STATUS HandleSetConfigNull(
   return EFI_UNSUPPORTED;
 }
 
+STATIC EFI_STATUS UsbGadgetHandleReset(USB_GADGET_INTERFACE *This) {
+  USB_GADGET* Gadget = INTERFACE_TO_GADGET(This);
+  EFI_STATUS Status;
+
+  DEBUG((EFI_D_INFO, "USB reset, disabling gadget\n"));
+  Status = Gadget->HandleSetConfig(Gadget, 0);
+  if (EFI_ERROR(Status)) {
+    DEBUG((EFI_D_ERROR, "Could not disable USB gadget\n"));
+  }
+
+  return Status;
+}
+
 EFI_STATUS EFIAPI UsbGadgetLibConstructor(
   IN EFI_HANDLE ImageHandle,
   IN EFI_SYSTEM_TABLE *SystemTable
@@ -75,6 +88,7 @@ EFI_STATUS EFIAPI UsbGadgetLibConstructor(
 EFI_STATUS UsbGadgetInitializeInterface(USB_GADGET *Gadget) {
   ASSERT(Gadget);
   Gadget->Interface.HandleControlRequest = UsbGadgetHandleControlRequest;
+  Gadget->Interface.HandleReset = UsbGadgetHandleReset;
   Gadget->GetDeviceDescriptor = GetDeviceDescriptorNull;
   Gadget->GetConfigDescriptor = GetConfigDescriptorNull;
   Gadget->GetStringDescriptor = GetStringDescriptorNull;

@@ -22,6 +22,12 @@ EFI_STATUS
   USB_DEVICE_REQUEST *Request
 );
 
+typedef
+EFI_STATUS
+(EFIAPI *USB_GADGET_HANDLE_RESET)(
+  USB_GADGET_INTERFACE *This
+);
+
 typedef USB_DEVICE_DESCRIPTOR*
 (EFIAPI *USB_GADGET_GET_DEVICE_DESCRIPTOR)(
   USB_GADGET *This
@@ -69,6 +75,7 @@ typedef EFI_STATUS
 // Low-level interface to USB driver
 struct _USB_GADGET_INTERFACE {
   USB_GADGET_HANDLE_CONTROL_REQUEST HandleControlRequest;
+  USB_GADGET_HANDLE_RESET HandleReset;
 };
 
 #define USB_URB_FROM_LINK(Record)        \

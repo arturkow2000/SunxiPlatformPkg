@@ -25,3 +25,10 @@ VOID UsbSignalCompletion(USB_DRIVER *Driver, UINT32 Endpoint, USB_REQUEST_BLOCK 
     Urb->Callback((USB_GADGET*)DxeDriver->GadgetDriver, Urb);
   }
 }
+
+VOID UsbSignalReset(USB_DRIVER *Driver) {
+  USB_DXE_DRIVER *DxeDriver = USB_DRIVER_INTO_DXE_DRIVER(Driver);
+  ASSERT(DxeDriver->GadgetDriver);
+  ASSERT(DxeDriver->GadgetDriver->HandleReset);
+  DxeDriver->GadgetDriver->HandleReset(DxeDriver->GadgetDriver);
+}
