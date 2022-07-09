@@ -110,27 +110,3 @@ VOID CdcTimerHandler(EFI_EVENT Event, VOID *Gadget);
 
 EFI_STATUS UsbSerialInit(USB_GADGET *This);
 EFI_STATUS UsbSerialDestroy(USB_GADGET *This);
-
-#if 0
-/**
- Responds to USB IN request
-**/
-EFI_STATUS UsbGadgetEp0Respond(GADGET_DRIVER_INTERNAL *Internal, USB_DEVICE_REQUEST *Request, VOID *Buffer, UINT32 Length);
-EFI_STATUS UsbGadgetEp0Queue(GADGET_DRIVER_INTERNAL *Internal, VOID *Buffer, UINT32 Length, USB_PPI_REQ_COMPLETE_CALLBACK Callback, UINT32 Flags);
-
-EFI_STATUS UsbGadgetEpxInitAndQueue(
-  GADGET_DRIVER_INTERNAL *Internal,
-  USB_REQUEST_BLOCK *Urb,
-  USB_ENDPOINT_DESCRIPTOR *Endpoint,
-  VOID *Buffer,
-  UINT32 Length,
-  UINT32 Flags,
-  USB_PPI_REQ_COMPLETE_CALLBACK Callback
-);
-
-
-// CDC API
-
-EFI_STATUS CdcEnable(GADGET_DRIVER_INTERNAL *Internal);
-EFI_STATUS CdcHandleRequest(GADGET_DRIVER_INTERNAL *Internal, USB_DEVICE_REQUEST *Request);
-#endif
