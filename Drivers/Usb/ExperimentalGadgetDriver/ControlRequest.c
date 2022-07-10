@@ -265,7 +265,11 @@ EFI_STATUS UsbGadgetHandleVendorRequest(USB_GADGET *This, USB_DEVICE_REQUEST *Re
 }
 
 EFI_STATUS UsbGadgetHandleSetConfig(USB_GADGET *This, UINT8 Config) {
+  GADGET_DRIVER *Driver = GADGET_TO_DRIVER(This);
   EFI_STATUS Status;
+
+  if (Driver->ActiveConfig == Config)
+    return EFI_SUCCESS;
 
   if (Config == 1) {
     Status = CdcEnable(This);
@@ -273,10 +277,16 @@ EFI_STATUS UsbGadgetHandleSetConfig(USB_GADGET *This, UINT8 Config) {
       DEBUG((EFI_D_ERROR, "CDC enable failed: %r\n", Status));
       return Status;
     }
+
+    Driver->ActiveConfig = Config;
     return EFI_SUCCESS;
   } else {
-    // TODO: need to properly handle set config=0
-    DEBUG((EFI_D_ERROR, "Unsupported config (%d) requested\n", Status));
-    return EFI_UNSUPPORTED;
+    Status = CdcDisable(This);
+    if (EFI_ERROR(Status)) {
+      DEBUG((EFI_D_ERROR, "CDC disable failed: %r\n", Status));
+    }
+
+    Driver->ActiveConfig = Config;
+    return EFI_SUCCESS;
   }
 }

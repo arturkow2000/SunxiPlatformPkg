@@ -66,6 +66,8 @@ typedef struct _GADGET_DRIVER {
 
   CDC_STATE CdcState;
   USB_CONFIG_DESCRIPTOR *ConfigDescriptor;
+
+  UINT8 ActiveConfig;
 } GADGET_DRIVER;
 
 typedef struct _DEVICE_CONFIG {
@@ -102,6 +104,8 @@ EFI_STATUS UsbGadgetHandleSetConfig(USB_GADGET *This, UINT8 Config);
 
 EFI_STATUS CdcHandleRequest(USB_GADGET *This, USB_DEVICE_REQUEST *Request);
 EFI_STATUS CdcEnable(USB_GADGET *This);
+EFI_STATUS CdcDisable(USB_GADGET *This);
+BOOLEAN CdcIsEnabled(USB_GADGET *This);
 EFI_STATUS CdcQueueRead(USB_GADGET *This);
 EFI_STATUS CdcRead(USB_GADGET *This, IN VOID *Buffer, IN OUT UINTN *BufferSize);
 EFI_STATUS CdcWrite(USB_GADGET *This, IN VOID *Buffer, IN OUT UINTN *BufferSize);

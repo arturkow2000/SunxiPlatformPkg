@@ -125,6 +125,40 @@ EFI_STATUS CdcEnable(USB_GADGET *This) {
   return EFI_SUCCESS;
 }
 
+EFI_STATUS CdcDisable(USB_GADGET *This) {
+  GADGET_DRIVER *Driver = GADGET_TO_DRIVER(This);
+  DEVICE_CONFIG *Config = (DEVICE_CONFIG*)Driver->ConfigDescriptor;
+  EFI_STATUS Status;
+
+  Driver->CdcTimerRunning = FALSE;
+  Status = gBS->SetTimer(Driver->CdcTimer, TimerCancel, 0);
+  if (EFI_ERROR(Status)) {
+    DEBUG((EFI_D_ERROR, "Failed to stop CDC timer: %r\n", Status));
+  }
+
+  Status = UsbGadgetDisableEndpoint(This, &Config->CdcControlEp);
+  if (EFI_ERROR(Status)) {
+    DEBUG((EFI_D_ERROR, "Failed to disable CDC control endpoint\n"));
+  }
+
+  Status = UsbGadgetDisableEndpoint(This, &Config->CdcDataEpIn);
+  if (EFI_ERROR(Status)) {
+    DEBUG((EFI_D_ERROR, "Failed to disable CDC data in endpoint\n"));
+  }
+
+  Status = UsbGadgetDisableEndpoint(This, &Config->CdcDataEpOut);
+  if (EFI_ERROR(Status)) {
+    DEBUG((EFI_D_ERROR, "Failed to disable CDC data out endpoint\n"));
+  }
+
+  return EFI_SUCCESS;
+}
+
+BOOLEAN CdcIsEnabled(USB_GADGET *This) {
+  GADGET_DRIVER *Driver = GADGET_TO_DRIVER(This);
+  return Driver->ActiveConfig == 1;
+}
+
 STATIC VOID CdcHandleData(
   USB_GADGET *This,
   USB_REQUEST_BLOCK *Urb
@@ -140,6 +174,13 @@ STATIC VOID CdcHandleData(
       SimpleBufferDiscard(&Driver->CdcRxBuffer, Urb->Actual - Length);
       SimpleBufferWrite(&Driver->CdcRxBuffer, &Driver->CdcRxBufferTemp[Length], &Length);
     }
+  }
+
+  if (Urb->Status == EFI_ABORTED) {
+    // Request gets aborted when we disable CDC either do to configuration
+    // change or USB reset. Don't queue more transfers, CDC has to be re-enabled
+    // first.
+    return;
   }
 
   Status = CdcQueueRead(This);
@@ -232,6 +273,10 @@ EFI_STATUS CdcWrite(USB_GADGET *This, IN VOID *Buffer, IN OUT UINTN *BufferSize)
   UINTN Length = TotalSize;
   UINTN Offset;
   EFI_TPL OldTpl;
+
+  // Discard any data if not enabled.
+  if (!CdcIsEnabled(This))
+    return EFI_SUCCESS;
 
   if (TotalSize == 0)
     return EFI_SUCCESS;

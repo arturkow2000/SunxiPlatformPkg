@@ -6,6 +6,8 @@ STATIC EFI_STATUS UsbGadgetReset(GADGET_DRIVER *Driver) {
   Driver->CdcState.LineCoding.CharFormat = USB_CDC_1_STOP_BITS;
   Driver->CdcState.LineCoding.DataBits = 8;
 
+  Driver->ActiveConfig = 0;
+
   return EFI_SUCCESS;
 }
 
