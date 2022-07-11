@@ -44,3 +44,25 @@ VOID UsbDumpSetupPacket(USB_DEVICE_REQUEST *Setup) {
 
   DEBUG((EFI_D_INFO, "idx 0x%x val 0x%x len 0x%x\n", Setup->Index, Setup->Value, Setup->Length));
 }
+
+CONST CHAR16 *UsbEp0StateStr(USB_DRIVER *Driver) {
+  switch (Driver->Ep0State)
+  {
+  case MUSB_EP0_STAGE_IDLE:
+    return L"idle";
+  case MUSB_EP0_STAGE_SETUP:
+    return L"setup";
+  case MUSB_EP0_STAGE_TX:
+    return L"tx";
+  case MUSB_EP0_STAGE_RX:
+    return L"rx";
+  case MUSB_EP0_STAGE_STATUSIN:
+    return L"statusin";
+  case MUSB_EP0_STAGE_STATUSOUT:
+    return L"statusout";
+  case MUSB_EP0_STAGE_ACKWAIT:
+    return L"ackwait";
+  default:
+    return NULL;
+  }
+}

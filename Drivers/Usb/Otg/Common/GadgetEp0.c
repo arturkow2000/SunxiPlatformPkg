@@ -348,8 +348,9 @@ VOID UsbEp0HandleIrq(USB_DRIVER *Driver) {
 
   DEBUG((
     EFI_D_INFO,
-    "csr %04x, count %u, addr %u\n",
-    Csr0, Len, MmioRead16(Driver->Base + MUSB_FADDR)
+    "csr %04x, count %u, addr %u, state %s\n",
+    Csr0, Len, MmioRead16(Driver->Base + MUSB_FADDR),
+    UsbEp0StateStr(Driver)
   ));
 
   if (Csr0 & MUSB_CSR0_P_DATAEND) {
@@ -379,7 +380,7 @@ VOID UsbEp0HandleIrq(USB_DRIVER *Driver) {
       Driver->Ep0State = MUSB_EP0_STAGE_STATUSIN;
       break;
     default:
-      DEBUG((EFI_D_ERROR, "SetupEnd came in a wrong ep0stage %d\n", Driver->Ep0State));
+      DEBUG((EFI_D_ERROR, "SetupEnd came in a wrong ep0stage %s\n", UsbEp0StateStr(Driver)));
     }
 
     Csr0 = MmioRead16(Driver->Base + MUSB_CSR0);
@@ -541,7 +542,7 @@ EFI_STATUS UsbEp0QueuePacket(USB_DRIVER *Driver, USB_REQUEST_BLOCK *Urb) {
   case MUSB_EP0_STAGE_ACKWAIT:  /* zero-length data */
     break;
   default:
-    DEBUG((EFI_D_ERROR, "ep0 request queued in state %d\n", Driver->Ep0State));
+    DEBUG((EFI_D_ERROR, "ep0 request queued in state %s\n", UsbEp0StateStr(Driver)));
     return EFI_DEVICE_ERROR;
   }
 
@@ -625,7 +626,7 @@ EFI_STATUS UsbEp0Halt(USB_DRIVER *Driver) {
     break;
   
   default:
-    DEBUG((EFI_D_ERROR, "EP0 can't halt in state %d\n", Driver->Ep0State));
+    DEBUG((EFI_D_ERROR, "EP0 can't halt in state %s\n", UsbEp0StateStr(Driver)));
     return EFI_DEVICE_ERROR;
   }
 

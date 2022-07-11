@@ -106,4 +106,5 @@ VOID UsbWriteFifo(USB_DRIVER *Driver, UINT8 Endpoint, UINT16 Length, CONST UINT8
 
 // Debugging
 VOID UsbDumpSetupPacket(USB_DEVICE_REQUEST *Setup);
+CONST CHAR16 *UsbEp0StateStr(USB_DRIVER *Driver);
 
