@@ -20,7 +20,7 @@ STATIC EFI_STATUS RegisterGadgetDriver(
   Driver->GadgetDriver = Gadget;
 
   UsbEnable(&Driver->Common);
-  Status = gBS->SetTimer(Driver->Timer, TimerPeriodic, EFI_TIMER_PERIOD_MILLISECONDS(1));
+  Status = gBS->SetTimer(Driver->Timer, TimerPeriodic, EFI_TIMER_PERIOD_MICROSECONDS(100));
   ASSERT_EFI_ERROR(Status);
   if (EFI_ERROR(Status))
     return Status;

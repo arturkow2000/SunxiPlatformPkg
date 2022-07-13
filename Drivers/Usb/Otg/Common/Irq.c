@@ -15,6 +15,16 @@ VOID UsbHandleInterrupt(USB_DRIVER *Driver) {
   IntrTx = MmioRead16(Driver->Base + MUSB_INTRTX);
   IntrRx = MmioRead16(Driver->Base + MUSB_INTRRX);
 
+  // Clear interrupt status
+  if (IntrUsb)
+    MmioWrite8(Driver->Base + MUSB_INTRUSB, IntrUsb);
+
+  if (IntrTx)
+    MmioWrite16(Driver->Base + MUSB_INTRTX, IntrTx);
+
+  if (IntrRx)
+    MmioWrite16(Driver->Base + MUSB_INTRRX, IntrRx);
+
   // Ignore this interrupt
   IntrUsb &= ~MUSB_INTR_SOF;
 
@@ -59,14 +69,4 @@ VOID UsbHandleInterrupt(USB_DRIVER *Driver) {
       Endpoint++;
     }
   }
-
-  // Clear interrupt status
-  if (IntrUsb)
-    MmioWrite8(Driver->Base + MUSB_INTRUSB, IntrUsb);
-  
-  if (IntrTx)
-    MmioWrite16(Driver->Base + MUSB_INTRTX, IntrTx);
-
-  if (IntrRx)
-    MmioWrite16(Driver->Base + MUSB_INTRRX, IntrRx);
 }
