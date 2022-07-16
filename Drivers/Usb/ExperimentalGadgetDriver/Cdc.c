@@ -112,16 +112,6 @@ EFI_STATUS CdcEnable(USB_GADGET *This) {
     return Status;
   }
 
-  if (!Driver->CdcTimerRunning) {
-    Status = gBS->SetTimer(Driver->CdcTimer, TimerPeriodic, EFI_TIMER_PERIOD_MILLISECONDS(1));
-    if (EFI_ERROR(Status)) {
-      DEBUG((EFI_D_ERROR, "Failed to start CDC timer: %r\n", Status));
-      return Status;
-    }
-
-    Driver->CdcTimerRunning = TRUE;
-  }
-
   return EFI_SUCCESS;
 }
 
@@ -129,12 +119,6 @@ EFI_STATUS CdcDisable(USB_GADGET *This) {
   GADGET_DRIVER *Driver = GADGET_TO_DRIVER(This);
   DEVICE_CONFIG *Config = (DEVICE_CONFIG*)Driver->ConfigDescriptor;
   EFI_STATUS Status;
-
-  Driver->CdcTimerRunning = FALSE;
-  Status = gBS->SetTimer(Driver->CdcTimer, TimerCancel, 0);
-  if (EFI_ERROR(Status)) {
-    DEBUG((EFI_D_ERROR, "Failed to stop CDC timer: %r\n", Status));
-  }
 
   Status = UsbGadgetDisableEndpoint(This, &Config->CdcControlEp);
   if (EFI_ERROR(Status)) {
@@ -195,11 +179,15 @@ STATIC VOID CdcTxComplete(
 ) {
   GADGET_DRIVER *Driver = GADGET_TO_DRIVER(This);
 
+  if (Urb->Status == EFI_ABORTED)
+    return;
+
   if (EFI_ERROR(Urb->Status))
     DEBUG((EFI_D_INFO, "CDC TX error: %r\n", Urb->Status));
 
-  Driver->CdcTxPending = FALSE;
   SimpleBufferDiscard(&Driver->CdcTxBuffer, Urb->Length);
+  Driver->CdcTxPending = FALSE;
+  CdcFlush(This);
 }
 
 EFI_STATUS CdcQueueRead(USB_GADGET *This) {
@@ -238,7 +226,6 @@ EFI_STATUS CdcFlush(USB_GADGET *This) {
   if (Driver->CdcTxPending)
     return EFI_NOT_READY;
 
-  // FIXME: For now we peek only the first part as driver does not support split buffer.
   SimpleBufferPeek(&Driver->CdcTxBuffer, &Data, &Length, NULL, NULL);
   if (Length == 0) {
     return EFI_SUCCESS;
@@ -259,12 +246,7 @@ EFI_STATUS CdcFlush(USB_GADGET *This) {
   }
   Driver->CdcTxPending = TRUE;
 
-  return EFI_SUCCESS;
-}
-
-VOID CdcTimerHandler(EFI_EVENT Event, VOID *Gadget) {
-  // Already running at TPL_NOTIFY, no need to raise
-  CdcFlush((USB_GADGET*)Gadget);
+  return Driver->CdcTxPending ? EFI_SUCCESS : EFI_NOT_READY;
 }
 
 EFI_STATUS CdcWrite(USB_GADGET *This, IN VOID *Buffer, IN OUT UINTN *BufferSize) {
@@ -294,11 +276,9 @@ EFI_STATUS CdcWrite(USB_GADGET *This, IN VOID *Buffer, IN OUT UINTN *BufferSize)
     // nobody read our data discard it now.
     SimpleBufferWrite(&Driver->CdcTxBuffer, &((UINT8*)Buffer)[Offset], &Length);
   }
-  gBS->RestoreTPL(OldTpl);
 
-  if (SimpleBufferLength(&Driver->CdcTxBuffer) >= CDC_DATA_MAX_PACKET / 2) {
-    CdcFlush(This);
-  }
+  CdcFlush(This);
+  gBS->RestoreTPL(OldTpl);
 
   return TotalSize == *BufferSize ? EFI_SUCCESS : EFI_TIMEOUT;
 }
