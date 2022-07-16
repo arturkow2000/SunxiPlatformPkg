@@ -25,6 +25,10 @@ STATIC VOID UsbGadgetInitializeEndpoints(
   Config->CdcDataEpOut.EndpointAddress = 2;
 
   Config->CdcControlEp.EndpointAddress = 3 | USB_ENDPOINT_DIR_IN;
+
+  Config->RndisControlEp.EndpointAddress = 4 | USB_ENDPOINT_DIR_IN;
+  Config->RndisDataEpIn.EndpointAddress = 5 | USB_ENDPOINT_DIR_IN;
+  Config->RndisDataEpOut.EndpointAddress = 5;
 }
 
 STATIC EFI_STATUS UsbGadgetInitialize(GADGET_DRIVER *Driver) {
@@ -49,6 +53,36 @@ STATIC EFI_STATUS UsbGadgetInitialize(GADGET_DRIVER *Driver) {
   Status = SimpleBufferInit(&Driver->CdcTxBuffer, CDC_DATA_MAX_PACKET * 8);
   if (EFI_ERROR(Status))
     return Status;
+
+  Driver->RndisDataInUrb = UsbGadgetAllocateUrb();
+  if (!Driver->RndisDataInUrb)
+    return EFI_OUT_OF_RESOURCES;
+
+  Driver->RndisDataOutUrb = UsbGadgetAllocateUrb();
+  if (!Driver->RndisDataOutUrb)
+    return EFI_OUT_OF_RESOURCES;
+
+  Driver->RndisInterruptUrb = UsbGadgetAllocateUrb();
+  if (!Driver->RndisInterruptUrb)
+    return EFI_OUT_OF_RESOURCES;
+
+  Driver->RndisRxBufferTemp = AllocatePool(CDC_DATA_MAX_PACKET);
+  if (!Driver->RndisRxBufferTemp)
+    return EFI_OUT_OF_RESOURCES;
+
+  Driver->RndisEncapsulatedMessage = AllocatePool(RNDIS_ENC_MAX);
+  if (!Driver->RndisEncapsulatedMessage)
+    return EFI_OUT_OF_RESOURCES;
+
+  Status = SimpleBufferInit(&Driver->RndisTxBuffer, CDC_DATA_MAX_PACKET * 8);
+  if (EFI_ERROR(Status))
+    return Status;
+
+  Status = SimpleBufferInit(&Driver->RndisRxBuffer, CDC_DATA_MAX_PACKET * 8);
+  if (EFI_ERROR(Status))
+    return Status;
+
+  Driver->RndisEncTxBufferSize = 0;
 
   Driver->SerialHandle = NULL;
   Driver->CdcTimerRunning = FALSE;

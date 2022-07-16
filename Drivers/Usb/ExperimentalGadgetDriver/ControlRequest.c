@@ -2,6 +2,9 @@
 
 #define USB_STR_MANUFACTURER 1
 #define USB_STR_PRODUCT 2
+#define USB_STR_RNDIS 4
+#define USB_STR_RNDIS_CONTROL 5
+#define USB_STR_RNDIS_DATA 6
 
 #define MOS_VENDOR_CODE 0xac
 
@@ -18,6 +21,9 @@
 
 MAKE_STRING_DESCRIPTOR(mManufacturerString, L"Allwinner");
 MAKE_STRING_DESCRIPTOR(mProductString, L"Sunxi device in UEFI mode");
+MAKE_STRING_DESCRIPTOR(mRndis, L"RNDIS");
+MAKE_STRING_DESCRIPTOR(mRndisControl, L"RNDIS Communications Control");
+MAKE_STRING_DESCRIPTOR(mRndisData, L"RNDIS Ethernet Data");
 
 STATIC struct {
   UINT8 __Length;
@@ -76,11 +82,86 @@ DEVICE_CONFIG gConfigDescriptorTemplate = {
     .Length = sizeof(USB_CONFIG_DESCRIPTOR),
     .DescriptorType = USB_DESC_TYPE_CONFIG,
     .TotalLength = sizeof(DEVICE_CONFIG),
-    .NumInterfaces = 3,
+    .NumInterfaces = NUM_INTERFACES,
     .ConfigurationValue = 1,
     // Use same properties as FEL mode - bus powered + 300 mA
     .Attributes = (1 << 7),
     .MaxPower = (300 / 2)
+  },
+   .Iad1 = {
+    .Length = sizeof(USB_INTERFACE_ASSOCIATION_DESCRIPTOR),
+    .DescriptorType = USB_DT_INTERFACE_ASSOCIATION,
+    .FirstInterface = RNDIS_CONTROL_INTERFACE,
+    .InterfaceCount = 2,
+    .FunctionClass = 0xE0,
+    .FunctionSubClass = 0x01,
+    .FunctionProtocol = 0x03,
+    .Function = USB_STR_RNDIS,
+  },
+  .RndisControl = {
+    .Length = sizeof(USB_INTERFACE_DESCRIPTOR),
+    .DescriptorType = USB_DESC_TYPE_INTERFACE,
+    .InterfaceNumber = RNDIS_CONTROL_INTERFACE,
+    .InterfaceClass = 0xE0,
+    .InterfaceSubClass = 0x01,
+    .InterfaceProtocol = 0x03,
+    .NumEndpoints = 1,
+    .Interface = USB_STR_RNDIS_CONTROL,
+  },
+  .RndisFunctionalDescriptor = {
+    .Length = sizeof(USB_CDC_FUNCTIONAL_DESCRIPTOR),
+    .DescriptorType = 0x24,
+    .DescriptorSubType = USB_CDC_FDT_HEADER,
+    .BcdCDC = 0x0110, // 1.10
+  },
+  .RndisCallManagementDescriptor = {
+    .Length = sizeof(USB_CDC_CALL_MANAGEMENT_DESCRIPTOR),
+    .DescriptorType = 0x24,
+    .DescriptorSubType = USB_CDC_FDT_CALL_MANAGEMENT,
+    .Capabilities = 0,
+    .DataInterface = RNDIS_DATA_INTERFACE
+  },
+  .RndisAcmDescriptor = {
+    .Length = sizeof(USB_CDC_ACM_DESCRIPTOR),
+    .DescriptorType = 0x24,
+    .DescriptorSubType = USB_CDC_FDT_ACM,
+    .Capabilities = 0,
+  },
+  .RndisUnionDescriptor = {
+    .Length = sizeof(USB_CDC_UNION_DESCRIPTOR),
+    .DescriptorType = 0x24,
+    .DescriptorSubType = USB_CDC_FDT_UNION,
+    .MasterInterface = RNDIS_CONTROL_INTERFACE,
+    .SlaveInterface = RNDIS_DATA_INTERFACE,
+  },
+  .RndisControlEp = {
+    .Length = sizeof(USB_ENDPOINT_DESCRIPTOR),
+    .DescriptorType = USB_DESC_TYPE_ENDPOINT,
+    .Attributes = USB_ENDPOINT_INTERRUPT,
+    .MaxPacketSize = 8,
+    .Interval = 9,
+  },
+  .RndisDataInterface = {
+    .Length = sizeof(USB_INTERFACE_DESCRIPTOR),
+    .DescriptorType = USB_DESC_TYPE_INTERFACE,
+    .InterfaceNumber = RNDIS_DATA_INTERFACE,
+    .InterfaceClass = USB_CLASS_DATA,
+    .InterfaceSubClass = 0x0,
+    .InterfaceProtocol = 0x0,
+    .NumEndpoints = 2,
+    .Interface = USB_STR_RNDIS_DATA,
+  },
+  .RndisDataEpIn = {
+    .Length = sizeof(USB_ENDPOINT_DESCRIPTOR),
+    .DescriptorType = USB_DESC_TYPE_ENDPOINT,
+    .Attributes = USB_ENDPOINT_BULK,
+    .MaxPacketSize = CDC_DATA_MAX_PACKET,
+  },
+  .RndisDataEpOut = {
+    .Length = sizeof(USB_ENDPOINT_DESCRIPTOR),
+    .DescriptorType = USB_DESC_TYPE_ENDPOINT,
+    .Attributes = USB_ENDPOINT_BULK,
+    .MaxPacketSize = CDC_DATA_MAX_PACKET,
   },
   .Custom = {
     .Length = sizeof(USB_INTERFACE_DESCRIPTOR),
@@ -203,6 +284,12 @@ UINT8 *UsbGadgetGetStringDescriptor(USB_GADGET *Gadget, UINT8 Id) {
     return (UINT8*)&mManufacturerString;
   case USB_STR_PRODUCT:
     return (UINT8*)&mProductString;
+  case USB_STR_RNDIS:
+    return (UINT8*)&mRndis;
+  case USB_STR_RNDIS_CONTROL:
+    return (UINT8*)&mRndisControl;
+  case USB_STR_RNDIS_DATA:
+    return (UINT8*)&mRndisData;
   default:
     DEBUG((EFI_D_ERROR, "Unknown string descriptor #%d\n", Id));
     return NULL;
@@ -214,6 +301,9 @@ EFI_STATUS UsbGadgetHandleClassRequest(USB_GADGET *This, USB_DEVICE_REQUEST *Req
   case USB_RECIP_INTERFACE:
     if (Request->Index == CDC_CONTROL_INTERFACE || Request->Index == CDC_DATA_INTEFACE)
       return CdcHandleRequest(This, Request);
+
+    if (Request->Index == RNDIS_CONTROL_INTERFACE)
+      return RndisHandleRequest(This, Request);
 
     DEBUG((EFI_D_INFO, "Unhandled interface specific class request\n"));
     return EFI_DEVICE_ERROR;
@@ -277,6 +367,11 @@ EFI_STATUS UsbGadgetHandleSetConfig(USB_GADGET *This, UINT8 Config) {
       DEBUG((EFI_D_ERROR, "CDC enable failed: %r\n", Status));
       return Status;
     }
+    Status = RndisEnable(This);
+    if (EFI_ERROR(Status)) {
+      DEBUG((EFI_D_ERROR, "RNDIS enable failed: %r\n", Status));
+      return Status;
+    }
 
     Driver->ActiveConfig = Config;
     return EFI_SUCCESS;
@@ -284,6 +379,10 @@ EFI_STATUS UsbGadgetHandleSetConfig(USB_GADGET *This, UINT8 Config) {
     Status = CdcDisable(This);
     if (EFI_ERROR(Status)) {
       DEBUG((EFI_D_ERROR, "CDC disable failed: %r\n", Status));
+    }
+    Status = RndisDisable(This);
+    if (EFI_ERROR(Status)) {
+      DEBUG((EFI_D_ERROR, "RNDIS disable failed: %r\n", Status));
     }
 
     Driver->ActiveConfig = Config;
