@@ -13,6 +13,7 @@
   Cdc.c
   Serial.c
   Buffer.c
+  Rndis.c
 
 [Packages]
   MdePkg/MdePkg.dec

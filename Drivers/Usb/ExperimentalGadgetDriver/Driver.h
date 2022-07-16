@@ -18,10 +18,20 @@
 #include <Protocol/SerialIo.h>
 
 #include "Buffer.h"
+#include "Rndis.h"
 
-#define CUSTOM_INTERFACE 0
-#define CDC_CONTROL_INTERFACE 1
-#define CDC_DATA_INTEFACE 2
+enum {
+  // Due to bug in rndis6 driver RNDIS must be the first interface (interface 0
+  // and 1). We also keep interfaces in the same order in configuration
+  // descriptor to keep interface number and interface indices the same because
+  // MOS descriptors refer to interface by its index instead of number.
+  RNDIS_CONTROL_INTERFACE,
+  RNDIS_DATA_INTERFACE,
+  CUSTOM_INTERFACE,
+  CDC_CONTROL_INTERFACE,
+  CDC_DATA_INTEFACE,
+  NUM_INTERFACES
+};
 
 #if FixedPcdGet32(UsbHighSpeedSupport)
 #define CDC_DATA_MAX_PACKET 512
@@ -57,6 +67,15 @@ typedef struct _GADGET_DRIVER {
   SIMPLE_BUFFER CdcRxBuffer;
   UINT8 *CdcRxBufferTemp;
 
+  USB_REQUEST_BLOCK *RndisDataInUrb;
+  USB_REQUEST_BLOCK *RndisDataOutUrb;
+  USB_REQUEST_BLOCK *RndisInterruptUrb;
+  SIMPLE_BUFFER RndisTxBuffer;
+  SIMPLE_BUFFER RndisRxBuffer;
+  UINT8 *RndisRxBufferTemp;
+  UINT8 *RndisEncapsulatedMessage;
+  UINT32 RndisEncTxBufferSize;
+
   EFI_HANDLE SerialHandle;
 
   EFI_SERIAL_IO_PROTOCOL SerialProtocol;
@@ -70,6 +89,16 @@ typedef struct _GADGET_DRIVER {
 
 typedef struct _DEVICE_CONFIG {
   USB_CONFIG_DESCRIPTOR Config;
+  USB_INTERFACE_ASSOCIATION_DESCRIPTOR Iad1;
+  USB_INTERFACE_DESCRIPTOR RndisControl;
+  USB_CDC_FUNCTIONAL_DESCRIPTOR RndisFunctionalDescriptor;
+  USB_CDC_CALL_MANAGEMENT_DESCRIPTOR RndisCallManagementDescriptor;
+  USB_CDC_ACM_DESCRIPTOR RndisAcmDescriptor;
+  USB_CDC_UNION_DESCRIPTOR RndisUnionDescriptor;
+  USB_ENDPOINT_DESCRIPTOR RndisControlEp;
+  USB_INTERFACE_DESCRIPTOR RndisDataInterface;
+  USB_ENDPOINT_DESCRIPTOR RndisDataEpIn;
+  USB_ENDPOINT_DESCRIPTOR RndisDataEpOut;
   // Interface with custom protocol used for controlling device
   // currently dummy,
   // it will be used to transfer EFI image when booting from USB
@@ -111,3 +140,7 @@ EFI_STATUS CdcFlush(USB_GADGET *This);
 
 EFI_STATUS UsbSerialInit(USB_GADGET *This);
 EFI_STATUS UsbSerialDestroy(USB_GADGET *This);
+
+EFI_STATUS RndisEnable(USB_GADGET *This);
+EFI_STATUS RndisDisable(USB_GADGET *This);
+EFI_STATUS RndisHandleRequest(USB_GADGET *This, USB_DEVICE_REQUEST *Request);
