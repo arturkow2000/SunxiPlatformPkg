@@ -21,4 +21,5 @@ BOOLEAN SimpleBufferIsEmpty(SIMPLE_BUFFER *Buffer);
 VOID SimpleBufferWrite(SIMPLE_BUFFER *Buffer, UINT8 *Data, UINTN* Length);
 VOID SimpleBufferDiscard(SIMPLE_BUFFER *Buffer, UINTN Count);
 UINTN SimpleBufferPeek(SIMPLE_BUFFER *Buffer, UINT8** Part1, UINTN *Part1Length, UINT8** Part2, UINTN *Part2Length);
+UINTN SimpleBufferPeekCopy(SIMPLE_BUFFER *Buffer, UINT8* Destination, UINTN Length);
 UINTN SimpleBufferRead(SIMPLE_BUFFER *Buffer, UINT8* Destination, UINTN Length);

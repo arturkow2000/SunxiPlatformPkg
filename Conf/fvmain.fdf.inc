@@ -97,3 +97,11 @@ READ_LOCK_STATUS   = TRUE
   INF MdeModulePkg/Logo/LogoDxe.inf
   INF MdeModulePkg/Application/UiApp/UiApp.inf
   INF ShellPkg/Application/Shell/Shell.inf
+
+  #
+  # Network
+  #
+  INF NetworkPkg/DpcDxe/DpcDxe.inf
+  INF NetworkPkg/MnpDxe/MnpDxe.inf
+  INF NetworkPkg/ArpDxe/ArpDxe.inf
+  INF NetworkPkg/Ip4Dxe/Ip4Dxe.inf

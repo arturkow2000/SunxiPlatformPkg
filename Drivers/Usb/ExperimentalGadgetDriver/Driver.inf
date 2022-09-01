@@ -14,11 +14,15 @@
   Serial.c
   Buffer.c
   Rndis.c
+  Net/Snp.c
+  Net/HWAddr.c
+  Net/Ethernet.c
 
 [Packages]
   MdePkg/MdePkg.dec
   MdeModulePkg/MdeModulePkg.dec
   SunxiPlatformPkg/SunxiPlatformPkg.dec
+  NetworkPkg/NetworkPkg.dec
 
 [LibraryClasses]
   UefiDriverEntryPoint
@@ -33,6 +37,7 @@
 [Protocols]
   gEfiSerialIoProtocolGuid      ## PRODUCES
   gEfiDevicePathProtocolGuid    ## PRODUCES
+  gEfiSimpleNetworkProtocolGuid ## PRODUCES
 
 [FixedPcd]
   gSunxiTokenSpaceGuid.UsbHighSpeedSupport

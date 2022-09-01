@@ -169,7 +169,7 @@ UINTN SimpleBufferPeek(
   return Total;
 }
 
-UINTN SimpleBufferRead(SIMPLE_BUFFER *Buffer, UINT8* Destination, UINTN Length) {
+UINTN SimpleBufferPeekCopy(SIMPLE_BUFFER *Buffer, UINT8* Destination, UINTN Length) {
   UINT8* Part1, *Part2;
   UINTN Part1Length, Part2Length;
   UINTN n;
@@ -194,6 +194,11 @@ UINTN SimpleBufferRead(SIMPLE_BUFFER *Buffer, UINT8* Destination, UINTN Length) 
     o += n;
   }
 
-  SimpleBufferDiscard(Buffer, o);
   return o;
+}
+
+UINTN SimpleBufferRead(SIMPLE_BUFFER *Buffer, UINT8* Destination, UINTN Length) {
+  UINTN n = SimpleBufferPeekCopy(Buffer, Destination, Length);
+  SimpleBufferDiscard(Buffer, n);
+  return n;
 }

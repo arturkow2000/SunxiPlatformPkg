@@ -165,6 +165,11 @@
 
 [LibraryClasses.common.UEFI_DRIVER]
   SunxiGpioLib|SunxiPlatformPkg/Library/SunxiGpioLib/SunxiGpioLibDxe.inf
+  NetLib|NetworkPkg/Library/DxeNetLib/DxeNetLib.inf
+  DpcLib|NetworkPkg/Library/DxeDpcLib/DxeDpcLib.inf
+
+[LibraryClasses.common.UEFI_APPLICATION]
+  NetLib|NetworkPkg/Library/DxeNetLib/DxeNetLib.inf
 
 [Components.common]
   #
@@ -287,8 +292,7 @@
     <LibraryClasses>
       BdsLib|SunxiPlatformPkg/Library/BdsLib/BdsLib.inf
       FdtLib|EmbeddedPkg/Library/FdtLib/FdtLib.inf
-      NetLib|NetworkPkg/Library/DxeNetLib/DxeNetLib.inf
-    
+
     <PcdsFixedAtBuild>
       gEfiShellPkgTokenSpaceGuid.PcdShellLibAutoInitialize|FALSE
   }
@@ -336,7 +340,7 @@
       NULL|ShellPkg/Library/UefiShellDriver1CommandsLib/UefiShellDriver1CommandsLib.inf
       NULL|ShellPkg/Library/UefiShellDebug1CommandsLib/UefiShellDebug1CommandsLib.inf
       NULL|ShellPkg/Library/UefiShellInstall1CommandsLib/UefiShellInstall1CommandsLib.inf
-      #NULL|ShellPkg/Library/UefiShellNetwork1CommandsLib/UefiShellNetwork1CommandsLib.inf
+      NULL|ShellPkg/Library/UefiShellNetwork1CommandsLib/UefiShellNetwork1CommandsLib.inf
 
       HandleParsingLib|ShellPkg/Library/UefiHandleParsingLib/UefiHandleParsingLib.inf
       BcfgCommandLib|ShellPkg/Library/UefiShellBcfgCommandLib/UefiShellBcfgCommandLib.inf
@@ -350,6 +354,14 @@
       gEfiShellPkgTokenSpaceGuid.PcdShellLibAutoInitialize|FALSE
       gEfiMdePkgTokenSpaceGuid.PcdUefiLibMaxPrintBufferSize|8000
   }
+
+  #
+  # Network
+  #
+  NetworkPkg/DpcDxe/DpcDxe.inf
+  NetworkPkg/MnpDxe/MnpDxe.inf
+  NetworkPkg/ArpDxe/ArpDxe.inf
+  NetworkPkg/Ip4Dxe/Ip4Dxe.inf
 
 [PcdsFixedAtBuild]
   gArmTokenSpaceGuid.PcdFdBaseAddress|0x0

@@ -9,6 +9,7 @@
 #include <Library/BaseMemoryLib.h>
 #include <Library/MemoryAllocationLib.h>
 #include <Library/UefiBootServicesTableLib.h>
+#include <Library/NetLib.h>
 
 #include <Library/UsbGadgetLib.h>
 #include <Ppi/UsbPpi.h>
@@ -16,6 +17,7 @@
 #include <IndustryStandard/UsbEx.h>
 #include <IndustryStandard/CdcAcm.h>
 #include <Protocol/SerialIo.h>
+#include <Protocol/SimpleNetwork.h>
 
 #include "Buffer.h"
 #include "Rndis.h"
@@ -45,6 +47,39 @@ enum {
 #define SERIAL_TO_DRIVER(Record)        \
   BASE_CR(Record, GADGET_DRIVER, SerialProtocol)
 
+#define SNP_TO_DRIVER(Record)           \
+  BASE_CR(Record, SNP_DRIVER, Protocol)
+
+#define SNP_TO_GADGET_DRIVER(Record)    \
+  BASE_CR(Record, GADGET_DRIVER, Snp)
+
+//#define RNDIS_RX_HEADER 0
+//#define RNDIS_RX_DATA 1
+
+typedef struct {
+  USB_REQUEST_BLOCK *DataInUrb;
+  USB_REQUEST_BLOCK *DataInUrb2;
+  USB_REQUEST_BLOCK *DataOutUrb;
+  USB_REQUEST_BLOCK *InterruptUrb;
+  SIMPLE_BUFFER TxBuffer;
+  SIMPLE_BUFFER RxBuffer;
+  UINT8 *RxBufferTemp;
+  UINT8 *EncapsulatedMessage;
+  UINT32 EncTxBufferSize;
+  UINT32 RxProcessThr;
+  BOOLEAN TxPending;
+} RNDIS_DRIVER;
+
+typedef struct {
+  EFI_SIMPLE_NETWORK_PROTOCOL Protocol;
+  EFI_SIMPLE_NETWORK_MODE Mode;
+  EFI_HANDLE Handle;
+  SIMPLE_BUFFER RxBuffer;
+  struct {
+    BOOLEAN Rx;
+  } Interrupt;
+} SNP_DRIVER;
+
 typedef struct {
   USB_CDC_LINE_CODING PendingLineCoding;
   USB_CDC_LINE_CODING LineCoding;
@@ -55,6 +90,12 @@ typedef struct {
   UART_DEVICE_PATH          Uart;
   EFI_DEVICE_PATH_PROTOCOL  End;
 } SERIAL_DEVICE_PATH;
+
+typedef struct {
+  VENDOR_DEVICE_PATH        Guid;
+  VENDOR_DEVICE_PATH        Network;
+  EFI_DEVICE_PATH_PROTOCOL  End;
+} NETWORK_DEVICE_PATH;
 
 typedef struct _GADGET_DRIVER {
   USB_GADGET Gadget;
@@ -67,14 +108,8 @@ typedef struct _GADGET_DRIVER {
   SIMPLE_BUFFER CdcRxBuffer;
   UINT8 *CdcRxBufferTemp;
 
-  USB_REQUEST_BLOCK *RndisDataInUrb;
-  USB_REQUEST_BLOCK *RndisDataOutUrb;
-  USB_REQUEST_BLOCK *RndisInterruptUrb;
-  SIMPLE_BUFFER RndisTxBuffer;
-  SIMPLE_BUFFER RndisRxBuffer;
-  UINT8 *RndisRxBufferTemp;
-  UINT8 *RndisEncapsulatedMessage;
-  UINT32 RndisEncTxBufferSize;
+  RNDIS_DRIVER Rndis;
+  SNP_DRIVER Snp;
 
   EFI_HANDLE SerialHandle;
 
@@ -141,6 +176,13 @@ EFI_STATUS CdcFlush(USB_GADGET *This);
 EFI_STATUS UsbSerialInit(USB_GADGET *This);
 EFI_STATUS UsbSerialDestroy(USB_GADGET *This);
 
+EFI_STATUS RndisInit(USB_GADGET *This);
 EFI_STATUS RndisEnable(USB_GADGET *This);
 EFI_STATUS RndisDisable(USB_GADGET *This);
 EFI_STATUS RndisHandleRequest(USB_GADGET *This, USB_DEVICE_REQUEST *Request);
+EFI_STATUS RndisSendPacket(USB_GADGET *This, VOID *Payload, UINTN PayloadLength);
+
+
+EFI_STATUS NetInitSnp(SNP_DRIVER *Driver);
+VOID NetProcessEthernetFrame(SNP_DRIVER *Snp, SIMPLE_BUFFER *Buffer, UINTN Length);
+UINT8* NetGetMacAddress();
